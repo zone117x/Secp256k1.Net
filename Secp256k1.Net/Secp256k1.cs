@@ -147,7 +147,7 @@ namespace Secp256k1Net
         /// <param name="compactSignatureOutput">Output for the 64-byte array of the compact signature.</param>
         /// <param name="recoveryID">The recovery ID.</param>
         /// <param name="signature">The initialized signature.</param>
-        public bool EcdsaRecoverableSignatureSerializeCompact(Span<byte> compactSignatureOutput, out int recoveryID, byte[] signature)
+        public bool EcdsaRecoverableSignatureSerializeCompact(Span<byte> compactSignatureOutput, out int recoveryID, Span<byte> signature)
         {
             if (compactSignatureOutput.Length < SERIALIZED_SIGNATURE_SIZE)
             {

@@ -31,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="dir\testfile.txt">
+    <Content Include="dir\testfile.txt" PackageCopyToOutput="true">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

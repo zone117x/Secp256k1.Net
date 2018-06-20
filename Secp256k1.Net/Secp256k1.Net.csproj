@@ -27,6 +27,24 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="testfile.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="dir\testfile.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <!--
+  <ItemGroup>
+    <Content Include="native\osx-x64\libsecp256k1.dylib" PackageCopyToOutput="true">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  -->
+  
+  <ItemGroup>
     <PackageReference Include="Secp256k1.Native" Version="0.1.9" PrivateAssets="all" />
     <PackageReference Include="System.Memory" Version="4.5.1" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.1" />
@@ -35,12 +53,12 @@
   <!--
   <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">
     <ItemGroup>
-      <Content Include="$(OutputPath)/native/**">
-        <PackageCopyToOutput>true</PackageCopyToOutput>
+      <Content Include="$(OutputPath)/native/**" PackageCopyToOutput="true">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>
     </ItemGroup>
   </Target>
-  -->
+-->
   
   <!--
   <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">

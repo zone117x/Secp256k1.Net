@@ -13,6 +13,7 @@ namespace Secp256k1Net
 {
     public static class LibPathResolver
     {
+
         static readonly Dictionary<PlatInfo, (string Prefix, string LibPrefix, string Extension)> PlatformPaths = new Dictionary<PlatInfo, (string, string, string)>
         {
             [(Windows, X64)] = ("win-x64", "", ".dll"),
@@ -45,99 +46,58 @@ namespace Secp256k1Net
                 throw new Exception(string.Join("\n", $"Unsupported platform: {CurrentPlatformDesc.Value}", "Must be one of:", SupportedPlatformDescriptions()));
             }
 
-            string ReturnFoundFile(string found)
+            var searchedPaths = new HashSet<string>();
+
+            foreach (var containerDir in GetSearchLocations())
             {
-                Cache[CurrentPlatformInfo] = found;
-                return found;
-            }
-
-            var searchedPaths = new List<string>();
-
-            string libLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-
-            string publishedPath = Path.Combine(libLocation, platform.LibPrefix + library) + platform.Extension;
-            searchedPaths.Add(publishedPath);
-            if (File.Exists(publishedPath))
-            {
-                return ReturnFoundFile(publishedPath);
-            }
-
-            string GetPath(string subDir = "")
-            {
-                return Path.Combine(libLocation, "native", platform.Prefix, subDir, platform.LibPrefix + library) + platform.Extension;
-            }
-
-            string GetRuntimesPath()
-            {
-                return Path.Combine(libLocation, "runtimes", platform.Prefix, "native", platform.LibPrefix + library) + platform.Extension;
-            }
-
-            string filePath = GetPath();
-            searchedPaths.Add(filePath);
-#if DEBUG
-            string debugFilePath = GetPath("Debug");
-            searchedPaths.Add(debugFilePath);
-            if (File.Exists(debugFilePath))
-            {
-                filePath = debugFilePath;
-            }
-#endif
-
-            if (File.Exists(filePath))
-            {
-                return ReturnFoundFile(filePath);
-            }
-
-            filePath = GetRuntimesPath();
-            searchedPaths.Add(filePath);
-            if (File.Exists(filePath))
-            {
-                return ReturnFoundFile(filePath);
-            }
-
-            libLocation = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "publish");
-            filePath = GetRuntimesPath();
-            searchedPaths.Add(filePath);
-            if (File.Exists(filePath))
-            {
-                return ReturnFoundFile(filePath);
-            }
-
-            libLocation = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-            filePath = GetPath();
-            searchedPaths.Add(filePath);
-            if (File.Exists(filePath))
-            {
-                return ReturnFoundFile(filePath);
-            }
-
-            filePath = GetRuntimesPath();
-            searchedPaths.Add(filePath);
-            if (File.Exists(filePath))
-            {
-                return ReturnFoundFile(filePath);
-            }
-
-            libLocation = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "publish");
-            filePath = GetRuntimesPath();
-            searchedPaths.Add(filePath);
-            if (File.Exists(filePath))
-            {
-                return ReturnFoundFile(filePath);
-            }
-
-            foreach (var extraPath in ExtraNativeLibSearchPaths)
-            {
-                libLocation = extraPath;
-                filePath = GetPath();
-                searchedPaths.Add(filePath);
-                if (File.Exists(filePath))
+                foreach (var libPath in SearchContainerPaths(containerDir, library, platform))
                 {
-                    return ReturnFoundFile(filePath);
+                    if (!searchedPaths.Contains(libPath) && File.Exists(libPath))
+                    {
+                        Cache[CurrentPlatformInfo] = libPath;
+                        return libPath;
+                    }
+                    searchedPaths.Add(libPath);
                 }
             }
 
             throw new Exception($"Platform can be supported but '{library}' lib not found for {CurrentPlatformDesc.Value} at: {Environment.NewLine}{string.Join(Environment.NewLine, searchedPaths)}");
+
+        }
+
+        static IEnumerable<string> GetSearchLocations()
+        {
+            yield return Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            yield return Path.GetDirectoryName(Assembly.GetCallingAssembly().Location);
+            yield return Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+            foreach(var extraPath in ExtraNativeLibSearchPaths)
+            {
+                yield return extraPath;
+            }
+            // If the this lib is being executed from its nuget package directory then the native
+            // files should be found up a couple directories.
+            yield return Path.GetFullPath(
+                Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                "../../contentFiles/any/any"));
+        }
+
+        static IEnumerable<string> SearchContainerPaths(string containerDir, string library, (string Prefix, string LibPrefix, string Extension) platform)
+        {
+            foreach(var subDir in GetSearchSubDir(library, platform))
+            {
+                yield return Path.Combine(containerDir, subDir);
+                yield return Path.Combine(containerDir, "publish", subDir);
+            }
+        }
+
+        static IEnumerable<string> GetSearchSubDir(string library, (string Prefix, string LibPrefix, string Extension) platform)
+        {
+            string libFileName = platform.LibPrefix + library + platform.Extension;
+
+            yield return libFileName;
+            yield return Path.Combine(platform.Prefix, libFileName); ;
+            yield return Path.Combine("native", platform.Prefix, libFileName); ;
+            yield return Path.Combine("runtimes", platform.Prefix, "native", libFileName);
 
         }
 

@@ -78,7 +78,7 @@ namespace Secp256k1Net
             // files should be found up a couple directories.
             yield return Path.GetFullPath(
                 Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-                "../../contentFiles/any/any"));
+                "../../content"));
         }
 
         static IEnumerable<string> SearchContainerPaths(string containerDir, string library, (string Prefix, string LibPrefix, string Extension) platform)

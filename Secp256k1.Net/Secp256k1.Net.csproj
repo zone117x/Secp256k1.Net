@@ -36,7 +36,7 @@
     <ItemGroup>
       <_PackageFiles Include="$(OutputPath)/native/**/*">
         <BuildAction>Content</BuildAction>
-        <PackagePath>contentFiles/any/any/native/</PackagePath>
+        <PackagePath>content/native/</PackagePath>
         <!--<CopyToOutput>true</CopyToOutput>-->
         <!--<PackageCopyToOutput>true</PackageCopyToOutput>-->
       </_PackageFiles>

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Secp256k1.Net
+namespace Secp256k1Net
 {
     static class LoadLibNative
     {

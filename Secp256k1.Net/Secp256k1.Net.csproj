@@ -19,6 +19,7 @@
   <PropertyGroup>
     <Version Condition="'$(VersionSuffix)' != ''">0.1.$(VersionSuffix)</Version>
     <Version Condition="'$(VersionSuffix)' == ''">0.1.0</Version>
+    <RootNamespace>Secp256k1Net</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(Configuration)' == 'Release'">

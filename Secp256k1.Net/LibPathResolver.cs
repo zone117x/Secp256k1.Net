@@ -9,7 +9,7 @@ using static System.Runtime.InteropServices.RuntimeInformation;
 using PlatInfo = System.ValueTuple<System.Runtime.InteropServices.OSPlatform, System.Runtime.InteropServices.Architecture>;
 using System.Reflection;
 
-namespace Secp256k1.Net
+namespace Secp256k1Net
 {
     public static class LibPathResolver
     {

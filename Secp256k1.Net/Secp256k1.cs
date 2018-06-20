@@ -1,33 +1,25 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using static Secp256k1.Net.Interop;
+using static Secp256k1Net.Interop;
 
-namespace Secp256k1.Net
+namespace Secp256k1Net
 {
-    public static unsafe class Secp256k1
+    public unsafe class Secp256k1 : IDisposable
     {
-        static IntPtr _ctx;
+        public IntPtr Context => _ctx;
+
+        IntPtr _ctx;
+
         public const int SERIALIZED_PUBKEY_LENGTH = 65;
         public const int PUBKEY_LENGTH = 64;
         public const int PRIVKEY_LENGTH = 32;
+        public const int UNSERIALIZED_SIGNATURE_SIZE = 65;
+        public const int SERIALIZED_SIGNATURE_SIZE = 64;
 
-        static Secp256k1()
+        public Secp256k1()
         {
-            var libPath = LibPathResolver.Resolve(LIB);
-            LoadLibNative.LoadLib(libPath);
             _ctx = secp256k1_context_create((uint)(Flags.SECP256K1_CONTEXT_SIGN | Flags.SECP256K1_CONTEXT_VERIFY));
-        }
-
-        private static void FlipEndianWords(Span<byte> data)
-        {
-            // Flip the endianness on our signature.
-            int wordCount = data.Length / 32;
-            for (int i = 0; i < wordCount; i++)
-            {
-                // Flip the endianness on this word
-                data.Slice(i * 32, 32).Reverse();
-            }
         }
 
         /// <summary>
@@ -39,23 +31,20 @@ namespace Secp256k1.Net
         /// <returns>
         /// True if the public key successfully recovered (which guarantees a correct signature).
         /// </returns>
-        public static bool EcdsaRecover(Span<byte> publicKeyOutput, Span<byte> signature, Span<byte> message)
+        public bool EcdsaRecover(Span<byte> publicKeyOutput, Span<byte> signature, Span<byte> message)
         {
-            if (publicKeyOutput.Length < 64)
+            if (publicKeyOutput.Length < PUBKEY_LENGTH)
             {
-                throw new ArgumentException($"{nameof(publicKeyOutput)} must be 64 bytes");
+                throw new ArgumentException($"{nameof(publicKeyOutput)} must be {PUBKEY_LENGTH} bytes");
             }
-            if (signature.Length < 64)
+            if (signature.Length < UNSERIALIZED_SIGNATURE_SIZE)
             {
-                throw new ArgumentException($"{nameof(signature)} must be 64 bytes");
+                throw new ArgumentException($"{nameof(signature)} must be {UNSERIALIZED_SIGNATURE_SIZE} bytes");
             }
             if (message.Length < 32)
             {
                 throw new ArgumentException($"{nameof(message)} must be 32 bytes");
             }
-
-            // Flip the endianness on our signature. (it comes in r, s, v, since v is one byte, it won't be affected by this and only r and s will flip endian.
-            FlipEndianWords(signature);
 
             var publicKeyPtr = Unsafe.AsPointer(ref publicKeyOutput[0]);
             var sigPtr = Unsafe.AsPointer(ref signature[0]);
@@ -74,7 +63,7 @@ namespace Secp256k1.Net
         /// <returns>
         /// True if the private key is valid and public key was obtained.
         /// </returns>
-        public static bool EcdsaGetPublicKey(Span<byte> publicKeyOutput, Span<byte> privateKeyInput)
+        public bool EcdsaGetPublicKey(Span<byte> publicKeyOutput, Span<byte> privateKeyInput)
         {
             if (publicKeyOutput.Length < PUBKEY_LENGTH)
             {
@@ -90,9 +79,6 @@ namespace Secp256k1.Net
             var result = secp256k1_ec_pubkey_create(_ctx, pubKeyPtr, privKeyPtr);
 
             // Verify we succeeded
-            if (result != 1)
-                return false;
-
             return result == 1;
         }
 
@@ -103,22 +89,23 @@ namespace Secp256k1.Net
         /// <param name="compactSignature">The 64-byte compact signature input.</param>
         /// <param name="recoveryID">The recovery id (0, 1, 2 or 3).</param>
         /// <returns>True when the signature could be parsed.</returns>
-        public static bool EcdsaRecoverableSignatureParseCompact(Span<byte> signatureOutput, Span<byte> compactSignature, int recoveryID)
+        public bool EcdsaRecoverableSignatureParseCompact(Span<byte> signatureOutput, Span<byte> compactSignature, int recoveryID)
         {
-            if (signatureOutput.Length < 64)
+            if (signatureOutput.Length < UNSERIALIZED_SIGNATURE_SIZE)
             {
                 throw new ArgumentException($"{nameof(signatureOutput)} must be 64 bytes");
             }
-            if (compactSignature.Length < 64)
+            if (compactSignature.Length < SERIALIZED_SIGNATURE_SIZE)
             {
                 throw new ArgumentException($"{nameof(compactSignature)} must be 64 bytes");
             }
+
             var sigPtr = Unsafe.AsPointer(ref signatureOutput[0]);
             var intputPtr = Unsafe.AsPointer(ref compactSignature[0]);
             var result = secp256k1_ecdsa_recoverable_signature_parse_compact(_ctx, sigPtr, intputPtr, recoveryID);
+
             return result == 1;
         }
-
 
         /// <summary>
         /// Create a recoverable ECDSA signature.
@@ -129,9 +116,9 @@ namespace Secp256k1.Net
         /// <returns>
         /// True if signature created, false if the nonce generation function failed, or the private key was invalid.
         /// </returns>
-        public static bool EcdsaSignRecoverable(Span<byte> signatureOutput, Span<byte> messageHash, Span<byte> secretKey)
+        public bool EcdsaSignRecoverable(Span<byte> signatureOutput, Span<byte> messageHash, Span<byte> secretKey)
         {
-            if (signatureOutput.Length < 65)
+            if (signatureOutput.Length < UNSERIALIZED_SIGNATURE_SIZE)
             {
                 throw new ArgumentException($"{nameof(signatureOutput)} must be 65 bytes");
             }
@@ -139,7 +126,7 @@ namespace Secp256k1.Net
             {
                 throw new ArgumentException($"{nameof(messageHash)} must be 32 bytes");
             }
-            if (secretKey.Length < 32)
+            if (secretKey.Length < PRIVKEY_LENGTH)
             {
                 throw new ArgumentException($"{nameof(secretKey)} must be 32 bytes");
             }
@@ -150,13 +137,7 @@ namespace Secp256k1.Net
             var result = secp256k1_ecdsa_sign_recoverable(_ctx, sigPtr, msgPtr, secPtr, IntPtr.Zero, IntPtr.Zero);
 
             // Verify we didn't fail.
-            if (result != 1)
-                return false;
-
-            // Flip the endianness on our signature. (it comes in r, s, v, since v is one byte, it won't be affected by this and only r and s will flip endian.
-            FlipEndianWords(signatureOutput);
-
-            return true;
+            return result == 1;
         }
 
 
@@ -166,40 +147,61 @@ namespace Secp256k1.Net
         /// <param name="compactSignatureOutput">Output for the 64-byte array of the compact signature.</param>
         /// <param name="recoveryID">The recovery ID.</param>
         /// <param name="signature">The initialized signature.</param>
-        public static bool EcdsaRecoverableSignatureSerializeCompact(Span<byte> compactSignatureOutput, out int recoveryID, byte[] signature)
+        public bool EcdsaRecoverableSignatureSerializeCompact(Span<byte> compactSignatureOutput, out int recoveryID, byte[] signature)
         {
-            if (compactSignatureOutput.Length < 64)
+            if (compactSignatureOutput.Length < SERIALIZED_SIGNATURE_SIZE)
             {
-                throw new ArgumentException($"{nameof(compactSignatureOutput)} must be 64 bytes");
+                throw new ArgumentException($"{nameof(compactSignatureOutput)} must be {SERIALIZED_SIGNATURE_SIZE} bytes");
             }
-            if (signature.Length < 64)
+            if (signature.Length < UNSERIALIZED_SIGNATURE_SIZE)
             {
-                throw new ArgumentException($"{nameof(signature)} must be 64 bytes");
+                throw new ArgumentException($"{nameof(signature)} must be {UNSERIALIZED_SIGNATURE_SIZE} bytes");
             }
+
+            int recID = 0;
             var compactSigPtr = Unsafe.AsPointer(ref compactSignatureOutput[0]);
             var sigPtr = Unsafe.AsPointer(ref signature[0]);
-            int recID = 0;
             var result = secp256k1_ecdsa_recoverable_signature_serialize_compact(_ctx, compactSigPtr, ref recID, sigPtr);
             recoveryID = recID;
+
             return result == 1;
         }
 
-        public static bool EcdsaPublicKeySerialize(Span<byte> serializedPublicKeyOutput, Span<byte> publicKey)
+        /// <summary>
+        /// Serialize a pubkey object into a serialized byte sequence.
+        /// </summary>
+        /// <param name="serializedPublicKeyOutput">65-byte (if compressed==0) or 33-byte (if compressed==1) output to place the serialized key in.</param>
+        /// <param name="publicKey">The secp256k1_pubkey initialized public key.</param>
+        /// <param name="flags">SECP256K1_EC_COMPRESSED if serialization should be in compressed format, otherwise SECP256K1_EC_UNCOMPRESSED.</param>
+        public bool EcdsaPublicKeySerialize(Span<byte> serializedPublicKeyOutput, Span<byte> publicKey, Flags flags = Flags.SECP256K1_EC_UNCOMPRESSED)
         {
             if (serializedPublicKeyOutput.Length < SERIALIZED_PUBKEY_LENGTH)
             {
                 throw new ArgumentException($"{nameof(serializedPublicKeyOutput)} must be {SERIALIZED_PUBKEY_LENGTH} bytes");
             }
-            if (publicKey.Length < 64)
+            if (publicKey.Length < PUBKEY_LENGTH)
             {
-                throw new ArgumentException($"{nameof(publicKey)} must be 64 bytes");
+                throw new ArgumentException($"{nameof(publicKey)} must be {PUBKEY_LENGTH} bytes");
             }
             var serializedPtr = Unsafe.AsPointer(ref serializedPublicKeyOutput[0]);
             var pubKeyPtr = Unsafe.AsPointer(ref publicKey[0]);
 
             uint newLength = SERIALIZED_PUBKEY_LENGTH;
-            var result = secp256k1_ec_pubkey_serialize(_ctx, serializedPtr, ref newLength, pubKeyPtr, (uint)Flags.SECP256K1_EC_UNCOMPRESSED);
+            var result = secp256k1_ec_pubkey_serialize(_ctx, serializedPtr, ref newLength, pubKeyPtr, (uint)flags);
             return result == 1 && newLength == SERIALIZED_PUBKEY_LENGTH;
         }
+
+
+        public void Dispose()
+        {
+            if (_ctx != IntPtr.Zero)
+            {
+                secp256k1_context_destroy(_ctx);
+                _ctx = IntPtr.Zero;
+            }
+        }
+
+
+
     }
 }

@@ -32,11 +32,13 @@
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.1" />
   </ItemGroup>
 
+  <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">
   <ItemGroup>
     <_PackageFiles Include="$(OutputPath)/native/**">
       <BuildAction>None</BuildAction>
       <PackagePath>content/native/</PackagePath>
     </_PackageFiles>
   </ItemGroup>
+  </Target>
   
 </Project>

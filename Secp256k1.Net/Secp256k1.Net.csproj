@@ -37,77 +37,11 @@
       <_PackageFiles Include="$(OutputPath)/native/**/*">
         <BuildAction>Content</BuildAction>
         <PackagePath>contentFiles/any/any/native/</PackagePath>
-        <CopyToOutput>true</CopyToOutput>
-        <PackageCopyToOutput>true</PackageCopyToOutput>
+        <!--<CopyToOutput>true</CopyToOutput>-->
+        <!--<PackageCopyToOutput>true</PackageCopyToOutput>-->
       </_PackageFiles>
     </ItemGroup>
   </Target>
-
-  <!--
-  <ItemGroup>
-    <Content Include="$(OutputPath)runtimes\**\*" LinkBase="somefolder" CopyToOutputDirectory="PreserveNewest" PackageCopyToOutput="true" />
-  </ItemGroup>
-  -->
-
-  <!--
-  <ItemGroup>
-    <Content Include="native\osx-x64\libsecp256k1.dylib" PackageCopyToOutput="true">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  -->
-
-  <!--
-  <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">
-    <ItemGroup>
-      <Content Include="$(OutputPath)/native/**" PackageCopyToOutput="true">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </Content>
-    </ItemGroup>
-  </Target>
--->
   
-  <!--
-  <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">
-    <ItemGroup>
-      <_PackageFiles Include="$(OutputPath)/native/**">
-        <BuildAction>Content</BuildAction>
-        <PackagePath>contentFiles/any/any/native/</PackagePath>
-        <CopyToOutput>true</CopyToOutput>
-      </_PackageFiles>
-    </ItemGroup>
-  </Target>
-  -->
-
-  <!--<Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">
-    <ItemGroup>
-      <_PackageFiles Include="$(OutputPath)/native/**">
-        <BuildAction>None</BuildAction>
-        <PackagePath>contentFiles/any/any/native/</PackagePath>
-        <CopyToOutput>true</CopyToOutput>
-      </_PackageFiles>
-    </ItemGroup>
-  </Target>-->
-
-  <!--
-  <ItemGroup>
-    <_PackageFiles Include="$(OutputPath)/native/win-x64/*">
-      <BuildAction>None</BuildAction>
-      <PackagePath>content/native/win-x64/</PackagePath>
-    </_PackageFiles>
-    <_PackageFiles Include="$(OutputPath)/native/win-x86/*">
-      <BuildAction>None</BuildAction>
-      <PackagePath>content/native/win-x86/</PackagePath>
-    </_PackageFiles>
-    <_PackageFiles Include="$(OutputPath)/native/osx-x64/*">
-      <BuildAction>None</BuildAction>
-      <PackagePath>content/native/osx-x64/</PackagePath>
-    </_PackageFiles>
-    <_PackageFiles Include="$(OutputPath)/native/linux-x64/*">
-      <BuildAction>None</BuildAction>
-      <PackagePath>content/native/linux-x64/</PackagePath>
-    </_PackageFiles>
-  </ItemGroup>
-  -->
   
 </Project>

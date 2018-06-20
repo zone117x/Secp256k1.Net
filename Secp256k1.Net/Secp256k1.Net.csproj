@@ -27,19 +27,62 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Secp256k1.Native" Version="0.1.6" />
+    <PackageReference Include="Secp256k1.Native" Version="0.1.9" PrivateAssets="all" />
     <PackageReference Include="System.Memory" Version="4.5.1" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.1" />
   </ItemGroup>
 
+  <!--
   <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">
-  <ItemGroup>
-    <_PackageFiles Include="$(OutputPath)/native/**">
+    <ItemGroup>
+      <Content Include="$(OutputPath)/native/**">
+        <PackageCopyToOutput>true</PackageCopyToOutput>
+      </Content>
+    </ItemGroup>
+  </Target>
+  -->
+  
+  <!--
+  <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">
+    <ItemGroup>
+      <_PackageFiles Include="$(OutputPath)/native/**">
         <BuildAction>Content</BuildAction>
         <PackagePath>contentFiles/any/any/native/</PackagePath>
         <CopyToOutput>true</CopyToOutput>
+      </_PackageFiles>
+    </ItemGroup>
+  </Target>
+  -->
+
+  <!--<Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">
+    <ItemGroup>
+      <_PackageFiles Include="$(OutputPath)/native/**">
+        <BuildAction>None</BuildAction>
+        <PackagePath>contentFiles/any/any/native/</PackagePath>
+        <CopyToOutput>true</CopyToOutput>
+      </_PackageFiles>
+    </ItemGroup>
+  </Target>-->
+
+  <!--
+  <ItemGroup>
+    <_PackageFiles Include="$(OutputPath)/native/win-x64/*">
+      <BuildAction>None</BuildAction>
+      <PackagePath>content/native/win-x64/</PackagePath>
+    </_PackageFiles>
+    <_PackageFiles Include="$(OutputPath)/native/win-x86/*">
+      <BuildAction>None</BuildAction>
+      <PackagePath>content/native/win-x86/</PackagePath>
+    </_PackageFiles>
+    <_PackageFiles Include="$(OutputPath)/native/osx-x64/*">
+      <BuildAction>None</BuildAction>
+      <PackagePath>content/native/osx-x64/</PackagePath>
+    </_PackageFiles>
+    <_PackageFiles Include="$(OutputPath)/native/linux-x64/*">
+      <BuildAction>None</BuildAction>
+      <PackagePath>content/native/linux-x64/</PackagePath>
     </_PackageFiles>
   </ItemGroup>
-  </Target>
+  -->
   
 </Project>

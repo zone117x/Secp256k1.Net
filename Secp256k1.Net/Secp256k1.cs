@@ -22,6 +22,8 @@ namespace Secp256k1Net
         readonly Lazy<secp256k1_ecdsa_recoverable_signature_serialize_compact> secp256k1_ecdsa_recoverable_signature_serialize_compact;
         readonly Lazy<secp256k1_ec_pubkey_serialize> secp256k1_ec_pubkey_serialize;
         readonly Lazy<secp256k1_context_destroy> secp256k1_context_destroy;
+        readonly Lazy<secp256k1_ec_pubkey_parse> secp256k1_ec_pubkey_parse;
+        readonly Lazy<secp256k1_ecdsa_signature_normalize> secp256k1_ecdsa_signature_normalize;
 
         const string LIB = "secp256k1";
         public readonly string LibPath;
@@ -38,8 +40,11 @@ namespace Secp256k1Net
             secp256k1_ec_pubkey_create = LazyDelegate<secp256k1_ec_pubkey_create>("secp256k1_ec_pubkey_create");
             secp256k1_ecdsa_recoverable_signature_parse_compact = LazyDelegate<secp256k1_ecdsa_recoverable_signature_parse_compact>("secp256k1_ecdsa_recoverable_signature_parse_compact");
             secp256k1_ecdsa_sign_recoverable = LazyDelegate<secp256k1_ecdsa_sign_recoverable>("secp256k1_ecdsa_sign_recoverable");
+            secp256k1_ecdsa_recoverable_signature_serialize_compact = LazyDelegate<secp256k1_ecdsa_recoverable_signature_serialize_compact>("secp256k1_ecdsa_recoverable_signature_serialize_compact");
             secp256k1_ec_pubkey_serialize = LazyDelegate<secp256k1_ec_pubkey_serialize>("secp256k1_ec_pubkey_serialize");
             secp256k1_context_destroy = LazyDelegate<secp256k1_context_destroy>("secp256k1_context_destroy");
+            secp256k1_ec_pubkey_parse = LazyDelegate<secp256k1_ec_pubkey_parse>("secp256k1_ec_pubkey_parse");
+            secp256k1_ecdsa_signature_normalize = LazyDelegate<secp256k1_ecdsa_signature_normalize>("secp256k1_ecdsa_signature_normalize");
 
             _ctx = secp256k1_context_create.Value(((uint)(Flags.SECP256K1_CONTEXT_SIGN | Flags.SECP256K1_CONTEXT_VERIFY)));
         }
@@ -216,6 +221,54 @@ namespace Secp256k1Net
             uint newLength = SERIALIZED_PUBKEY_LENGTH;
             var result = secp256k1_ec_pubkey_serialize.Value(_ctx, serializedPtr, ref newLength, pubKeyPtr, (uint)flags);
             return result == 1 && newLength == SERIALIZED_PUBKEY_LENGTH;
+        }
+
+        /// <summary>
+        /// Parse a variable-length public key into the pubkey object.
+        /// This function supports parsing compressed (33 bytes, header byte 0x02 or
+        /// 0x03), uncompressed(65 bytes, header byte 0x04), or hybrid(65 bytes, header
+        /// byte 0x06 or 0x07) format public keys.
+        /// </summary>
+        /// <param name="publicKeyOutput">(Output) pointer to a pubkey object. If 1 is returned, it is set to a parsed version of input. If not, its value is undefined.</param>
+        /// <param name="serializedPublicKey">Serialized public key.</param>
+        /// <returns>True if the public key was fully valid, false if the public key could not be parsed or is invalid.</returns>
+        public bool EcdsaPublicKeyParse(Span<byte> publicKeyOutput, Span<byte> serializedPublicKey)
+        {
+            var inputLen = serializedPublicKey.Length;
+            if (inputLen != 33 && inputLen != 65)
+            {
+                throw new ArgumentException($"{nameof(serializedPublicKey)} must be 33 or 65 bytes");
+            }
+            if (publicKeyOutput.Length < PUBKEY_LENGTH)
+            {
+                throw new ArgumentException($"{nameof(publicKeyOutput)} must be {PUBKEY_LENGTH} bytes");
+            }
+            var pubKeyPtr = Unsafe.AsPointer(ref publicKeyOutput[0]);
+            var serializedPtr = Unsafe.AsPointer(ref serializedPublicKey[0]);
+            var result = secp256k1_ec_pubkey_parse.Value(_ctx, pubKeyPtr, serializedPtr, (uint)inputLen);
+            return result == 1;
+        }
+
+        /// <summary>
+        /// Normalizes a signature and enforces a low-S.
+        /// </summary>
+        /// <param name="normalizedSignatureOutput">(Output) pointer to an array where the normalized signature will be placed (cannot be NULL)</param>
+        /// <param name="signatureInput">(Input) pointer to an array where a signature to normalize resides (cannot be NULL)</param>
+        /// <returns>True if correct signature, false incorrect or unparseable signature</returns>
+        public bool EcdsaSignatureNormalize(Span<byte> normalizedSignatureOutput, Span<byte> signatureInput)
+        {
+            if (normalizedSignatureOutput.Length < SERIALIZED_SIGNATURE_SIZE)
+            {
+                throw new ArgumentException($"{nameof(normalizedSignatureOutput)} must be {SERIALIZED_SIGNATURE_SIZE} bytes");
+            }
+            if (signatureInput.Length < SERIALIZED_SIGNATURE_SIZE)
+            {
+                throw new ArgumentException($"{nameof(signatureInput)} must be {SERIALIZED_SIGNATURE_SIZE} bytes");
+            }
+            var outPtr = Unsafe.AsPointer(ref normalizedSignatureOutput[0]);
+            var intPtr = Unsafe.AsPointer(ref signatureInput[0]);
+            var result = secp256k1_ecdsa_signature_normalize.Value(_ctx, outPtr, intPtr);
+            return result == 1;
         }
 
 

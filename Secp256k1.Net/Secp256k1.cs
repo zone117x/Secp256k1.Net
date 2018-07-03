@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using static Secp256k1Net.Interop;
 
 namespace Secp256k1Net
 {
@@ -9,17 +8,45 @@ namespace Secp256k1Net
     {
         public IntPtr Context => _ctx;
 
-        IntPtr _ctx;
-
         public const int SERIALIZED_PUBKEY_LENGTH = 65;
         public const int PUBKEY_LENGTH = 64;
         public const int PRIVKEY_LENGTH = 32;
         public const int UNSERIALIZED_SIGNATURE_SIZE = 65;
         public const int SERIALIZED_SIGNATURE_SIZE = 64;
 
+        readonly Lazy<secp256k1_context_create> secp256k1_context_create;
+        readonly Lazy<secp256k1_ecdsa_recover> secp256k1_ecdsa_recover;
+        readonly Lazy<secp256k1_ec_pubkey_create> secp256k1_ec_pubkey_create;
+        readonly Lazy<secp256k1_ecdsa_recoverable_signature_parse_compact> secp256k1_ecdsa_recoverable_signature_parse_compact;
+        readonly Lazy<secp256k1_ecdsa_sign_recoverable> secp256k1_ecdsa_sign_recoverable;
+        readonly Lazy<secp256k1_ecdsa_recoverable_signature_serialize_compact> secp256k1_ecdsa_recoverable_signature_serialize_compact;
+        readonly Lazy<secp256k1_ec_pubkey_serialize> secp256k1_ec_pubkey_serialize;
+        readonly Lazy<secp256k1_context_destroy> secp256k1_context_destroy;
+
+        const string LIB = "secp256k1";
+        public readonly string LibPath;
+        readonly IntPtr _libPtr;
+        IntPtr _ctx;
+
         public Secp256k1()
         {
-            _ctx = secp256k1_context_create((uint)(Flags.SECP256K1_CONTEXT_SIGN | Flags.SECP256K1_CONTEXT_VERIFY));
+            LibPath = LibPathResolver.Resolve(LIB);
+            _libPtr = LoadLibNative.LoadLib(LibPath);
+
+            secp256k1_context_create = LazyDelegate<secp256k1_context_create>("secp256k1_context_create");
+            secp256k1_ecdsa_recover = LazyDelegate<secp256k1_ecdsa_recover>("secp256k1_ecdsa_recover");
+            secp256k1_ec_pubkey_create = LazyDelegate<secp256k1_ec_pubkey_create>("secp256k1_ec_pubkey_create");
+            secp256k1_ecdsa_recoverable_signature_parse_compact = LazyDelegate<secp256k1_ecdsa_recoverable_signature_parse_compact>("secp256k1_ecdsa_recoverable_signature_parse_compact");
+            secp256k1_ecdsa_sign_recoverable = LazyDelegate<secp256k1_ecdsa_sign_recoverable>("secp256k1_ecdsa_sign_recoverable");
+            secp256k1_ec_pubkey_serialize = LazyDelegate<secp256k1_ec_pubkey_serialize>("secp256k1_ec_pubkey_serialize");
+            secp256k1_context_destroy = LazyDelegate<secp256k1_context_destroy>("secp256k1_context_destroy");
+
+            _ctx = secp256k1_context_create.Value(((uint)(Flags.SECP256K1_CONTEXT_SIGN | Flags.SECP256K1_CONTEXT_VERIFY)));
+        }
+
+        Lazy<TDelegate> LazyDelegate<TDelegate>(string name)
+        {
+            return new Lazy<TDelegate>(() => LoadLibNative.GetDelegate<TDelegate>(_libPtr, name), isThreadSafe: false);
         }
 
         /// <summary>
@@ -49,7 +76,7 @@ namespace Secp256k1Net
             var publicKeyPtr = Unsafe.AsPointer(ref publicKeyOutput[0]);
             var sigPtr = Unsafe.AsPointer(ref signature[0]);
             var msgPtr = Unsafe.AsPointer(ref message[0]);
-            var result = secp256k1_ecdsa_recover(_ctx, publicKeyPtr, sigPtr, msgPtr);
+            var result = secp256k1_ecdsa_recover.Value(_ctx, publicKeyPtr, sigPtr, msgPtr);
 
             // Verify we succeeded
             return result == 1;
@@ -76,7 +103,7 @@ namespace Secp256k1Net
 
             var pubKeyPtr = Unsafe.AsPointer(ref publicKeyOutput[0]);
             var privKeyPtr = Unsafe.AsPointer(ref privateKeyInput[0]);
-            var result = secp256k1_ec_pubkey_create(_ctx, pubKeyPtr, privKeyPtr);
+            var result = secp256k1_ec_pubkey_create.Value(_ctx, pubKeyPtr, privKeyPtr);
 
             // Verify we succeeded
             return result == 1;
@@ -102,7 +129,7 @@ namespace Secp256k1Net
 
             var sigPtr = Unsafe.AsPointer(ref signatureOutput[0]);
             var intputPtr = Unsafe.AsPointer(ref compactSignature[0]);
-            var result = secp256k1_ecdsa_recoverable_signature_parse_compact(_ctx, sigPtr, intputPtr, recoveryID);
+            var result = secp256k1_ecdsa_recoverable_signature_parse_compact.Value(_ctx, sigPtr, intputPtr, recoveryID);
 
             return result == 1;
         }
@@ -134,7 +161,7 @@ namespace Secp256k1Net
             var sigPtr = Unsafe.AsPointer(ref signatureOutput[0]);
             var msgPtr = Unsafe.AsPointer(ref messageHash[0]);
             var secPtr = Unsafe.AsPointer(ref secretKey.Slice(secretKey.Length - 32)[0]);
-            var result = secp256k1_ecdsa_sign_recoverable(_ctx, sigPtr, msgPtr, secPtr, IntPtr.Zero, IntPtr.Zero);
+            var result = secp256k1_ecdsa_sign_recoverable.Value(_ctx, sigPtr, msgPtr, secPtr, IntPtr.Zero, IntPtr.Zero);
 
             // Verify we didn't fail.
             return result == 1;
@@ -161,7 +188,7 @@ namespace Secp256k1Net
             int recID = 0;
             var compactSigPtr = Unsafe.AsPointer(ref compactSignatureOutput[0]);
             var sigPtr = Unsafe.AsPointer(ref signature[0]);
-            var result = secp256k1_ecdsa_recoverable_signature_serialize_compact(_ctx, compactSigPtr, ref recID, sigPtr);
+            var result = secp256k1_ecdsa_recoverable_signature_serialize_compact.Value(_ctx, compactSigPtr, ref recID, sigPtr);
             recoveryID = recID;
 
             return result == 1;
@@ -187,7 +214,7 @@ namespace Secp256k1Net
             var pubKeyPtr = Unsafe.AsPointer(ref publicKey[0]);
 
             uint newLength = SERIALIZED_PUBKEY_LENGTH;
-            var result = secp256k1_ec_pubkey_serialize(_ctx, serializedPtr, ref newLength, pubKeyPtr, (uint)flags);
+            var result = secp256k1_ec_pubkey_serialize.Value(_ctx, serializedPtr, ref newLength, pubKeyPtr, (uint)flags);
             return result == 1 && newLength == SERIALIZED_PUBKEY_LENGTH;
         }
 
@@ -196,7 +223,7 @@ namespace Secp256k1Net
         {
             if (_ctx != IntPtr.Zero)
             {
-                secp256k1_context_destroy(_ctx);
+                secp256k1_context_destroy.Value(_ctx);
                 _ctx = IntPtr.Zero;
             }
         }

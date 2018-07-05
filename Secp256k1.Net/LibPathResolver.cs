@@ -8,6 +8,7 @@ using static System.Runtime.InteropServices.Architecture;
 using static System.Runtime.InteropServices.RuntimeInformation;
 using PlatInfo = System.ValueTuple<System.Runtime.InteropServices.OSPlatform, System.Runtime.InteropServices.Architecture>;
 using System.Reflection;
+using System.Collections.Concurrent;
 
 namespace Secp256k1Net
 {
@@ -31,7 +32,7 @@ namespace Secp256k1Net
         static readonly PlatInfo CurrentPlatformInfo = (CurrentOSPlatform, ProcessArchitecture);
         static readonly Lazy<string> CurrentPlatformDesc = new Lazy<string>(() => GetPlatformDesc((CurrentOSPlatform, ProcessArchitecture)));
 
-        static readonly Dictionary<PlatInfo, string> Cache = new Dictionary<PlatInfo, string>();
+        static readonly ConcurrentDictionary<PlatInfo, string> Cache = new ConcurrentDictionary<PlatInfo, string>();
 
         public static List<string> ExtraNativeLibSearchPaths = new List<string>();
 
@@ -54,7 +55,7 @@ namespace Secp256k1Net
                 {
                     if (!searchedPaths.Contains(libPath) && File.Exists(libPath))
                     {
-                        Cache[CurrentPlatformInfo] = libPath;
+                        Cache.TryAdd(CurrentPlatformInfo, libPath);
                         return libPath;
                     }
                     searchedPaths.Add(libPath);

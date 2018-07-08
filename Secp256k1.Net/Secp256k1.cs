@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -14,9 +15,11 @@ namespace Secp256k1Net
         public const int UNSERIALIZED_SIGNATURE_SIZE = 65;
         public const int SERIALIZED_SIGNATURE_SIZE = 64;
 
+
         readonly Lazy<secp256k1_context_create> secp256k1_context_create;
         readonly Lazy<secp256k1_ecdsa_recover> secp256k1_ecdsa_recover;
         readonly Lazy<secp256k1_ec_pubkey_create> secp256k1_ec_pubkey_create;
+        readonly Lazy<secp256k1_ec_seckey_verify> secp256k1_ec_seckey_verify;
         readonly Lazy<secp256k1_ecdsa_recoverable_signature_parse_compact> secp256k1_ecdsa_recoverable_signature_parse_compact;
         readonly Lazy<secp256k1_ecdsa_sign_recoverable> secp256k1_ecdsa_sign_recoverable;
         readonly Lazy<secp256k1_ecdsa_recoverable_signature_serialize_compact> secp256k1_ecdsa_recoverable_signature_serialize_compact;
@@ -35,23 +38,25 @@ namespace Secp256k1Net
             LibPath = LibPathResolver.Resolve(LIB);
             _libPtr = LoadLibNative.LoadLib(LibPath);
 
-            secp256k1_context_create = LazyDelegate<secp256k1_context_create>("secp256k1_context_create");
-            secp256k1_ecdsa_recover = LazyDelegate<secp256k1_ecdsa_recover>("secp256k1_ecdsa_recover");
-            secp256k1_ec_pubkey_create = LazyDelegate<secp256k1_ec_pubkey_create>("secp256k1_ec_pubkey_create");
-            secp256k1_ecdsa_recoverable_signature_parse_compact = LazyDelegate<secp256k1_ecdsa_recoverable_signature_parse_compact>("secp256k1_ecdsa_recoverable_signature_parse_compact");
-            secp256k1_ecdsa_sign_recoverable = LazyDelegate<secp256k1_ecdsa_sign_recoverable>("secp256k1_ecdsa_sign_recoverable");
-            secp256k1_ecdsa_recoverable_signature_serialize_compact = LazyDelegate<secp256k1_ecdsa_recoverable_signature_serialize_compact>("secp256k1_ecdsa_recoverable_signature_serialize_compact");
-            secp256k1_ec_pubkey_serialize = LazyDelegate<secp256k1_ec_pubkey_serialize>("secp256k1_ec_pubkey_serialize");
-            secp256k1_context_destroy = LazyDelegate<secp256k1_context_destroy>("secp256k1_context_destroy");
-            secp256k1_ec_pubkey_parse = LazyDelegate<secp256k1_ec_pubkey_parse>("secp256k1_ec_pubkey_parse");
-            secp256k1_ecdsa_signature_normalize = LazyDelegate<secp256k1_ecdsa_signature_normalize>("secp256k1_ecdsa_signature_normalize");
+            secp256k1_context_create = LazyDelegate<secp256k1_context_create>();
+            secp256k1_ecdsa_recover = LazyDelegate<secp256k1_ecdsa_recover>();
+            secp256k1_ec_pubkey_create = LazyDelegate<secp256k1_ec_pubkey_create>();
+            secp256k1_ec_seckey_verify = LazyDelegate<secp256k1_ec_seckey_verify>();
+            secp256k1_ecdsa_recoverable_signature_parse_compact = LazyDelegate<secp256k1_ecdsa_recoverable_signature_parse_compact>();
+            secp256k1_ecdsa_sign_recoverable = LazyDelegate<secp256k1_ecdsa_sign_recoverable>();
+            secp256k1_ecdsa_recoverable_signature_serialize_compact = LazyDelegate<secp256k1_ecdsa_recoverable_signature_serialize_compact>();
+            secp256k1_ec_pubkey_serialize = LazyDelegate<secp256k1_ec_pubkey_serialize>();
+            secp256k1_context_destroy = LazyDelegate<secp256k1_context_destroy>();
+            secp256k1_ec_pubkey_parse = LazyDelegate<secp256k1_ec_pubkey_parse>();
+            secp256k1_ecdsa_signature_normalize = LazyDelegate<secp256k1_ecdsa_signature_normalize>();
 
             _ctx = secp256k1_context_create.Value(((uint)(Flags.SECP256K1_CONTEXT_SIGN | Flags.SECP256K1_CONTEXT_VERIFY)));
         }
 
-        Lazy<TDelegate> LazyDelegate<TDelegate>(string name)
+        Lazy<TDelegate> LazyDelegate<TDelegate>()
         {
-            return new Lazy<TDelegate>(() => LoadLibNative.GetDelegate<TDelegate>(_libPtr, name), isThreadSafe: false);
+            var symbol = SymbolNameCache<TDelegate>.SymbolName;
+            return new Lazy<TDelegate>(() => LoadLibNative.GetDelegate<TDelegate>(_libPtr, symbol), isThreadSafe: false);
         }
 
         /// <summary>
@@ -63,7 +68,7 @@ namespace Secp256k1Net
         /// <returns>
         /// True if the public key successfully recovered (which guarantees a correct signature).
         /// </returns>
-        public bool EcdsaRecover(Span<byte> publicKeyOutput, Span<byte> signature, Span<byte> message)
+        public bool Recover(Span<byte> publicKeyOutput, Span<byte> signature, Span<byte> message)
         {
             if (publicKeyOutput.Length < PUBKEY_LENGTH)
             {
@@ -88,6 +93,22 @@ namespace Secp256k1Net
         }
 
         /// <summary>
+        /// Verify an ECDSA secret key.
+        /// </summary>
+        /// <param name="secretKey">32-byte secret key.</param>
+        /// <returns>True if secret key is valid, false if secret key is invalid.</returns>
+        public bool SecretKeyVerify(Span<byte> secretKey)
+        {
+            if (secretKey.Length < PRIVKEY_LENGTH)
+            {
+                throw new ArgumentException($"{nameof(secretKey)} must be {PRIVKEY_LENGTH} bytes");
+            }
+            var privKeyPtr = Unsafe.AsPointer(ref secretKey[0]);
+            var result = secp256k1_ec_seckey_verify.Value(_ctx, privKeyPtr);
+            return result == 1;
+        }
+
+        /// <summary>
         /// Gets the public key for a given private key.
         /// </summary>
         /// <param name="publicKeyOutput">Output for the 64 byte recovered public key to be written to.</param>
@@ -95,7 +116,7 @@ namespace Secp256k1Net
         /// <returns>
         /// True if the private key is valid and public key was obtained.
         /// </returns>
-        public bool EcdsaGetPublicKey(Span<byte> publicKeyOutput, Span<byte> privateKeyInput)
+        public bool PublicKeyCreate(Span<byte> publicKeyOutput, Span<byte> privateKeyInput)
         {
             if (publicKeyOutput.Length < PUBKEY_LENGTH)
             {
@@ -121,7 +142,7 @@ namespace Secp256k1Net
         /// <param name="compactSignature">The 64-byte compact signature input.</param>
         /// <param name="recoveryID">The recovery id (0, 1, 2 or 3).</param>
         /// <returns>True when the signature could be parsed.</returns>
-        public bool EcdsaRecoverableSignatureParseCompact(Span<byte> signatureOutput, Span<byte> compactSignature, int recoveryID)
+        public bool RecoverableSignatureParseCompact(Span<byte> signatureOutput, Span<byte> compactSignature, int recoveryID)
         {
             if (signatureOutput.Length < UNSERIALIZED_SIGNATURE_SIZE)
             {
@@ -148,7 +169,7 @@ namespace Secp256k1Net
         /// <returns>
         /// True if signature created, false if the nonce generation function failed, or the private key was invalid.
         /// </returns>
-        public bool EcdsaSignRecoverable(Span<byte> signatureOutput, Span<byte> messageHash, Span<byte> secretKey)
+        public bool SignRecoverable(Span<byte> signatureOutput, Span<byte> messageHash, Span<byte> secretKey)
         {
             if (signatureOutput.Length < UNSERIALIZED_SIGNATURE_SIZE)
             {
@@ -179,7 +200,7 @@ namespace Secp256k1Net
         /// <param name="compactSignatureOutput">Output for the 64-byte array of the compact signature.</param>
         /// <param name="recoveryID">The recovery ID.</param>
         /// <param name="signature">The initialized signature.</param>
-        public bool EcdsaRecoverableSignatureSerializeCompact(Span<byte> compactSignatureOutput, out int recoveryID, Span<byte> signature)
+        public bool RecoverableSignatureSerializeCompact(Span<byte> compactSignatureOutput, out int recoveryID, Span<byte> signature)
         {
             if (compactSignatureOutput.Length < SERIALIZED_SIGNATURE_SIZE)
             {
@@ -205,7 +226,7 @@ namespace Secp256k1Net
         /// <param name="serializedPublicKeyOutput">65-byte (if compressed==0) or 33-byte (if compressed==1) output to place the serialized key in.</param>
         /// <param name="publicKey">The secp256k1_pubkey initialized public key.</param>
         /// <param name="flags">SECP256K1_EC_COMPRESSED if serialization should be in compressed format, otherwise SECP256K1_EC_UNCOMPRESSED.</param>
-        public bool EcdsaPublicKeySerialize(Span<byte> serializedPublicKeyOutput, Span<byte> publicKey, Flags flags = Flags.SECP256K1_EC_UNCOMPRESSED)
+        public bool PublicKeySerialize(Span<byte> serializedPublicKeyOutput, Span<byte> publicKey, Flags flags = Flags.SECP256K1_EC_UNCOMPRESSED)
         {
             if (serializedPublicKeyOutput.Length < SERIALIZED_PUBKEY_LENGTH)
             {
@@ -232,7 +253,7 @@ namespace Secp256k1Net
         /// <param name="publicKeyOutput">(Output) pointer to a pubkey object. If 1 is returned, it is set to a parsed version of input. If not, its value is undefined.</param>
         /// <param name="serializedPublicKey">Serialized public key.</param>
         /// <returns>True if the public key was fully valid, false if the public key could not be parsed or is invalid.</returns>
-        public bool EcdsaPublicKeyParse(Span<byte> publicKeyOutput, Span<byte> serializedPublicKey)
+        public bool PublicKeyParse(Span<byte> publicKeyOutput, Span<byte> serializedPublicKey)
         {
             var inputLen = serializedPublicKey.Length;
             if (inputLen != 33 && inputLen != 65)
@@ -255,7 +276,7 @@ namespace Secp256k1Net
         /// <param name="normalizedSignatureOutput">(Output) pointer to an array where the normalized signature will be placed (cannot be NULL)</param>
         /// <param name="signatureInput">(Input) pointer to an array where a signature to normalize resides (cannot be NULL)</param>
         /// <returns>True if correct signature, false incorrect or unparseable signature</returns>
-        public bool EcdsaSignatureNormalize(Span<byte> normalizedSignatureOutput, Span<byte> signatureInput)
+        public bool SignatureNormalize(Span<byte> normalizedSignatureOutput, Span<byte> signatureInput)
         {
             if (normalizedSignatureOutput.Length < SERIALIZED_SIGNATURE_SIZE)
             {

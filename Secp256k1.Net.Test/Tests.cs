@@ -27,6 +27,16 @@ namespace Secp256k1Net.Test
         }
 
         [Fact]
+        public void SignatureNormalize()
+        {
+            using (var secp256k1 = new Secp256k1())
+            {
+                Span<byte> secretKey = "e815acba8fcf085a0b4141060c13b8017a08da37f2eb1d6a5416adbb621560ef".HexToBytes();
+                Assert.False(secp256k1.SignatureNormalize(secretKey, secretKey));
+            }
+        }
+
+        [Fact]
         public void SigningTest()
         {
             using (var secp256k1 = new Secp256k1())

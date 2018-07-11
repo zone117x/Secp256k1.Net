@@ -273,18 +273,18 @@ namespace Secp256k1Net
         /// <summary>
         /// Normalizes a signature and enforces a low-S.
         /// </summary>
-        /// <param name="normalizedSignatureOutput">(Output) pointer to an array where the normalized signature will be placed (cannot be NULL)</param>
-        /// <param name="signatureInput">(Input) pointer to an array where a signature to normalize resides (cannot be NULL)</param>
-        /// <returns>True if correct signature, false incorrect or unparseable signature</returns>
+        /// <param name="normalizedSignatureOutput">(Output) Signature to fill with the normalized form, or copy if the input was already normalized.</param>
+        /// <param name="signatureInput">(Input) signature to check/normalize, can be identical to sigout</param>
+        /// <returns>True if sigin was not normalized, false if it already was.</returns>
         public bool SignatureNormalize(Span<byte> normalizedSignatureOutput, Span<byte> signatureInput)
         {
-            if (normalizedSignatureOutput.Length < SERIALIZED_SIGNATURE_SIZE)
+            if (normalizedSignatureOutput.Length < PRIVKEY_LENGTH)
             {
-                throw new ArgumentException($"{nameof(normalizedSignatureOutput)} must be {SERIALIZED_SIGNATURE_SIZE} bytes");
+                throw new ArgumentException($"{nameof(normalizedSignatureOutput)} must be {PRIVKEY_LENGTH} bytes");
             }
-            if (signatureInput.Length < SERIALIZED_SIGNATURE_SIZE)
+            if (signatureInput.Length < PRIVKEY_LENGTH)
             {
-                throw new ArgumentException($"{nameof(signatureInput)} must be {SERIALIZED_SIGNATURE_SIZE} bytes");
+                throw new ArgumentException($"{nameof(signatureInput)} must be {PRIVKEY_LENGTH} bytes");
             }
             var outPtr = Unsafe.AsPointer(ref normalizedSignatureOutput[0]);
             var intPtr = Unsafe.AsPointer(ref signatureInput[0]);

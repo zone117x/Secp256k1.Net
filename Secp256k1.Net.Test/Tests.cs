@@ -2,39 +2,97 @@ using HoshoEthUtil;
 using System;
 using System.Linq;
 using System.Numerics;
+using System.Security.Cryptography;
 using Xunit;
 
 namespace Secp256k1Net.Test
 {
     public class Tests
     {
-        [Fact]
-        public void KeyPairGeneration()
+        ref struct KeyPair
         {
-            var secp256k1 = new Secp256k1();
-            var rnd = System.Security.Cryptography.RandomNumberGenerator.Create();
+            public Span<byte> PrivateKey;
+            public Span<byte> PublicKey;
+        }
+
+        Span<byte> GeneratePrivateKey(Secp256k1 secp256k1)
+        {
+            var rnd = RandomNumberGenerator.Create();
             Span<byte> privateKey = new byte[32];
             do
             {
                 rnd.GetBytes(privateKey);
             }
             while (!secp256k1.SecretKeyVerify(privateKey));
+            return privateKey;
+        }
+
+        KeyPair GenerateKeyPair(Secp256k1 secp256k1)
+        {
+            var privateKey = GeneratePrivateKey(secp256k1);
             Span<byte> publicKey = new byte[64];
             if (!secp256k1.PublicKeyCreate(publicKey, privateKey))
             {
                 throw new Exception("Public key creation failed");
             }
+            return new KeyPair { PrivateKey = privateKey, PublicKey = publicKey };
         }
 
+        [Fact]
+        public void EcdhTest()
+        {
+            using (var secp256k1 = new Secp256k1())
+            {
+                var kp1 = GenerateKeyPair(secp256k1);
+                var kp2 = GenerateKeyPair(secp256k1);
+
+                Span<byte> sec1 = new byte[32];
+                Assert.True(secp256k1.Ecdh(sec1, kp1.PublicKey, kp2.PrivateKey));
+
+                Span<byte> sec2 = new byte[32];
+                Assert.True(secp256k1.Ecdh(sec2, kp2.PublicKey, kp1.PrivateKey));
+
+                Span<byte> sec3 = new byte[32];
+                Assert.True(secp256k1.Ecdh(sec3, kp1.PublicKey, kp1.PrivateKey));
+
+                Assert.Equal(sec1.ToHexString(), sec2.ToHexString());
+                Assert.NotEqual(sec3.ToHexString(), sec2.ToHexString());
+            }
+        }
+
+        [Fact]
+        public void KeyPairGeneration()
+        {
+            using (var secp256k1 = new Secp256k1())
+            {
+                var kp = GenerateKeyPair(secp256k1);
+            }
+        }
+
+        [Fact]
+        public void SignAndVerify()
+        {
+            using (var secp256k1 = new Secp256k1())
+            {
+                var kp = GenerateKeyPair(secp256k1);
+                Span<byte> msg = new byte[32];
+                RandomNumberGenerator.Create().GetBytes(msg);
+                Span<byte> signature = new byte[64];
+                Assert.True(secp256k1.Sign(signature, msg, kp.PrivateKey));
+                Assert.True(secp256k1.Verify(signature, msg, kp.PublicKey));
+            }
+        }
+
+        /*
         [Fact]
         public void SignatureNormalize()
         {
             using (var secp256k1 = new Secp256k1())
             {
-                Span<byte> secretKey = "e815acba8fcf085a0b4141060c13b8017a08da37f2eb1d6a5416adbb621560ef".HexToBytes();
-                Assert.False(secp256k1.SignatureNormalize(secretKey, secretKey));
+                Assert.True(secp256k1.SignatureNormalize()
             }
         }
+        */
 
         [Fact]
         public void SigningTest()

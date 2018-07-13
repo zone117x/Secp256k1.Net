@@ -166,6 +166,61 @@ namespace Secp256k1Net
         int recid       // int recid
     );
 
+    /// <summary>
+    /// Verify an ECDSA signature.
+    /// To avoid accepting malleable signatures, only ECDSA signatures in lower-S
+    /// form are accepted.
+    /// If you need to accept ECDSA signatures from sources that do not obey this
+    /// rule, apply secp256k1_ecdsa_signature_normalize to the signature prior to
+    /// validation, but be aware that doing so results in malleable signatures.
+    /// For details, see the comments for that function.
+    /// </summary>
+    /// <param name="ctx">a secp256k1 context object, initialized for verification.</param>
+    /// <param name="sig">the signature being verified (cannot be NULL)</param>
+    /// <param name="msg32">the 32-byte message hash being verified (cannot be NULL)</param>
+    /// <param name="pubkey">pointer to an initialized public key to verify with (cannot be NULL)</param>
+    /// <returns>1: correct signature, 0: incorrect or unparseable signature</returns>
+    [SymbolName(nameof(secp256k1_ecdsa_verify))]
+    public unsafe delegate int secp256k1_ecdsa_verify(IntPtr ctx,
+        void* sig,      // const secp256k1_ecdsa_signature *sig,
+        void* msg32,    // const unsigned char *msg32,
+        void* pubkey    // const secp256k1_pubkey *pubkey
+    );
+
+    /// <summary>
+    /// Create an ECDSA signature. The created signature is always in lower-S form. See
+    /// secp256k1_ecdsa_signature_normalize for more details.
+    /// </summary>
+    /// <param name="ctx">Pointer to a context object, initialized for signing (cannot be NULL).</param>
+    /// <param name="sig">Pointer to an array where the signature will be placed (cannot be NULL).</param>
+    /// <param name="msg32">The 32-byte message hash being signed (cannot be NULL).</param>
+    /// <param name="seckey">Pointer to a 32-byte secret key (cannot be NULL).</param>
+    /// <param name="noncefp">Pointer to a nonce generation function. If NULL, secp256k1_nonce_function_default is used.</param>
+    /// <param name="ndata">Pointer to arbitrary data used by the nonce generation function (can be NULL).</param>
+    /// <returns>1: signature created, 0: the nonce generation function failed, or the private key was invalid.</returns>
+    [SymbolName(nameof(secp256k1_ecdsa_sign))]
+    public unsafe delegate int secp256k1_ecdsa_sign(IntPtr ctx,
+        void* sig,      // secp256k1_ecdsa_signature *sig
+        void* msg32,    // const unsigned char *msg32
+        void* seckey,   // const unsigned char *seckey
+        IntPtr noncefp, // secp256k1_nonce_function noncefp
+        void* ndata     // const void *ndata
+    );
+
+    /// <summary>
+    /// Compute an EC Diffie-Hellman secret in constant time.
+    /// </summary>
+    /// <param name="ctx">Pointer to a context object (cannot be NULL).</param>
+    /// <param name="result">A 32-byte array which will be populated by an ECDH secret computed from the point and scalar.</param>
+    /// <param name="pubkey">A pointer to a secp256k1_pubkey containing an initialized public key.</param>
+    /// <param name="privkey">A 32-byte scalar with which to multiply the point.</param>
+    /// <returns>1: exponentiation was successful, 0: scalar was invalid(zero or overflow)</returns>
+    [SymbolName(nameof(secp256k1_ecdh))]
+    public unsafe delegate int secp256k1_ecdh(IntPtr ctx,
+        void* result,   // unsigned char *result
+        void* pubkey,   // const secp256k1_pubkey *pubkey
+        void* privkey   // const unsigned char *privkey
+    );
 
     // Flags copied from
     // https://github.com/bitcoin-core/secp256k1/blob/452d8e4d2a2f9f1b5be6b02e18f1ba102e5ca0b4/include/secp256k1.h#L157

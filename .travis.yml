@@ -1,6 +1,5 @@
 language: csharp
 mono: none
-dotnet: 2.1
 
 install:
 - dotnet restore
@@ -15,7 +14,9 @@ matrix:
       env: 
         - OS=linux_x64
       dist: trusty
+      dotnet: 2.1
 
     - os: osx
       env:
         - OS=macos_x64
+      dotnet: 2.1.302

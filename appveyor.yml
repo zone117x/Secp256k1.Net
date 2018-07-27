@@ -1,0 +1,9 @@
+version: 1.0.{build}
+image:
+- Visual Studio 2017
+- Ubuntu
+configuration: Release
+install:
+- cmd: dotnet restore
+build:
+  verbosity: minimal

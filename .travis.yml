@@ -1,13 +1,13 @@
 language: csharp
 mono: none
-dotnet: 2.1.3
+dotnet: 2.1
 
 install:
 - dotnet restore
 
 script:
- - dotnet build -c Release
- - dotnet test Secp256k1.Net.Test -c Release
+- dotnet build -c Release
+- dotnet test Secp256k1.Net.Test -c Release
 
 matrix:
   include:

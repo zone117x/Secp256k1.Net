@@ -92,13 +92,12 @@ namespace Secp256k1Net
                 throw new ArgumentException($"{nameof(message)} must be 32 bytes");
             }
 
-            var publicKeyPtr = Unsafe.AsPointer(ref publicKeyOutput[0]);
-            var sigPtr = Unsafe.AsPointer(ref signature[0]);
-            var msgPtr = Unsafe.AsPointer(ref message[0]);
-            var result = secp256k1_ecdsa_recover.Value(_ctx, publicKeyPtr, sigPtr, msgPtr);
-
-            // Verify we succeeded
-            return result == 1;
+            fixed (byte* publicKeyPtr = &MemoryMarshal.GetReference(publicKeyOutput),
+                sigPtr = &MemoryMarshal.GetReference(signature),
+                msgPtr = &MemoryMarshal.GetReference(message))
+            {
+                return secp256k1_ecdsa_recover.Value(_ctx, publicKeyPtr, sigPtr, msgPtr) == 1;
+            }
         }
 
         /// <summary>
@@ -112,9 +111,11 @@ namespace Secp256k1Net
             {
                 throw new ArgumentException($"{nameof(secretKey)} must be {PRIVKEY_LENGTH} bytes");
             }
-            var privKeyPtr = Unsafe.AsPointer(ref secretKey[0]);
-            var result = secp256k1_ec_seckey_verify.Value(_ctx, privKeyPtr);
-            return result == 1;
+
+            fixed (byte* privKeyPtr = &MemoryMarshal.GetReference(secretKey))
+            {
+                return secp256k1_ec_seckey_verify.Value(_ctx, privKeyPtr) == 1;
+            }
         }
 
         /// <summary>
@@ -136,12 +137,11 @@ namespace Secp256k1Net
                 throw new ArgumentException($"{nameof(privateKeyInput)} must be {PRIVKEY_LENGTH} bytes");
             }
 
-            var pubKeyPtr = Unsafe.AsPointer(ref publicKeyOutput[0]);
-            var privKeyPtr = Unsafe.AsPointer(ref privateKeyInput[0]);
-            var result = secp256k1_ec_pubkey_create.Value(_ctx, pubKeyPtr, privKeyPtr);
-
-            // Verify we succeeded
-            return result == 1;
+            fixed (byte* pubKeyPtr = &MemoryMarshal.GetReference(publicKeyOutput),
+                privKeyPtr = &MemoryMarshal.GetReference(privateKeyInput))
+            {
+                return secp256k1_ec_pubkey_create.Value(_ctx, pubKeyPtr, privKeyPtr) == 1;
+            }
         }
 
         /// <summary>
@@ -162,11 +162,11 @@ namespace Secp256k1Net
                 throw new ArgumentException($"{nameof(compactSignature)} must be 64 bytes");
             }
 
-            var sigPtr = Unsafe.AsPointer(ref signatureOutput[0]);
-            var intputPtr = Unsafe.AsPointer(ref compactSignature[0]);
-            var result = secp256k1_ecdsa_recoverable_signature_parse_compact.Value(_ctx, sigPtr, intputPtr, recoveryID);
-
-            return result == 1;
+            fixed (byte* sigPtr = &MemoryMarshal.GetReference(signatureOutput),
+                inputPtr = &MemoryMarshal.GetReference(compactSignature))
+            {
+                return secp256k1_ecdsa_recoverable_signature_parse_compact.Value(_ctx, sigPtr, inputPtr, recoveryID) == 1;
+            }
         }
 
         /// <summary>
@@ -193,13 +193,13 @@ namespace Secp256k1Net
                 throw new ArgumentException($"{nameof(secretKey)} must be 32 bytes");
             }
 
-            var sigPtr = Unsafe.AsPointer(ref signatureOutput[0]);
-            var msgPtr = Unsafe.AsPointer(ref messageHash[0]);
-            var secPtr = Unsafe.AsPointer(ref secretKey.Slice(secretKey.Length - 32)[0]);
-            var result = secp256k1_ecdsa_sign_recoverable.Value(_ctx, sigPtr, msgPtr, secPtr, IntPtr.Zero, IntPtr.Zero);
+            fixed (byte* sigPtr = &MemoryMarshal.GetReference(signatureOutput),
+                msgPtr = &MemoryMarshal.GetReference(messageHash),
+                secPtr = &MemoryMarshal.GetReference(secretKey.Slice(secretKey.Length - 32)))
+            {
 
-            // Verify we didn't fail.
-            return result == 1;
+                return secp256k1_ecdsa_sign_recoverable.Value(_ctx, sigPtr, msgPtr, secPtr, IntPtr.Zero, IntPtr.Zero) == 1;
+            }
         }
 
 
@@ -221,12 +221,14 @@ namespace Secp256k1Net
             }
 
             int recID = 0;
-            var compactSigPtr = Unsafe.AsPointer(ref compactSignatureOutput[0]);
-            var sigPtr = Unsafe.AsPointer(ref signature[0]);
-            var result = secp256k1_ecdsa_recoverable_signature_serialize_compact.Value(_ctx, compactSigPtr, ref recID, sigPtr);
-            recoveryID = recID;
+            fixed (byte* compactSigPtr = &MemoryMarshal.GetReference(compactSignatureOutput),
+                sigPtr = &MemoryMarshal.GetReference(signature))
+            {
+                var result = secp256k1_ecdsa_recoverable_signature_serialize_compact.Value(_ctx, compactSigPtr, ref recID, sigPtr);
+                recoveryID = recID;
 
-            return result == 1;
+                return result == 1;
+            }            
         }
 
         /// <summary>
@@ -245,12 +247,15 @@ namespace Secp256k1Net
             {
                 throw new ArgumentException($"{nameof(publicKey)} must be {PUBKEY_LENGTH} bytes");
             }
-            var serializedPtr = Unsafe.AsPointer(ref serializedPublicKeyOutput[0]);
-            var pubKeyPtr = Unsafe.AsPointer(ref publicKey[0]);
 
             uint newLength = SERIALIZED_PUBKEY_LENGTH;
-            var result = secp256k1_ec_pubkey_serialize.Value(_ctx, serializedPtr, ref newLength, pubKeyPtr, (uint)flags);
-            return result == 1 && newLength == SERIALIZED_PUBKEY_LENGTH;
+
+            fixed (byte* serializedPtr = &MemoryMarshal.GetReference(serializedPublicKeyOutput),
+                pubKeyPtr = &MemoryMarshal.GetReference(publicKey))
+            {
+                var result = secp256k1_ec_pubkey_serialize.Value(_ctx, serializedPtr, ref newLength, pubKeyPtr, (uint) flags);
+                return result == 1 && newLength == SERIALIZED_PUBKEY_LENGTH;
+            }
         }
 
         /// <summary>
@@ -273,10 +278,12 @@ namespace Secp256k1Net
             {
                 throw new ArgumentException($"{nameof(publicKeyOutput)} must be {PUBKEY_LENGTH} bytes");
             }
-            var pubKeyPtr = Unsafe.AsPointer(ref publicKeyOutput[0]);
-            var serializedPtr = Unsafe.AsPointer(ref serializedPublicKey[0]);
-            var result = secp256k1_ec_pubkey_parse.Value(_ctx, pubKeyPtr, serializedPtr, (uint)inputLen);
-            return result == 1;
+
+            fixed (byte* pubKeyPtr = &MemoryMarshal.GetReference(publicKeyOutput),
+                serializedPtr = &MemoryMarshal.GetReference(serializedPublicKey))
+            {
+                return secp256k1_ec_pubkey_parse.Value(_ctx, pubKeyPtr, serializedPtr, (uint) inputLen) == 1;
+            }
         }
 
         /// <summary>
@@ -295,10 +302,12 @@ namespace Secp256k1Net
             {
                 throw new ArgumentException($"{nameof(signatureInput)} must be {SIGNATURE_LENGTH} bytes");
             }
-            var outPtr = Unsafe.AsPointer(ref normalizedSignatureOutput[0]);
-            var intPtr = Unsafe.AsPointer(ref signatureInput[0]);
-            var result = secp256k1_ecdsa_signature_normalize.Value(_ctx, outPtr, intPtr);
-            return result == 1;
+
+            fixed (byte* outPtr = &MemoryMarshal.GetReference(normalizedSignatureOutput),
+                intPtr = &MemoryMarshal.GetReference(signatureInput))
+            {
+                return secp256k1_ecdsa_signature_normalize.Value(_ctx, outPtr, intPtr) == 1;
+            }
         }
 
         /// <summary>
@@ -329,11 +338,12 @@ namespace Secp256k1Net
                 throw new ArgumentException($"{nameof(publicKey)} must be {PUBKEY_LENGTH} bytes");
             }
 
-            var sigPtr = Unsafe.AsPointer(ref signature[0]);
-            var msgPtr = Unsafe.AsPointer(ref messageHash[0]);
-            var pubPtr = Unsafe.AsPointer(ref publicKey[0]);
-            var result = secp256k1_ecdsa_verify.Value(_ctx, sigPtr, msgPtr, pubPtr);
-            return result == 1;
+            fixed (byte* sigPtr = &MemoryMarshal.GetReference(signature),
+                msgPtr = &MemoryMarshal.GetReference(messageHash),
+                pubPtr = &MemoryMarshal.GetReference(publicKey))
+            {
+                return secp256k1_ecdsa_verify.Value(_ctx, sigPtr, msgPtr, pubPtr) == 1;
+            }
         }
 
         /// <summary>
@@ -359,11 +369,13 @@ namespace Secp256k1Net
             {
                 throw new ArgumentException($"{nameof(secretKey)} must be {PRIVKEY_LENGTH} bytes");
             }
-            var sigPtr = Unsafe.AsPointer(ref signatureOutput[0]);
-            var msgPtr = Unsafe.AsPointer(ref messageHash[0]);
-            var secPtr = Unsafe.AsPointer(ref secretKey[0]);
-            var result = secp256k1_ecdsa_sign.Value(_ctx, sigPtr, msgPtr, secPtr, IntPtr.Zero, IntPtr.Zero.ToPointer());
-            return result == 1;
+
+            fixed (byte* sigPtr = &MemoryMarshal.GetReference(signatureOutput),
+                msgPtr = &MemoryMarshal.GetReference(messageHash),
+                secPtr = &MemoryMarshal.GetReference(secretKey))
+            {
+                return secp256k1_ecdsa_sign.Value(_ctx, sigPtr, msgPtr, secPtr, IntPtr.Zero, IntPtr.Zero.ToPointer()) == 1;
+            }
         }
 
         /// <summary>
@@ -387,11 +399,13 @@ namespace Secp256k1Net
             {
                 throw new ArgumentException($"{nameof(privateKey)} must be {PRIVKEY_LENGTH} bytes");
             }
-            var resPtr = Unsafe.AsPointer(ref resultOutput[0]);
-            var pubPtr = Unsafe.AsPointer(ref publicKey[0]);
-            var privPtr = Unsafe.AsPointer(ref privateKey[0]);
-            var result = secp256k1_ecdh.Value(_ctx, resPtr, pubPtr, privPtr);
-            return result == 1;
+
+            fixed (byte* resPtr = &MemoryMarshal.GetReference(resultOutput),
+                pubPtr = &MemoryMarshal.GetReference(publicKey),
+                privPtr = &MemoryMarshal.GetReference(privateKey))
+            {
+                return secp256k1_ecdh.Value(_ctx, resPtr, pubPtr, privPtr) == 1;
+            }
         }
 
         public void Dispose()

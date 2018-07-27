@@ -29,7 +29,6 @@
   <ItemGroup>
     <PackageReference Include="Secp256k1.Native" Version="0.1.18" PrivateAssets="all" />
     <PackageReference Include="System.Memory" Version="4.5.1" />
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.1" />
   </ItemGroup>
 
   <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">

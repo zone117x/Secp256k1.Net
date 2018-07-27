@@ -9,8 +9,7 @@ script:
  - dotnet build -c Release
  - dotnet test Secp256k1.Net.Test -c Release
 
-
- matrix:
+matrix:
   include:
     - os: linux
       env: 

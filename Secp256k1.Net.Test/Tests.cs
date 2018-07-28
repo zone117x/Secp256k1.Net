@@ -1,4 +1,3 @@
-using HoshoEthUtil;
 using System;
 using System.Linq;
 using System.Numerics;
@@ -120,11 +119,7 @@ namespace Secp256k1Net.Test
                 // Slice off any prefix.
                 serializedKey = serializedKey.Slice(serializedKey.Length - Secp256k1.PUBKEY_LENGTH);
 
-                Assert.Equal("0x3a2361270fb1bdd220a2fa0f187cc6f85079043a56fb6a968dfad7d7032b07b01213e80ecd4fb41f1500f94698b1117bc9f3335bde5efbb1330271afc6e85e92", serializedKey.ToHexString(true), true);
-
-                // Verify we could obtain the correct sender from the signature.
-                Span<byte> senderAddress = Keccak.ComputeHash(serializedKey).Slice(Keccak.HASH_SIZE - 20);
-                Assert.Equal("0x75c8aa4b12bc52c1f1860bc4e8af981d6542cccd", senderAddress.ToArray().ToHexString(true), true);
+                Assert.Equal("0x3a2361270fb1bdd220a2fa0f187cc6f85079043a56fb6a968dfad7d7032b07b01213e80ecd4fb41f1500f94698b1117bc9f3335bde5efbb1330271afc6e85e92", serializedKey.ToHexString(), true);
 
                 // Verify it works with variables generated from our managed code.
                 BigInteger ecdsa_r = BigInteger.Parse("68932463183462156574914988273446447389145511361487771160486080715355143414637");
@@ -157,8 +152,27 @@ namespace Secp256k1Net.Test
                 serializedKey = serializedKey.Slice(serializedKey.Length - Secp256k1.PUBKEY_LENGTH);
 
                 // Assert our key
-                Assert.Equal("0x3a2361270fb1bdd220a2fa0f187cc6f85079043a56fb6a968dfad7d7032b07b01213e80ecd4fb41f1500f94698b1117bc9f3335bde5efbb1330271afc6e85e92", serializedKey.ToHexString(true), true);
+                Assert.Equal("0x3a2361270fb1bdd220a2fa0f187cc6f85079043a56fb6a968dfad7d7032b07b01213e80ecd4fb41f1500f94698b1117bc9f3335bde5efbb1330271afc6e85e92", serializedKey.ToHexString(), true);
             }
+        }
+    }
+
+    public static class Extensions
+    {
+        public static string ToHexString(this Span<byte> span)
+        {
+            return "0x" + BitConverter.ToString(span.ToArray()).Replace("-", "").ToLowerInvariant();
+        }
+
+        public static byte[] HexToBytes(this string hexString)
+        {
+            int chars = hexString.Length;
+            byte[] bytes = new byte[chars / 2];
+            for (int i = 0; i < chars; i += 2)
+            {
+                bytes[i / 2] = Convert.ToByte(hexString.Substring(i, 2), 16);
+            }
+            return bytes;
         }
     }
 
@@ -197,4 +211,4 @@ namespace Secp256k1Net.Test
             return result;
         }
     }
-    }
+}

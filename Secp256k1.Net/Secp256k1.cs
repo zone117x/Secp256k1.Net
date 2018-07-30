@@ -35,15 +35,15 @@ namespace Secp256k1Net
         readonly Lazy<secp256k1_ecdh> secp256k1_ecdh;
 
         const string LIB = "secp256k1";
-        public readonly string LibPath;
-        readonly IntPtr _libPtr;
+
+        public static string LibPath => _libPath.Value;
+        static readonly Lazy<string> _libPath = new Lazy<string>(() => LibPathResolver.Resolve(LIB));
+        static readonly Lazy<IntPtr> _libPtr = new Lazy<IntPtr>(() => LoadLibNative.LoadLib(_libPath.Value));
+
         IntPtr _ctx;
 
         public Secp256k1()
         {
-            LibPath = LibPathResolver.Resolve(LIB);
-            _libPtr = LoadLibNative.LoadLib(LibPath);
-
             secp256k1_context_create = LazyDelegate<secp256k1_context_create>();
             secp256k1_ecdsa_recover = LazyDelegate<secp256k1_ecdsa_recover>();
             secp256k1_ec_pubkey_create = LazyDelegate<secp256k1_ec_pubkey_create>();
@@ -65,7 +65,7 @@ namespace Secp256k1Net
         Lazy<TDelegate> LazyDelegate<TDelegate>()
         {
             var symbol = SymbolNameCache<TDelegate>.SymbolName;
-            return new Lazy<TDelegate>(() => LoadLibNative.GetDelegate<TDelegate>(_libPtr, symbol), isThreadSafe: false);
+            return new Lazy<TDelegate>(() => LoadLibNative.GetDelegate<TDelegate>(_libPtr.Value, symbol), isThreadSafe: false);
         }
 
         /// <summary>

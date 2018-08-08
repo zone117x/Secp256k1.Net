@@ -41,6 +41,13 @@
       </_PackageFiles>
     </ItemGroup>
   </Target>
+
+  <ItemGroup>
+    <_PackageFiles Include="Secp256k1.Net.targets">
+      <BuildAction>None</BuildAction>
+      <PackagePath>build/</PackagePath>
+    </_PackageFiles>
+  </ItemGroup>
   
   
 </Project>

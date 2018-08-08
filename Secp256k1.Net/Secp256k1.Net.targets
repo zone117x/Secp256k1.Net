@@ -1,0 +1,14 @@
+﻿<Project>
+
+  <PropertyGroup>
+    <Secp256k1NativeLibDirectory>$(MSBuildThisFileDirectory)/../content/native</Secp256k1NativeLibDirectory>
+  </PropertyGroup>
+
+  <Target Name="Secp256k1PublishNativeLibs" AfterTargets="Publish">
+    <ItemGroup>
+      <Secp256k1NativeLibs Include="$(Secp256k1NativeLibDirectory)/**/*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(Secp256k1NativeLibs)" DestinationFolder="$(PublishDir)/native/%(RecursiveDir)" />
+  </Target>
+
+</Project>

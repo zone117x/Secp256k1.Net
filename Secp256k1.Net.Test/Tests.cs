@@ -112,7 +112,7 @@ namespace Secp256k1Net.Test
                 Assert.True(result);
 
                 // Serialize the public key
-                Span<byte> serializedKey = new byte[Secp256k1.SERIALIZED_PUBKEY_LENGTH];
+                Span<byte> serializedKey = new byte[Secp256k1.SERIALIZED_UNCOMPRESSED_PUBKEY_LENGTH];
                 result = secp256k1.PublicKeySerialize(serializedKey, publicKeyOutput);
                 Assert.True(result);
 
@@ -144,7 +144,7 @@ namespace Secp256k1Net.Test
 
 
                 // Serialize the public key
-                serializedKey = new byte[Secp256k1.SERIALIZED_PUBKEY_LENGTH];
+                serializedKey = new byte[Secp256k1.SERIALIZED_UNCOMPRESSED_PUBKEY_LENGTH];
                 result = secp256k1.PublicKeySerialize(serializedKey, publicKeyOutput);
                 Assert.True(result);
 

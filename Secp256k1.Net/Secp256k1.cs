@@ -9,7 +9,8 @@ namespace Secp256k1Net
     {
         public IntPtr Context => _ctx;
 
-        public const int SERIALIZED_PUBKEY_LENGTH = 65;
+        public const int SERIALIZED_UNCOMPRESSED_PUBKEY_LENGTH = 65;
+        public const int SERIALIZED_COMPRESSED_PUBKEY_LENGTH = 33;
         public const int PUBKEY_LENGTH = 64;
         public const int PRIVKEY_LENGTH = 32;
         public const int UNSERIALIZED_SIGNATURE_SIZE = 65;
@@ -239,22 +240,25 @@ namespace Secp256k1Net
         /// <param name="flags">SECP256K1_EC_COMPRESSED if serialization should be in compressed format, otherwise SECP256K1_EC_UNCOMPRESSED.</param>
         public bool PublicKeySerialize(Span<byte> serializedPublicKeyOutput, Span<byte> publicKey, Flags flags = Flags.SECP256K1_EC_UNCOMPRESSED)
         {
-            if (serializedPublicKeyOutput.Length < SERIALIZED_PUBKEY_LENGTH)
+            bool compressed = flags.HasFlag(Flags.SECP256K1_EC_COMPRESSED);
+            int serializedPubKeyLength = compressed ? SERIALIZED_COMPRESSED_PUBKEY_LENGTH : SERIALIZED_UNCOMPRESSED_PUBKEY_LENGTH;
+            if (serializedPublicKeyOutput.Length < serializedPubKeyLength)
             {
-                throw new ArgumentException($"{nameof(serializedPublicKeyOutput)} must be {SERIALIZED_PUBKEY_LENGTH} bytes");
+                string compressedStr = compressed ? "compressed" : "uncompressed";
+                throw new ArgumentException($"{nameof(serializedPublicKeyOutput)} ({compressedStr}) must be {serializedPubKeyLength} bytes");
             }
             if (publicKey.Length < PUBKEY_LENGTH)
             {
                 throw new ArgumentException($"{nameof(publicKey)} must be {PUBKEY_LENGTH} bytes");
             }
 
-            uint newLength = SERIALIZED_PUBKEY_LENGTH;
+            uint newLength = (uint)serializedPubKeyLength;
 
             fixed (byte* serializedPtr = &MemoryMarshal.GetReference(serializedPublicKeyOutput),
                 pubKeyPtr = &MemoryMarshal.GetReference(publicKey))
             {
                 var result = secp256k1_ec_pubkey_serialize.Value(_ctx, serializedPtr, ref newLength, pubKeyPtr, (uint) flags);
-                return result == 1 && newLength == SERIALIZED_PUBKEY_LENGTH;
+                return result == 1 && newLength == serializedPubKeyLength;
             }
         }
 

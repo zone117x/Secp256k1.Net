@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
+using System.Text;
 using Xunit;
 
 namespace Secp256k1Net.Test
@@ -53,6 +54,38 @@ namespace Secp256k1Net.Test
 
                 Span<byte> sec3 = new byte[32];
                 Assert.True(secp256k1.Ecdh(sec3, kp1.PublicKey, kp1.PrivateKey));
+
+                Assert.Equal(sec1.ToHexString(), sec2.ToHexString());
+                Assert.NotEqual(sec3.ToHexString(), sec2.ToHexString());
+            }
+        }
+
+        [Fact]
+        public void EcdhTestCustomHash()
+        {
+            using (var secp256k1 = new Secp256k1())
+            {
+                var kp1 = GenerateKeyPair(secp256k1);
+                var kp2 = GenerateKeyPair(secp256k1);
+
+                EcdhHashFunction hashFunc = (Span<byte> output, Span<byte> x, Span<byte> y, IntPtr data) => 
+                {
+                    // XOR points together (dumb)
+                    for (var i = 0; i < 32; i++)
+                    {
+                        output[i] = (byte)(x[i] ^ y[i]);
+                    }
+                    return 1;
+                };
+
+                Span<byte> sec1 = new byte[32];
+                Assert.True(secp256k1.Ecdh(sec1, kp1.PublicKey, kp2.PrivateKey, hashFunc, IntPtr.Zero));
+
+                Span<byte> sec2 = new byte[32];
+                Assert.True(secp256k1.Ecdh(sec2, kp2.PublicKey, kp1.PrivateKey, hashFunc, IntPtr.Zero));
+
+                Span<byte> sec3 = new byte[32];
+                Assert.True(secp256k1.Ecdh(sec3, kp1.PublicKey, kp1.PrivateKey, hashFunc, IntPtr.Zero));
 
                 Assert.Equal(sec1.ToHexString(), sec2.ToHexString());
                 Assert.NotEqual(sec3.ToHexString(), sec2.ToHexString());

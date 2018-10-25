@@ -211,15 +211,19 @@ namespace Secp256k1Net
     /// Compute an EC Diffie-Hellman secret in constant time.
     /// </summary>
     /// <param name="ctx">Pointer to a context object (cannot be NULL).</param>
-    /// <param name="result">A 32-byte array which will be populated by an ECDH secret computed from the point and scalar.</param>
+    /// <param name="output">Pointer to an array to be filled by the function.</param>
     /// <param name="pubkey">A pointer to a secp256k1_pubkey containing an initialized public key.</param>
     /// <param name="privkey">A 32-byte scalar with which to multiply the point.</param>
+    /// <param name="hashfp">Pointer to a hash function. If NULL, secp256k1_ecdh_hash_function_sha256 is used.</param>
+    /// <param name="data">Arbitrary data pointer that is passed through.</param>
     /// <returns>1: exponentiation was successful, 0: scalar was invalid(zero or overflow)</returns>
     [SymbolName(nameof(secp256k1_ecdh))]
     public unsafe delegate int secp256k1_ecdh(IntPtr ctx,
-        void* result,   // unsigned char *result
+        void* output,   // unsigned char *output
         void* pubkey,   // const secp256k1_pubkey *pubkey
-        void* privkey   // const unsigned char *privkey
+        void* privkey,  // const unsigned char *privkey
+        IntPtr hashfp,  // secp256k1_ecdh_hash_function hashfp,
+        IntPtr data      // void *data
     );
 
     // Flags copied from

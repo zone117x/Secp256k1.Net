@@ -5,6 +5,19 @@ using System.Runtime.InteropServices;
 
 namespace Secp256k1Net
 {
+
+    /// <summary>
+    /// A pointer to a function that applies hash function to a point.
+    /// Returns: 1 if a point was successfully hashed. 0 will cause ecdh to fail.
+    /// </summary>
+    /// <param name="output">Pointer to an array to be filled by the function.</param>
+    /// <param name="x">Pointer to a 32-byte x coordinate.</param>
+    /// <param name="y">Pointer to a 32-byte y coordinate.</param>
+    /// <param name="data">Arbitrary data pointer that is passed through.</param>
+    /// <returns>Returns: 1 if a point was successfully hashed. 0 will cause ecdh to fail.</returns>
+    public delegate int EcdhHashFunction(Span<byte> output, Span<byte> x, Span<byte> y, IntPtr data);
+
+
     public unsafe class Secp256k1 : IDisposable
     {
         public IntPtr Context => _ctx;
@@ -408,9 +421,62 @@ namespace Secp256k1Net
                 pubPtr = &MemoryMarshal.GetReference(publicKey),
                 privPtr = &MemoryMarshal.GetReference(privateKey))
             {
-                return secp256k1_ecdh.Value(_ctx, resPtr, pubPtr, privPtr) == 1;
+                return secp256k1_ecdh.Value(_ctx, resPtr, pubPtr, privPtr, IntPtr.Zero, IntPtr.Zero) == 1;
             }
         }
+
+
+        delegate int secp256k1_ecdh_hash_function(void* output, void* x, void* y, IntPtr data);
+
+        /// <summary>
+        /// Compute an EC Diffie-Hellman secret in constant time.
+        /// </summary>
+        /// <param name="resultOutput">A 32-byte array which will be populated by an ECDH secret computed from the point and scalar.</param>
+        /// <param name="publicKey">A secp256k1_pubkey containing an initialized public key.</param>
+        /// <param name="privateKey">A 32-byte scalar with which to multiply the point.</param>
+        /// <param name="hashFunction">Pointer to a hash function. If null, sha256 is used.</param>
+        /// <param name="data">Arbitrary data that is passed through.</param>
+        /// <returns>True if exponentiation was successful, false if scalar was invalid (zero or overflow).</returns>
+        public bool Ecdh(Span<byte> resultOutput, Span<byte> publicKey, Span<byte> privateKey, EcdhHashFunction hashFunction, IntPtr data)
+        {
+            if (resultOutput.Length < SECRET_LENGTH)
+            {
+                throw new ArgumentException($"{nameof(resultOutput)} must be {SECRET_LENGTH} bytes");
+            }
+            if (publicKey.Length < PUBKEY_LENGTH)
+            {
+                throw new ArgumentException($"{nameof(publicKey)} must be {PUBKEY_LENGTH} bytes");
+            }
+            if (privateKey.Length < PRIVKEY_LENGTH)
+            {
+                throw new ArgumentException($"{nameof(privateKey)} must be {PRIVKEY_LENGTH} bytes");
+            }
+
+            secp256k1_ecdh_hash_function hashFunctionPtr = (void* output, void* x, void* y, IntPtr d) =>
+            {
+                var outputSpan = new Span<byte>(output, SECRET_LENGTH);
+                var xSpan = new Span<byte>(x, 32);
+                var ySpan = new Span<byte>(y, 32);
+                return hashFunction(outputSpan, xSpan, ySpan, d);
+            };
+
+            GCHandle gch = GCHandle.Alloc(hashFunctionPtr);
+            try
+            {
+                var fp = Marshal.GetFunctionPointerForDelegate(hashFunctionPtr);
+                fixed (byte* resPtr = &MemoryMarshal.GetReference(resultOutput),
+                    pubPtr = &MemoryMarshal.GetReference(publicKey),
+                    privPtr = &MemoryMarshal.GetReference(privateKey))
+                {
+                    return secp256k1_ecdh.Value(_ctx, resPtr, pubPtr, privPtr, fp, data) == 1;
+                }
+            }
+            finally
+            {
+                gch.Free();
+            }
+        }
+
 
         public void Dispose()
         {

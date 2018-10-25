@@ -452,9 +452,11 @@ namespace Secp256k1Net
                 throw new ArgumentException($"{nameof(privateKey)} must be {PRIVKEY_LENGTH} bytes");
             }
 
+            int outputLength = resultOutput.Length;
+
             secp256k1_ecdh_hash_function hashFunctionPtr = (void* output, void* x, void* y, IntPtr d) =>
             {
-                var outputSpan = new Span<byte>(output, SECRET_LENGTH);
+                var outputSpan = new Span<byte>(output, outputLength);
                 var xSpan = new Span<byte>(x, 32);
                 var ySpan = new Span<byte>(y, 32);
                 return hashFunction(outputSpan, xSpan, ySpan, d);

@@ -102,6 +102,21 @@ namespace Secp256k1Net.Test
         }
 
         [Fact]
+        public void CompressedPublicKeySerializationTest()
+        {
+            using (var secp256k1 = new Secp256k1())
+            {
+                Span<byte> compressedPubKey = "03c1851f46d58866accbd3532ef081b10a053518be9f1c003b6eea2206cd286eb3".HexToBytes();
+                Span<byte> serializedPubKey = new byte[Secp256k1.SERIALIZED_COMPRESSED_PUBKEY_LENGTH];
+
+                var res = secp256k1.PublicKeySerialize(serializedPubKey, compressedPubKey, Flags.SECP256K1_EC_COMPRESSED);
+
+                Assert.True(res);
+                Assert.Equal("0x036e28cd0622ea6e3b001c9fbe1835050ab181f02e53d3cbac6688d5461f85c103", serializedPubKey.ToHexString());
+            }
+        }
+
+        [Fact]
         public void SignAndVerify()
         {
             using (var secp256k1 = new Secp256k1())

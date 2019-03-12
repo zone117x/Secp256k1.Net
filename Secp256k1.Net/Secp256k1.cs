@@ -254,24 +254,26 @@ namespace Secp256k1Net
         public bool PublicKeySerialize(Span<byte> serializedPublicKeyOutput, Span<byte> publicKey, Flags flags = Flags.SECP256K1_EC_UNCOMPRESSED)
         {
             bool compressed = flags.HasFlag(Flags.SECP256K1_EC_COMPRESSED);
-            int serializedPubKeyLength = compressed ? SERIALIZED_COMPRESSED_PUBKEY_LENGTH : SERIALIZED_UNCOMPRESSED_PUBKEY_LENGTH;
-            if (serializedPublicKeyOutput.Length < serializedPubKeyLength)
+            int pubKeyLength = compressed ? SERIALIZED_COMPRESSED_PUBKEY_LENGTH : SERIALIZED_UNCOMPRESSED_PUBKEY_LENGTH;
+            string compressedStr = compressed ? "compressed" : "uncompressed";
+
+            if (serializedPublicKeyOutput.Length < pubKeyLength)
             {
-                string compressedStr = compressed ? "compressed" : "uncompressed";
-                throw new ArgumentException($"{nameof(serializedPublicKeyOutput)} ({compressedStr}) must be {serializedPubKeyLength} bytes");
-            }
-            if (publicKey.Length < PUBKEY_LENGTH)
-            {
-                throw new ArgumentException($"{nameof(publicKey)} must be {PUBKEY_LENGTH} bytes");
+                throw new ArgumentException($"{nameof(serializedPublicKeyOutput)} ({compressedStr}) must be {pubKeyLength} bytes");
             }
 
-            uint newLength = (uint)serializedPubKeyLength;
+            if (publicKey.Length < pubKeyLength - 1)
+            {
+                throw new ArgumentException($"{nameof(publicKey)} ({compressedStr}) must be {pubKeyLength - 1} bytes");
+            }
+
+            uint newLength = (uint)pubKeyLength;
 
             fixed (byte* serializedPtr = &MemoryMarshal.GetReference(serializedPublicKeyOutput),
                 pubKeyPtr = &MemoryMarshal.GetReference(publicKey))
             {
                 var result = secp256k1_ec_pubkey_serialize.Value(_ctx, serializedPtr, ref newLength, pubKeyPtr, (uint) flags);
-                return result == 1 && newLength == serializedPubKeyLength;
+                return result == 1 && newLength == pubKeyLength;
             }
         }
 
@@ -291,9 +293,10 @@ namespace Secp256k1Net
             {
                 throw new ArgumentException($"{nameof(serializedPublicKey)} must be 33 or 65 bytes");
             }
-            if (publicKeyOutput.Length < PUBKEY_LENGTH)
+
+            if (inputLen != publicKeyOutput.Length)
             {
-                throw new ArgumentException($"{nameof(publicKeyOutput)} must be {PUBKEY_LENGTH} bytes");
+                throw new ArgumentException($"{nameof(publicKeyOutput)} {publicKeyOutput.Length} must have the same length as {nameof(serializedPublicKey)} ({inputLen})");
             }
 
             fixed (byte* pubKeyPtr = &MemoryMarshal.GetReference(publicKeyOutput),

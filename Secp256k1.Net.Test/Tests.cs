@@ -115,6 +115,21 @@ namespace Secp256k1Net.Test
             }
         }
 
+        [Fact]
+        public void ParseDerSignatureTest()
+        {
+            using (var secp256k1 = new Secp256k1())
+            {
+                Span<byte> signatureOutput = new byte[Secp256k1.SIGNATURE_LENGTH];
+
+                Span<byte> validDerSignature = "30440220484ECE2B365D2B2C2EAD34B518328BBFEF0F4409349EEEC9CB19837B5795A5F5022040C4F6901FE489F923C49D4104554FD08595EAF864137F87DADDD0E3619B0605".HexToBytes();                
+                Assert.True(secp256k1.SignatureParseDer(signatureOutput, validDerSignature));
+
+                Span<byte> invalidDerSignature = "00".HexToBytes();
+                Assert.False(secp256k1.SignatureParseDer(signatureOutput, invalidDerSignature));
+            }
+        }
+
         /*
         [Fact]
         public void SignatureNormalize()

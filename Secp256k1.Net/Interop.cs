@@ -119,6 +119,26 @@ namespace Secp256k1Net
     );
 
     /// <summary>
+    /// Parse a DER ECDSA signature
+    /// This function will accept any valid DER encoded signature, even if the
+    /// encoded numbers are out of range.
+    /// After the call, sig will always be initialized. If parsing failed or the
+    /// encoded numbers are out of range, signature validation with it is
+    /// guaranteed to fail for every message and public key.
+    /// </summary>
+    /// <param name="ctx">a secp256k1 context object (cannot be NULL)</param>
+    /// <param name="sig">(Output) pointer to an array where the parsed signature will be placed (cannot be NULL)</param>
+    /// <param name="input">(Input) pointer to an array where a signature to parse resides (cannot be NULL)</param>
+    /// <param name="inputlen">length of the array pointed to by input</param>
+    /// <returns>1: correct signature, 0: incorrect or unparseable signature</returns>
+    [SymbolName(nameof(secp256k1_ecdsa_signature_parse_der))]
+    public unsafe delegate int secp256k1_ecdsa_signature_parse_der(IntPtr ctx,
+        void* sig,    // secp256k1_ecdsa_signature* sig
+        void* input,  // const unsigned char *input
+        uint inputlen // size_t inputlen
+    ); 
+
+    /// <summary>
     /// Serialize an ECDSA signature in compact format (64 bytes + recovery id).
     /// </summary>
     /// <param name="ctx">a secp256k1 context object</param>

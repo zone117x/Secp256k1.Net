@@ -31,6 +31,11 @@ namespace Examples
                 var signature = new byte[64];
                 Debug.Assert(secp256k1.Sign(signature, messageHash, privateKey));
 
+                // Serialize a DER signature from ECDSA signature
+                byte[] signatureDer = new byte[Secp256k1.SERIALIZED_DER_SIGNATURE_MAX_SIZE];
+                int outL = 0;
+                Debug.Assert(secp256k1.SignatureSerializeDer(signatureDer, signature, out outL));
+                Array.Resize(ref signatureDer, outL);
 
                 // Verify message hash.
                 Debug.Assert(secp256k1.Verify(signature, messageHash, publicKey));

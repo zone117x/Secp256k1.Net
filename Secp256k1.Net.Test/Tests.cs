@@ -130,6 +130,20 @@ namespace Secp256k1Net.Test
             }
         }
 
+
+        [Fact]
+        public void SerializeDerSignatureTest()
+        {
+            using (var secp256k1 = new Secp256k1())
+            {
+                Span<byte> signatureOutput = new byte[Secp256k1.SERIALIZED_DER_SIGNATURE_MAX_SIZE];
+                int signatureOutputLenght = 0;
+
+                Span<byte> validECDSAsignature = "304502203b8cbc6a72101fd9e6c6149e7ee97e86786082f16008183e6311483f81985b5d02210080bb7228cd91da2cf92dfe99be639eeecc7e4f4f31acb5748af6307f578ac45d".HexToBytes();
+                Assert.True(secp256k1.SignatureSerializeDer(signatureOutput, validECDSAsignature, out signatureOutputLenght));
+            }
+        }
+
         /*
         [Fact]
         public void SignatureNormalize()
@@ -189,7 +203,6 @@ namespace Secp256k1Net.Test
                 publicKeyOutput = new byte[Secp256k1.PUBKEY_LENGTH];
                 result = secp256k1.Recover(publicKeyOutput, signature, messageHash);
                 Assert.True(result);
-
 
                 // Serialize the public key
                 serializedKey = new byte[Secp256k1.SERIALIZED_UNCOMPRESSED_PUBKEY_LENGTH];

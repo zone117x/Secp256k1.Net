@@ -375,7 +375,7 @@ namespace Secp256k1Net
             {
                 throw new ArgumentException($"{nameof(signatureOutput)} must be {SERIALIZED_DER_SIGNATURE_MAX_SIZE} bytes as maximum to void truncate signature");
             }
-            
+
             uint sigOutputLength = (uint)SERIALIZED_DER_SIGNATURE_MAX_SIZE;
             
             fixed (byte* sig = &MemoryMarshal.GetReference(signatureOutput),

@@ -136,7 +136,24 @@ namespace Secp256k1Net
         void* sig,    // secp256k1_ecdsa_signature* sig
         void* input,  // const unsigned char *input
         uint inputlen // size_t inputlen
-    ); 
+    );
+
+    /// <summary>
+    /// Serialize an ECDSA signature in DER format (72 bytes maximum)
+    /// This function will accept any valid ECDSA encoded signature
+    /// After the call, output will always be initialized.
+    /// </summary>
+    /// <param name="ctx">a secp256k1 context object (cannot be NULL)</param>
+    /// <param name="output">(Output) pointer to an array where the serialized signature will be placed (cannot be NULL)</param>    
+    /// <param name="outputlen">which is initially set to the size of output, and is overwritten with the written size (cannot be NULL)</param>
+    /// <param name="sig">(Input) pointer to an array where a signature to parse resides (cannot be NULL)</param>
+    /// <returns>1: correct signature, 0: incorrect or unserializeble signature</returns>
+    [SymbolName(nameof(secp256k1_ecdsa_signature_serialize_der))]
+    public unsafe delegate int secp256k1_ecdsa_signature_serialize_der(IntPtr ctx,
+        void* output, // unsigned char *output
+        ref uint outputlen, // size_t *outputlen
+        void* sig  // const secp256k1_ecdsa_signature* sig        
+    );
 
     /// <summary>
     /// Serialize an ECDSA signature in compact format (64 bytes + recovery id).

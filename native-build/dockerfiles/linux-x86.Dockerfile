@@ -21,7 +21,7 @@ RUN ./configure \
   CFLAGS="-Os -m32" LDFLAGS="-m32" \
   --enable-experimental --enable-module-ecdh \
   --enable-module-recovery --enable-endomorphism \
-  --enable-benchmark=no --enable-tests=no || cat config.log
+  --enable-benchmark=no --enable-tests=no --enable-exhaustive-tests=no
 RUN make -j$(nproc)
 
 RUN ls -lh .libs/

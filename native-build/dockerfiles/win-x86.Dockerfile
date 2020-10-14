@@ -16,7 +16,7 @@ RUN ./autogen.sh
 RUN ./configure CFLAGS="-Os" --host=i686-w64-mingw32 \
   --enable-experimental --enable-module-ecdh \
   --enable-module-recovery --enable-endomorphism \
-  --enable-benchmark=no --enable-tests=no
+  --enable-benchmark=no --enable-tests=no --enable-exhaustive-tests=no
 RUN make -j$(nproc)
 
 RUN ls .libs/

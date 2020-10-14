@@ -16,7 +16,7 @@ RUN ./configure CFLAGS="-Os" \
   CC=x86_64-apple-darwin18-cc --host=x86_64-apple-darwin18 \
   --enable-experimental --enable-module-ecdh \
   --enable-module-recovery --enable-endomorphism \
-  --enable-benchmark=no --enable-tests=no
+  --enable-benchmark=no --enable-tests=no --enable-exhaustive-tests=no
 RUN make -j$(nproc)
 
 RUN ls -lh .libs/

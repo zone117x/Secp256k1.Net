@@ -1,53 +1,112 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <LangVersion>latest</LangVersion>
-    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
-    <Company>Hosho</Company>
-    <Authors>Hosho</Authors>
-    <PackageTags>Secp256k1 libsecp256k1 ECDSA ethereum bitcoin</PackageTags>
-    <Description>.NET wrapper for native secp256k1 library</Description>
-    <PackageProjectUrl>https://github.com/hosho/Secp256k1.Net</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/hosho/Secp256k1.Net/blob/master/LICENSE</PackageLicenseUrl>
-    <NoWarn>1591,1573</NoWarn>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <Version Condition="'$(VersionSuffix)' != ''">0.1.$(VersionSuffix)</Version>
-    <Version Condition="'$(VersionSuffix)' == ''">0.1.0</Version>
-    <RootNamespace>Secp256k1Net</RootNamespace>
-  </PropertyGroup>
-
-  <ItemGroup Condition="'$(Configuration)' == 'Release'">
-    <PackageReference Include="SourceLink.Embed.AllSourceFiles" Version="2.8.3" PrivateAssets="all" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Secp256k1.Native" Version="0.1.20" PrivateAssets="all" />
-    <PackageReference Include="System.Memory" Version="4.5.1" />
-  </ItemGroup>
-
-  <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">
-    <ItemGroup>
-      <_PackageFiles Include="$(OutputPath)/native/**/*">
-        <BuildAction>Content</BuildAction>
-        <PackagePath>content/native/</PackagePath>
-        <!--<CopyToOutput>true</CopyToOutput>-->
-        <!--<PackageCopyToOutput>true</PackageCopyToOutput>-->
-      </_PackageFiles>
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <LangVersion>latest</LangVersion>
+        <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+        <Company>Hosho</Company>
+        <Authors>Hosho</Authors>
+        <PackageTags>Secp256k1 libsecp256k1 ECDSA ethereum bitcoin</PackageTags>
+        <Description>.NET wrapper for native secp256k1 library</Description>
+        <PackageProjectUrl>https://github.com/hosho/Secp256k1.Net</PackageProjectUrl>
+        <PackageLicenseUrl>https://github.com/hosho/Secp256k1.Net/blob/master/LICENSE</PackageLicenseUrl>
+        <NoWarn>1591,1573</NoWarn>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+    <PropertyGroup>
+        <Version Condition="'$(VersionSuffix)' != ''">0.1.$(VersionSuffix)</Version>
+        <Version Condition="'$(VersionSuffix)' == ''">0.1.0</Version>
+        <RootNamespace>Secp256k1Net</RootNamespace>
+    </PropertyGroup>
+    <ItemGroup Condition="'$(Configuration)' == 'Release'">
+        <PackageReference Include="SourceLink.Embed.AllSourceFiles" Version="2.8.3" PrivateAssets="all" />
     </ItemGroup>
-  </Target>
-
-  <ItemGroup>
-    <_PackageFiles Include="Secp256k1.Net.targets">
-      <BuildAction>None</BuildAction>
-      <PackagePath>build/</PackagePath>
-    </_PackageFiles>
-  </ItemGroup>
-  
-  
+    <ItemGroup>
+        <PackageReference Include="System.Memory" Version="4.5.4" />
+    </ItemGroup>
+    <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">
+        <ItemGroup>
+            <_PackageFiles Include="$(OutputPath)/native/**/*">
+                <BuildAction>Content</BuildAction>
+                <PackagePath>content/native/</PackagePath>
+                <!--<CopyToOutput>true</CopyToOutput>-->
+                <!--<PackageCopyToOutput>true</PackageCopyToOutput>-->
+            </_PackageFiles>
+        </ItemGroup>
+    </Target>
+    <ItemGroup>
+        <_PackageFiles Include="Secp256k1.Net.targets">
+            <BuildAction>None</BuildAction>
+            <PackagePath>build/</PackagePath>
+        </_PackageFiles>
+    </ItemGroup>
+    <!--
+    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\win-x64\native\secp256k1.dll">
+        <PackageCopyToOutput>true</PackageCopyToOutput>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <Link>native\win-x64\secp256k1.dll</Link>
+        <Visible>true</Visible>
+        <Pack>false</Pack>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\win-x86\native\secp256k1.dll">
+        <PackageCopyToOutput>true</PackageCopyToOutput>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <Link>native\win-x86\secp256k1.dll</Link>
+        <Visible>true</Visible>
+        <Pack>false</Pack>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\linux-x64\native\libsecp256k1.so">
+        <PackageCopyToOutput>true</PackageCopyToOutput>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <Link>native\linux-x64\libsecp256k1.so</Link>
+        <Visible>true</Visible>
+        <Pack>false</Pack>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\osx-x64\native\libsecp256k1.dylib">
+        <PackageCopyToOutput>true</PackageCopyToOutput>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <Link>native\osx-x64\libsecp256k1.dylib</Link>
+        <Visible>true</Visible>
+        <Pack>false</Pack>
+    </Content>
+    -->
+    <ItemGroup>
+        <Content Include="..\native-build\native\linux-x64\libsecp256k1.so">
+            <PackageCopyToOutput>true</PackageCopyToOutput>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Link>native\linux-x64\libsecp256k1.so</Link>
+        </Content>
+        <Content Include="..\native-build\native\linux-musl-x64\libsecp256k1.so">
+            <PackageCopyToOutput>true</PackageCopyToOutput>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Link>native\linux-musl-x64\libsecp256k1.so</Link>
+        </Content>
+        <Content Include="..\native-build\native\linux-arm7\libsecp256k1.so">
+            <PackageCopyToOutput>true</PackageCopyToOutput>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Link>native\linux-arm7\libsecp256k1.so</Link>
+        </Content>
+        <Content Include="..\native-build\native\linux-arm64\libsecp256k1.so">
+            <PackageCopyToOutput>true</PackageCopyToOutput>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Link>native\linux-arm64\libsecp256k1.so</Link>
+        </Content>
+        <Content Include="..\native-build\native\macos-x64\libsecp256k1.dylib">
+            <PackageCopyToOutput>true</PackageCopyToOutput>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Link>native\macos-x64\libsecp256k1.dylib</Link>
+        </Content>
+        <Content Include="..\native-build\native\win-x64\secp256k1.dll">
+            <PackageCopyToOutput>true</PackageCopyToOutput>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Link>native\win-x64\secp256k1.dll</Link>
+        </Content>
+        <Content Include="..\native-build\native\win-x86\secp256k1.dll">
+            <PackageCopyToOutput>true</PackageCopyToOutput>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Link>native\win-x86\secp256k1.dll</Link>
+        </Content>
+    </ItemGroup>
 </Project>

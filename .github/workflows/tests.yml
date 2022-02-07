@@ -12,12 +12,6 @@ jobs:
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
         include:
-          #- dotnet-version: 2.1.x
-          #  dotnet-framework: netcoreapp2.1
-          #- dotnet-version: 3.1.x
-          #  dotnet-framework: netcoreapp3.1
-          - dotnet-version: 5.0.x
-            dotnet-framework: net5.0
           - dotnet-version: 6.0.x
             dotnet-framework: net6.0
     steps:

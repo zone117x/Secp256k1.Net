@@ -44,7 +44,7 @@ jobs:
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
       - name: MSBuild
-        run: msbuild Secp256k1.Net.Test.csproj "/t:Clean;Rebuild" "/p:TargetFramework=net472"
+        run: msbuild Secp256k1.Net.Test.csproj "/t:Clean;Restore;Rebuild" "/p:TargetFramework=net472" -p:RestorePackagesConfig=true
       - name: ls dir
         run: ls bin
       - name: vstest

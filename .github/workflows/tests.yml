@@ -10,17 +10,27 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dotnet-version: ['2.1.x', '3.1.x', '5.0.x', '6.0.x']
+        include:
+          - dotnet-version: 2.1.x
+            dotnet-framework: netcoreapp2.1
+          - dotnet-version: 3.1.x
+            dotnet-framework: netcoreapp3.1
+          - dotnet-version: 5.0.x
+            dotnet-framework: net5.0
+          - dotnet-version: 6.0.x
+            dotnet-framework: net6.0
     steps:
       - uses: actions/checkout@v2
       - name: Setup .NET Core SDK ${{ matrix.dotnet-version }}
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: ${{ matrix.dotnet-version }}
-      - name: Install dependencies
-        run: dotnet restore
-      - name: Build
-        run: dotnet build --configuration Release --no-restore
+          include-prerelease: true
+      # - name: Install dependencies
+      #   run: dotnet restore
+      # - name: Build
+      #   run: dotnet build --configuration Release --no-restore
+      # - name: Test
+      #   run: dotnet test --no-restore --verbosity normal --collect:"XPlat Code Coverage"
       - name: Test
-        run: dotnet test --no-restore --verbosity normal --collect:"XPlat Code Coverage"
-
+        run: dotnet test --framework ${{ matrix.dotnet-framework }} --verbosity normal --collect:"XPlat Code Coverage"

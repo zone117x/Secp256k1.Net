@@ -21,6 +21,7 @@ namespace Secp256k1Net
             [(Windows, X86)] = ("win-x86", "", ".dll"),
             [(Linux, X64)] = ("linux-x64", "lib", ".so"),
             [(OSX, X64)] = ("osx-x64", "lib", ".dylib"),
+            [(OSX, Arm64)] = ("osx-arm64", "lib", ".dylib"),
         };
 
         static readonly OSPlatform[] SupportedPlatforms = { Windows, OSX, Linux };

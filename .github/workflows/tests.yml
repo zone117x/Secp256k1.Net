@@ -41,5 +41,9 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Run
-        run: dotnet test --framework net47
+      - name: MSBuild
+        run: msbuild Secp256k1.Net.Test.csproj
+      - name: ls dir
+        run: ls bin
+      - name: vstest
+        run: vstest.console bin\Debug\MyTests.dll

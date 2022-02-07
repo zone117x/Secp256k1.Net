@@ -3,7 +3,7 @@ name: dotnet package
 on: [push]
 
 jobs:
-  build:
+  test-net-core:
     defaults:
       run:
         working-directory: Secp256k1.Net.Test
@@ -33,3 +33,13 @@ jobs:
         run: dotnet build --configuration Release --no-restore --framework net6.0
       - name: Test
         run: dotnet test --framework ${{ matrix.dotnet-framework }} --no-restore --verbosity normal --collect:"XPlat Code Coverage"
+
+  test-net-framework:
+    defaults:
+      run:
+        working-directory: Secp256k1.Net.Test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run
+        run: dotnet test --framework net47

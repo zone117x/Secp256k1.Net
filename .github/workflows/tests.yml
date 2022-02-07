@@ -7,9 +7,10 @@ jobs:
     defaults:
       run:
         working-directory: Secp256k1.Net.Test
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
         include:
           #- dotnet-version: 2.1.x
           #  dotnet-framework: netcoreapp2.1
@@ -26,11 +27,9 @@ jobs:
         with:
           dotnet-version: ${{ matrix.dotnet-version }}
           include-prerelease: true
-      # - name: Install dependencies
-      #   run: dotnet restore
-      # - name: Build
-      #   run: dotnet build --configuration Release --no-restore
-      # - name: Test
-      #   run: dotnet test --no-restore --verbosity normal --collect:"XPlat Code Coverage"
+      - name: Install dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --configuration Release --no-restore --framework net6.0
       - name: Test
-        run: dotnet test --framework ${{ matrix.dotnet-framework }} --verbosity normal --collect:"XPlat Code Coverage"
+        run: dotnet test --framework ${{ matrix.dotnet-framework }} --no-restore --verbosity normal --collect:"XPlat Code Coverage"

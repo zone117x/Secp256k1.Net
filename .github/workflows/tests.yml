@@ -16,8 +16,8 @@ jobs:
           #  dotnet-framework: netcoreapp2.1
           #- dotnet-version: 3.1.x
           #  dotnet-framework: netcoreapp3.1
-          #- dotnet-version: 5.0.x
-          #  dotnet-framework: net5.0
+          - dotnet-version: 5.0.x
+            dotnet-framework: net5.0
           - dotnet-version: 6.0.x
             dotnet-framework: net6.0
     steps:
@@ -33,19 +33,3 @@ jobs:
         run: dotnet build --configuration Release --no-restore --framework net6.0
       - name: Test
         run: dotnet test --framework ${{ matrix.dotnet-framework }} --no-restore --verbosity normal --collect:"XPlat Code Coverage"
-
-  test-net-framework:
-    defaults:
-      run:
-        working-directory: Secp256k1.Net.Test
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.1
-      - name: MSBuild
-        run: msbuild Secp256k1.Net.Test.csproj "/t:Clean;Restore;Rebuild" "/p:TargetFramework=net472" -p:RestorePackagesConfig=true
-      - name: ls dir
-        run: ls bin
-      - name: vstest
-        run: vstest.console bin\Debug\MyTests.dll

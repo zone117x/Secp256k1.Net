@@ -44,7 +44,7 @@ jobs:
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
       - name: MSBuild
-        run: msbuild Secp256k1.Net.Test.csproj /p:TargetFrameworkVersion=v4.7.2;Configuration=Debug
+        run: msbuild Secp256k1.Net.Test.csproj /p:TargetFrameworkVersion=v4.7.2
       - name: ls dir
         run: ls bin
       - name: vstest

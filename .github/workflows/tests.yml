@@ -1,0 +1,29 @@
+name: dotnet package
+
+on: [push]
+
+jobs:
+  test-net-core:
+    defaults:
+      run:
+        working-directory: Secp256k1.Net.Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+        include:
+          - dotnet-version: 6.0.x
+            dotnet-framework: net6.0
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup .NET Core SDK ${{ matrix.dotnet-version }}
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}
+          include-prerelease: true
+      - name: Install dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --configuration Release --no-restore --framework net6.0
+      - name: Test
+        run: dotnet test --framework ${{ matrix.dotnet-framework }} --no-restore --verbosity normal --collect:"XPlat Code Coverage"

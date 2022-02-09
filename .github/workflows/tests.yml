@@ -24,6 +24,6 @@ jobs:
       - name: Install dependencies
         run: dotnet restore
       - name: Build
-        run: dotnet build --configuration Release --no-restore --framework net6.0
+        run: dotnet build --configuration Release --no-restore --framework ${{ matrix.dotnet-framework }}
       - name: Test
-        run: dotnet test --framework ${{ matrix.dotnet-framework }} --no-restore --verbosity normal --collect:"XPlat Code Coverage"
+        run: dotnet test --configuration Release --framework ${{ matrix.dotnet-framework }} --no-restore --verbosity normal --collect:"XPlat Code Coverage"

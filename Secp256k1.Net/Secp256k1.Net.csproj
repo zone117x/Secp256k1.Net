@@ -27,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Secp256k1.Native" Version="0.1.23" PrivateAssets="all" />
+    <PackageReference Include="Secp256k1.Native" Version="0.1.24-alpha" PrivateAssets="all" />
     <PackageReference Include="System.Memory" Version="4.5.4" />
   </ItemGroup>
 

@@ -19,7 +19,9 @@ namespace Secp256k1Net
         {
             [(Windows, X64)] = ("win-x64", "", ".dll"),
             [(Windows, X86)] = ("win-x86", "", ".dll"),
+            [(Windows, Arm64)] = ("win-arm64", "", ".dll"),
             [(Linux, X64)] = ("linux-x64", "lib", ".so"),
+            [(Linux, X86)] = ("linux-x86", "lib", ".so"),
             [(Linux, Arm64)] = ("linux-arm64", "lib", ".so"),
             [(OSX, X64)] = ("osx-x64", "lib", ".dylib"),
             [(OSX, Arm64)] = ("osx-arm64", "lib", ".dylib"),

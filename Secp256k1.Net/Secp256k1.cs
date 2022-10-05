@@ -35,6 +35,8 @@ namespace Secp256k1Net
 
 
         readonly Lazy<secp256k1_context_create> secp256k1_context_create;
+        readonly Lazy<secp256k1_context_set_illegal_callback> secp256k1_context_set_illegal_callback;
+        readonly Lazy<secp256k1_context_set_error_callback> secp256k1_context_set_error_callback;
         readonly Lazy<secp256k1_context_destroy> secp256k1_context_destroy;
         readonly Lazy<secp256k1_ec_pubkey_create> secp256k1_ec_pubkey_create;
         readonly Lazy<secp256k1_ec_seckey_verify> secp256k1_ec_seckey_verify;
@@ -58,10 +60,17 @@ namespace Secp256k1Net
         static readonly Lazy<IntPtr> _libPtr = new Lazy<IntPtr>(() => LoadLibNative.LoadLib(_libPath.Value));
 
         IntPtr _ctx;
+        private CsDelegateForCFunctionT _error_callback;
+        private static void DefaultErrorCallback(String message, void* data)
+        {
+            Console.Write(message);
+        }
 
         public Secp256k1()
         {
             secp256k1_context_create = LazyDelegate<secp256k1_context_create>();
+            secp256k1_context_set_illegal_callback = LazyDelegate<secp256k1_context_set_illegal_callback>();
+            secp256k1_context_set_error_callback = LazyDelegate<secp256k1_context_set_error_callback>();
             secp256k1_ecdsa_recover = LazyDelegate<secp256k1_ecdsa_recover>();
             secp256k1_ec_pubkey_create = LazyDelegate<secp256k1_ec_pubkey_create>();
             secp256k1_ec_seckey_verify = LazyDelegate<secp256k1_ec_seckey_verify>();
@@ -79,6 +88,10 @@ namespace Secp256k1Net
             secp256k1_ecdh = LazyDelegate<secp256k1_ecdh>();
 
             _ctx = secp256k1_context_create.Value(((uint)(Flags.SECP256K1_CONTEXT_SIGN | Flags.SECP256K1_CONTEXT_VERIFY)));
+
+            _error_callback = DefaultErrorCallback;
+            secp256k1_context_set_illegal_callback.Value(_ctx, _error_callback, null);
+            secp256k1_context_set_error_callback.Value(_ctx, _error_callback, null);
         }
 
         Lazy<TDelegate> LazyDelegate<TDelegate>()

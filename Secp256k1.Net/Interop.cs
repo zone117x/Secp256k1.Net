@@ -13,7 +13,34 @@ namespace Secp256k1Net
     /// <returns>a newly created context object.</returns>
     [SymbolName(nameof(secp256k1_context_create))]
     public delegate IntPtr secp256k1_context_create(uint flags);
+    
+    
+    /// <summary>
+    /// Type for error and illegal callback functions,
+    /// </summary>
+    /// <param name="message">message: error message.</param>
+    /// <param name="data">data: callback marker, it is set by user together with callback.</param>
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public unsafe delegate void CsDelegateForCFunctionT(String message, void* data);
+    
+    /// <summary>
+    /// Sets and illegal calback for secp256k1 context object. This callback is called fo illegal operations.
+    /// </summary>
+    /// <param name="ctx">ctx: an existing context to destroy (cannot be NULL).</param>
+    /// <param name="fun">fun: illegal callback function.</param>
+    /// <param name="data">data: callback marker, it is set by user together with callback.</param>
+    [SymbolName(nameof(secp256k1_context_set_illegal_callback))]
+    public unsafe delegate void secp256k1_context_set_illegal_callback(IntPtr ctx, CsDelegateForCFunctionT fun, void* data);
 
+    /// <summary>
+    /// Sets and error callback for secp256k1 context object. This callback is called for errors.
+    /// </summary>
+    /// <param name="ctx">ctx: an existing context to destroy (cannot be NULL).</param>
+    /// <param name="fun">fun: illegal callback function.</param>
+    /// <param name="data">data: callback marker, it is set by user together with callback.</param>
+    [SymbolName(nameof(secp256k1_context_set_error_callback))]
+    public unsafe delegate void secp256k1_context_set_error_callback(IntPtr ctx, CsDelegateForCFunctionT fun, void* data);
+    
     /// <summary>
     /// Destroy a secp256k1 context object. The context pointer may not be used afterwards.
     /// </summary>

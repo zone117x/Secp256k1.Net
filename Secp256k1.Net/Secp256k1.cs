@@ -88,16 +88,25 @@ namespace Secp256k1Net
             secp256k1_ecdh = LazyDelegate<secp256k1_ecdh>();
 
             _ctx = secp256k1_context_create.Value(((uint)(Flags.SECP256K1_CONTEXT_SIGN | Flags.SECP256K1_CONTEXT_VERIFY)));
-
-            _error_callback = DefaultErrorCallback;
-            secp256k1_context_set_illegal_callback.Value(_ctx, _error_callback, null);
-            secp256k1_context_set_error_callback.Value(_ctx, _error_callback, null);
+            SetErrorCallback(DefaultErrorCallback, null);
         }
 
         Lazy<TDelegate> LazyDelegate<TDelegate>()
         {
             var symbol = SymbolNameCache<TDelegate>.SymbolName;
             return new Lazy<TDelegate>(() => LoadLibNative.GetDelegate<TDelegate>(_libPtr.Value, symbol), isThreadSafe: false);
+        }
+
+        /// <summary>
+        /// Sets user-defined error calback for this context.
+        /// </summary>
+        /// <param name="cb">User-defined callback, it is called in the case of the error or illegal operation.</param>
+        /// <param name="data">User-defined callback marker, it is passed as second argument when callback is called.</param>
+        public void SetErrorCallback(CsDelegateForCFunctionT cb, void* data)
+        {
+            _error_callback = cb;
+            secp256k1_context_set_illegal_callback.Value(_ctx, _error_callback, data);
+            secp256k1_context_set_error_callback.Value(_ctx, _error_callback, data);
         }
 
         /// <summary>

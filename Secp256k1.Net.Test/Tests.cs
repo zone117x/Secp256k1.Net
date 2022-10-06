@@ -216,6 +216,30 @@ namespace Secp256k1Net.Test
                 Assert.Equal("0x3a2361270fb1bdd220a2fa0f187cc6f85079043a56fb6a968dfad7d7032b07b01213e80ecd4fb41f1500f94698b1117bc9f3335bde5efbb1330271afc6e85e92", serializedKey.ToHexString(), true);
             }
         }
+    
+        [Fact]
+        public void SigAbortTest()
+        {
+            using (var secp256k1 = new Secp256k1())
+            {
+
+                BigInteger ecdsa_r = BigInteger.Parse("68932463183462156574914988273446447389145511361487771160486080715355143414637");
+                BigInteger ecdsa_s = BigInteger.Parse("47416572686988136438359045243120473513988610648720291068939984598262749281683");
+
+                byte[] ecdsa_r_bytes = BigIntegerConverter.GetBytes(ecdsa_r);
+                byte[] ecdsa_s_bytes = BigIntegerConverter.GetBytes(ecdsa_s);
+                var signature = ecdsa_r_bytes.Concat(ecdsa_s_bytes).ToArray();
+
+                // Allocate memory for the signature and create a serialized-format signature to deserialize into our native format (platform dependent, hence why we do this).
+                Span<byte> serializedSignature = ecdsa_r_bytes.Concat(ecdsa_s_bytes).ToArray();
+                signature = new byte[Secp256k1.UNSERIALIZED_SIGNATURE_SIZE];
+                byte recoveryId = 9; // incorrect recoveryId,  it should be >=0 and <=3
+                // We get SIGABORT here with default error callback  
+                var result = secp256k1.RecoverableSignatureParseCompact(signature, serializedSignature, recoveryId);
+                Assert.False(result);
+                
+            }
+        }
     }
 
     public static class Extensions

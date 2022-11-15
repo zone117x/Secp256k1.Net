@@ -60,13 +60,17 @@ namespace Secp256k1Net
         static readonly Lazy<IntPtr> _libPtr = new Lazy<IntPtr>(() => LoadLibNative.LoadLib(_libPath.Value));
 
         IntPtr _ctx;
-        private CsDelegateForCFunctionT _error_callback;
+        
+        private ErrorCallbackDelegate _errorCallback;
+        private GCHandle _errorCallbackHandle;
+        private IntPtr _errorCallbackPtr;
+        
         private static void DefaultErrorCallback(String message, void* data)
         {
-            Console.Write(message);
+            Console.Error.WriteLine(message);
         }
 
-        public Secp256k1()
+        public Secp256k1(ErrorCallbackDelegate errorCallback = null)
         {
             secp256k1_context_create = LazyDelegate<secp256k1_context_create>();
             secp256k1_context_set_illegal_callback = LazyDelegate<secp256k1_context_set_illegal_callback>();
@@ -88,7 +92,8 @@ namespace Secp256k1Net
             secp256k1_ecdh = LazyDelegate<secp256k1_ecdh>();
 
             _ctx = secp256k1_context_create.Value(((uint)(Flags.SECP256K1_CONTEXT_SIGN | Flags.SECP256K1_CONTEXT_VERIFY)));
-            SetErrorCallback(DefaultErrorCallback, null);
+
+            SetErrorCallback(errorCallback ?? DefaultErrorCallback, null);
         }
 
         Lazy<TDelegate> LazyDelegate<TDelegate>()
@@ -102,11 +107,18 @@ namespace Secp256k1Net
         /// </summary>
         /// <param name="cb">User-defined callback, it is called in the case of the error or illegal operation.</param>
         /// <param name="data">User-defined callback marker, it is passed as second argument when callback is called.</param>
-        public void SetErrorCallback(CsDelegateForCFunctionT cb, void* data)
+        public void SetErrorCallback(ErrorCallbackDelegate cb, void* data = null)
         {
-            _error_callback = cb;
-            secp256k1_context_set_illegal_callback.Value(_ctx, _error_callback, data);
-            secp256k1_context_set_error_callback.Value(_ctx, _error_callback, data);
+            if (_errorCallbackPtr != IntPtr.Zero)
+            {
+                _errorCallbackHandle.Free();
+            }
+            _errorCallback = cb;
+            _errorCallbackHandle = GCHandle.Alloc(_errorCallback);
+            _errorCallbackPtr = Marshal.GetFunctionPointerForDelegate(_errorCallback);
+            
+            secp256k1_context_set_illegal_callback.Value(_ctx, _errorCallback, data);
+            secp256k1_context_set_error_callback.Value(_ctx, _errorCallback, data);
         }
 
         /// <summary>
@@ -564,6 +576,11 @@ namespace Secp256k1Net
 
         public void Dispose()
         {
+            if (_errorCallbackPtr != IntPtr.Zero)
+            {
+                _errorCallbackHandle.Free();
+                _errorCallbackPtr = IntPtr.Zero;
+            }
             if (_ctx != IntPtr.Zero)
             {
                 secp256k1_context_destroy.Value(_ctx);

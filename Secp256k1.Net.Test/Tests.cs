@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Secp256k1Net.Test
 {
-    public class Tests
+    public unsafe class Tests
     {
         ref struct KeyPair
         {
@@ -222,7 +222,6 @@ namespace Secp256k1Net.Test
         {
             using (var secp256k1 = new Secp256k1())
             {
-
                 BigInteger ecdsa_r = BigInteger.Parse("68932463183462156574914988273446447389145511361487771160486080715355143414637");
                 BigInteger ecdsa_s = BigInteger.Parse("47416572686988136438359045243120473513988610648720291068939984598262749281683");
 
@@ -238,6 +237,65 @@ namespace Secp256k1Net.Test
                 var result = secp256k1.RecoverableSignatureParseCompact(signature, serializedSignature, recoveryId);
                 Assert.False(result);
                 
+            }
+        }
+
+        [Fact]
+        public void SigAbortCtorCustomErrorHandlerTest()
+        {
+            string errorMsg = null;
+            var errorCallback = new ErrorCallbackDelegate((msg, data) =>
+            {
+                errorMsg = "Error message test: " + msg;
+            });
+            using (var secp256k1 = new Secp256k1(errorCallback))
+            {
+                BigInteger ecdsa_r = BigInteger.Parse("68932463183462156574914988273446447389145511361487771160486080715355143414637");
+                BigInteger ecdsa_s = BigInteger.Parse("47416572686988136438359045243120473513988610648720291068939984598262749281683");
+
+                byte[] ecdsa_r_bytes = BigIntegerConverter.GetBytes(ecdsa_r);
+                byte[] ecdsa_s_bytes = BigIntegerConverter.GetBytes(ecdsa_s);
+                var signature = ecdsa_r_bytes.Concat(ecdsa_s_bytes).ToArray();
+
+                // Allocate memory for the signature and create a serialized-format signature to deserialize into our native format (platform dependent, hence why we do this).
+                Span<byte> serializedSignature = ecdsa_r_bytes.Concat(ecdsa_s_bytes).ToArray();
+                signature = new byte[Secp256k1.UNSERIALIZED_SIGNATURE_SIZE];
+                byte recoveryId = 9; // incorrect recoveryId,  it should be >=0 and <=3
+                // We get SIGABORT here with default error callback  
+                var result = secp256k1.RecoverableSignatureParseCompact(signature, serializedSignature, recoveryId);
+                Assert.False(result);
+                
+                Assert.Equal("Error message test: recid >= 0 && recid <= 3", errorMsg);
+            }
+        }
+        
+        [Fact]
+        public void SigAbortSetCustomErrorHandlerTest()
+        {
+            string errorMsg = null;
+            var errorCallback = new ErrorCallbackDelegate((msg, data) =>
+            {
+                errorMsg = "Error message test: " + msg;
+            });
+            using (var secp256k1 = new Secp256k1())
+            {
+                secp256k1.SetErrorCallback(errorCallback);
+                BigInteger ecdsa_r = BigInteger.Parse("68932463183462156574914988273446447389145511361487771160486080715355143414637");
+                BigInteger ecdsa_s = BigInteger.Parse("47416572686988136438359045243120473513988610648720291068939984598262749281683");
+
+                byte[] ecdsa_r_bytes = BigIntegerConverter.GetBytes(ecdsa_r);
+                byte[] ecdsa_s_bytes = BigIntegerConverter.GetBytes(ecdsa_s);
+                var signature = ecdsa_r_bytes.Concat(ecdsa_s_bytes).ToArray();
+
+                // Allocate memory for the signature and create a serialized-format signature to deserialize into our native format (platform dependent, hence why we do this).
+                Span<byte> serializedSignature = ecdsa_r_bytes.Concat(ecdsa_s_bytes).ToArray();
+                signature = new byte[Secp256k1.UNSERIALIZED_SIGNATURE_SIZE];
+                byte recoveryId = 9; // incorrect recoveryId,  it should be >=0 and <=3
+                // We get SIGABORT here with default error callback  
+                var result = secp256k1.RecoverableSignatureParseCompact(signature, serializedSignature, recoveryId);
+                Assert.False(result);
+                
+                Assert.Equal("Error message test: recid >= 0 && recid <= 3", errorMsg);
             }
         }
     }

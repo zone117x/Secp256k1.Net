@@ -1,6 +1,8 @@
 name: dotnet package
 
-on: [push]
+on:
+  push:
+  pull_request:
 
 jobs:
   test-net-core:
@@ -11,19 +13,17 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
-        include:
-          - dotnet-version: 6.0.x
-            dotnet-framework: net6.0
+        dotnet-version: ['3.1.x', '5.0.x', '6.0.x' ]
+
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup .NET Core SDK ${{ matrix.dotnet-version }}
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ matrix.dotnet-version }}
-          include-prerelease: true
       - name: Install dependencies
         run: dotnet restore
       - name: Build
-        run: dotnet build --configuration Release --no-restore --framework ${{ matrix.dotnet-framework }}
+        run: dotnet build --configuration Release --no-restore
       - name: Test
-        run: dotnet test --configuration Release --framework ${{ matrix.dotnet-framework }} --no-restore --verbosity normal --collect:"XPlat Code Coverage"
+        run: dotnet test --no-restore --verbosity normal --collect:"XPlat Code Coverage"

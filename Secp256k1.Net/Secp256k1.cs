@@ -35,6 +35,8 @@ namespace Secp256k1Net
 
 
         readonly Lazy<secp256k1_context_create> secp256k1_context_create;
+        readonly Lazy<secp256k1_context_set_illegal_callback> secp256k1_context_set_illegal_callback;
+        readonly Lazy<secp256k1_context_set_error_callback> secp256k1_context_set_error_callback;
         readonly Lazy<secp256k1_context_destroy> secp256k1_context_destroy;
         readonly Lazy<secp256k1_ec_pubkey_create> secp256k1_ec_pubkey_create;
         readonly Lazy<secp256k1_ec_seckey_verify> secp256k1_ec_seckey_verify;
@@ -58,10 +60,21 @@ namespace Secp256k1Net
         static readonly Lazy<IntPtr> _libPtr = new Lazy<IntPtr>(() => LoadLibNative.LoadLib(_libPath.Value));
 
         IntPtr _ctx;
+        
+        private ErrorCallbackDelegate _errorCallback;
+        private GCHandle _errorCallbackHandle;
+        private IntPtr _errorCallbackPtr;
+        
+        private static void DefaultErrorCallback(String message, void* data)
+        {
+            Console.Error.WriteLine(message);
+        }
 
-        public Secp256k1()
+        public Secp256k1(ErrorCallbackDelegate errorCallback = null)
         {
             secp256k1_context_create = LazyDelegate<secp256k1_context_create>();
+            secp256k1_context_set_illegal_callback = LazyDelegate<secp256k1_context_set_illegal_callback>();
+            secp256k1_context_set_error_callback = LazyDelegate<secp256k1_context_set_error_callback>();
             secp256k1_ecdsa_recover = LazyDelegate<secp256k1_ecdsa_recover>();
             secp256k1_ec_pubkey_create = LazyDelegate<secp256k1_ec_pubkey_create>();
             secp256k1_ec_seckey_verify = LazyDelegate<secp256k1_ec_seckey_verify>();
@@ -79,12 +92,33 @@ namespace Secp256k1Net
             secp256k1_ecdh = LazyDelegate<secp256k1_ecdh>();
 
             _ctx = secp256k1_context_create.Value(((uint)(Flags.SECP256K1_CONTEXT_SIGN | Flags.SECP256K1_CONTEXT_VERIFY)));
+
+            SetErrorCallback(errorCallback ?? DefaultErrorCallback, null);
         }
 
         Lazy<TDelegate> LazyDelegate<TDelegate>()
         {
             var symbol = SymbolNameCache<TDelegate>.SymbolName;
             return new Lazy<TDelegate>(() => LoadLibNative.GetDelegate<TDelegate>(_libPtr.Value, symbol), isThreadSafe: false);
+        }
+
+        /// <summary>
+        /// Sets user-defined error calback for this context.
+        /// </summary>
+        /// <param name="cb">User-defined callback, it is called in the case of the error or illegal operation.</param>
+        /// <param name="data">User-defined callback marker, it is passed as second argument when callback is called.</param>
+        public void SetErrorCallback(ErrorCallbackDelegate cb, void* data = null)
+        {
+            if (_errorCallbackPtr != IntPtr.Zero)
+            {
+                _errorCallbackHandle.Free();
+            }
+            _errorCallback = cb;
+            _errorCallbackHandle = GCHandle.Alloc(_errorCallback);
+            _errorCallbackPtr = Marshal.GetFunctionPointerForDelegate(_errorCallback);
+            
+            secp256k1_context_set_illegal_callback.Value(_ctx, _errorCallback, data);
+            secp256k1_context_set_error_callback.Value(_ctx, _errorCallback, data);
         }
 
         /// <summary>
@@ -542,6 +576,11 @@ namespace Secp256k1Net
 
         public void Dispose()
         {
+            if (_errorCallbackPtr != IntPtr.Zero)
+            {
+                _errorCallbackHandle.Free();
+                _errorCallbackPtr = IntPtr.Zero;
+            }
             if (_ctx != IntPtr.Zero)
             {
                 secp256k1_context_destroy.Value(_ctx);

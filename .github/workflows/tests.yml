@@ -2,6 +2,7 @@ name: dotnet package
 
 on:
   push:
+    branches: [master]
   pull_request:
 
 jobs:

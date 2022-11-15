@@ -28,3 +28,8 @@ jobs:
         run: dotnet build --configuration Release --no-restore
       - name: Test
         run: dotnet test --no-restore --verbosity normal --collect:"XPlat Code Coverage"
+      - uses: codecov/codecov-action@v3
+        with:
+          files: "**/TestResults/*/*.cobertura.xml"
+          verbose: true
+  

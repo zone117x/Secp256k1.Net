@@ -22,7 +22,7 @@ do { rnd.GetBytes(privateKey); }
 while (!secp256k1.SecretKeyVerify(privateKey));
 
 // Derive public key bytes
-var publicKey = new byte[64];
+var publicKey = new byte[Secp256k1.PUBKEY_LENGTH];
 Assert.True(secp256k1.PublicKeyCreate(publicKey, privateKey), "Public key creation failed");
 
 // Serialize the public key to compressed format

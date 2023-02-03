@@ -19,8 +19,12 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 7.0.x
+      - name: Install dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --configuration Release --no-restore --version-suffix "$NUGET_PACKAGE_VERSION"
       - name: Build package
-        run: dotnet pack --configuration Release --version-suffix "$NUGET_PACKAGE_VERSION"
+        run: dotnet pack --configuration Release --no-build --version-suffix "$NUGET_PACKAGE_VERSION"
       - name: Publish the package to nuget.org
         run: dotnet nuget push */bin/Release/*.nupkg -k $NUGET_AUTH_TOKEN -s https://api.nuget.org/v3/index.json
         env:

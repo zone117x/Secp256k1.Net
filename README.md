@@ -99,8 +99,4 @@ derSignatureOutput = derSignatureOutput.Slice(0, signatureOutputLength);
 Assert.Equal(Convert.ToHexString(derSignature), Convert.ToHexString(derSignatureOutput));
 ```
 
-#### Generate BIP-340 Schnorr key pair
-```csharp
-```
-
-See the [tests project](Secp256k1.Net.Test/Tests.cs) for more complex examples. 
+See the [tests project](Secp256k1.Net.Test/Tests.cs) for more examples. 

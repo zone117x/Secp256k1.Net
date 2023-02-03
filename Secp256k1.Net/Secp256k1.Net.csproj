@@ -6,24 +6,25 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <LangVersion>latest</LangVersion>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
-    <Company>Hosho</Company>
-    <Authors>Hosho</Authors>
+    <Company />
+    <Authors>Matthew Little</Authors>
     <PackageTags>Secp256k1 libsecp256k1 ECDSA ethereum bitcoin</PackageTags>
     <Description>.NET wrapper for native secp256k1 library</Description>
-    <PackageProjectUrl>https://github.com/hosho/Secp256k1.Net</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/hosho/Secp256k1.Net/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/zone117x/Secp256k1.Net</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <NoWarn>1591,1573</NoWarn>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
   </PropertyGroup>
 
   <PropertyGroup>
-    <Version Condition="'$(VersionSuffix)' != ''">0.1.$(VersionSuffix)</Version>
+    <Version Condition="'$(VersionSuffix)' != ''">$(VersionSuffix)</Version>
     <Version Condition="'$(VersionSuffix)' == ''">0.1.0</Version>
     <RootNamespace>Secp256k1Net</RootNamespace>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(Configuration)' == 'Release'">
-    <PackageReference Include="SourceLink.Embed.AllSourceFiles" Version="2.8.3" PrivateAssets="all" />
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
   </ItemGroup>
 
   <ItemGroup>

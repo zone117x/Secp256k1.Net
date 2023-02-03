@@ -1,0 +1,27 @@
+name: Publish nuget package
+
+on:
+  workflow_dispatch:
+    inputs:
+      nuget-package-version:
+        description: Specify the nuget package version, e.g. `0.0.1-alpha.0`
+        required: true
+
+jobs:
+  npm-package:
+    runs-on: ubuntu-latest
+    env:
+      NUGET_PACKAGE_VERSION: ${{ github.event.inputs.nuget-package-version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 7.0.x
+      - name: Build package
+        run: dotnet pack --configuration Release --version-suffix "$NUGET_PACKAGE_VERSION"
+      - name: Publish the package to nuget.org
+        run: dotnet nuget push */bin/Release/*.nupkg -k $NUGET_AUTH_TOKEN -s https://api.nuget.org/v3/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.NUGET_TOKEN }}

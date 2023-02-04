@@ -313,5 +313,62 @@
             Assert.IsFalse(result);
             Assert.AreEqual("Error message test: recid >= 0 && recid <= 3", errorMsg);
         }
+
+        [TestMethod]
+        public void NativeLibResolveLoadClose()
+        {
+            var libPath = LibPathResolver.Resolve(Secp256k1.LIB);
+            var libPtr = LoadLibNative.LoadLib(libPath);
+            LoadLibNative.CloseLibrary(libPtr);
+        }
+
+        [TestMethod]
+        public void NativeLibResolveFailure()
+        {
+            var exception = Assert.ThrowsException<Exception>(() =>
+            {
+                LibPathResolver.Resolve("invalid_lib_test_123456");
+            });
+            StringAssert.Contains(exception.Message, "lib not found");
+        }
+
+        [TestMethod]
+        public void NativeLibLoadFailure()
+        {
+            var exception = Assert.ThrowsException<Exception>(() =>
+            {
+                LoadLibNative.LoadLib("invalid_lib_test_123456");
+            });
+            StringAssert.Contains(exception.Message, "loading failed");
+        }
+
+        [TestMethod]
+        public void NativeLibCloseFailure()
+        {
+            var exception = Assert.ThrowsException<Exception>(() =>
+            {
+                LoadLibNative.CloseLibrary(IntPtr.MaxValue);
+            });
+            StringAssert.Contains(exception.Message, "closing failed");
+        }
+
+        [TestMethod]
+        public void NativeLibSymbolLoadFailure()
+        {
+            var libPath = LibPathResolver.Resolve(Secp256k1.LIB);
+            var libPtr = LoadLibNative.LoadLib(libPath);
+            try
+            {
+                var exception = Assert.ThrowsException<Exception>(() =>
+                {
+                    LoadLibNative.GetDelegate<Action>(libPtr, "invalid_symbol_name_test_123456");
+                });
+                StringAssert.Contains(exception.Message, "symbol failed");
+            }
+            finally
+            {
+                LoadLibNative.CloseLibrary(libPtr);
+            }
+        }
     }
 }

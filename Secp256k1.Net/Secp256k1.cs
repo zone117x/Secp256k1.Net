@@ -53,7 +53,7 @@ namespace Secp256k1Net
         static readonly Lazy<secp256k1_ecdsa_verify> secp256k1_ecdsa_verify;
         static readonly Lazy<secp256k1_ecdh> secp256k1_ecdh;
 
-        const string LIB = "secp256k1";
+        internal const string LIB = "secp256k1";
 
         public static string LibPath => _libPath.Value;
         static readonly Lazy<string> _libPath = new Lazy<string>(() => LibPathResolver.Resolve(LIB));

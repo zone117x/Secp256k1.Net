@@ -36,13 +36,13 @@ namespace Secp256k1Net
         static readonly PlatInfo CurrentPlatformInfo = (CurrentOSPlatform, ProcessArchitecture);
         static readonly Lazy<string> CurrentPlatformDesc = new Lazy<string>(() => GetPlatformDesc((CurrentOSPlatform, ProcessArchitecture)));
 
-        static readonly ConcurrentDictionary<PlatInfo, string> Cache = new ConcurrentDictionary<PlatInfo, string>();
+        static readonly ConcurrentDictionary<string, string> Cache = new ConcurrentDictionary<string, string>();
 
         public static List<string> ExtraNativeLibSearchPaths = new List<string>();
 
         public static string Resolve(string library)
         {
-            if (Cache.TryGetValue(CurrentPlatformInfo, out string result))
+            if (Cache.TryGetValue(library, out string result))
             {
                 return result;
             }
@@ -59,7 +59,7 @@ namespace Secp256k1Net
                 {
                     if (!searchedPaths.Contains(libPath) && File.Exists(libPath))
                     {
-                        Cache.TryAdd(CurrentPlatformInfo, libPath);
+                        Cache.TryAdd(library, libPath);
                         return libPath;
                     }
                     searchedPaths.Add(libPath);
@@ -100,8 +100,8 @@ namespace Secp256k1Net
             string libFileName = platform.LibPrefix + library + platform.Extension;
 
             yield return libFileName;
-            yield return Path.Combine(platform.Prefix, libFileName); ;
-            yield return Path.Combine("native", platform.Prefix, libFileName); ;
+            yield return Path.Combine(platform.Prefix, libFileName);
+            yield return Path.Combine("native", platform.Prefix, libFileName);
             yield return Path.Combine("runtimes", platform.Prefix, "native", libFileName);
 
         }

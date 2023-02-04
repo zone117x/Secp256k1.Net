@@ -12,26 +12,23 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
-        dotnet-version: ['6.0.x', '7.0.x']
-        dotnet-framework: ['']
-        include:
-          - dotnet-version: '6.0.x'
-            dotnet-framework: net6.0
-          - dotnet-version: '7.0.x'
-            dotnet-framework: net7.0
+        dotnet: [
+          { framework: net6.0, version: '6.0.x' },
+          { framework: net7.0, version: '7.0.x' }
+        ]
 
     steps:
       - uses: actions/checkout@v3
-      - name: Setup .NET Core SDK ${{ matrix.dotnet-version }}
+      - name: Setup .NET Core SDK ${{ matrix.dotnet.version }}
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: ${{ matrix.dotnet-version }}
+          dotnet-version: ${{ matrix.dotnet.version }}
       - name: Install dependencies
         run: dotnet restore Secp256k1.Net.Test
       - name: Build
-        run: dotnet build Secp256k1.Net.Test --configuration Release --framework ${{ matrix.dotnet-framework }} --no-restore
+        run: dotnet build Secp256k1.Net.Test --configuration Release --framework ${{ matrix.dotnet.framework }} --no-restore
       - name: Test
-        run: dotnet test Secp256k1.Net.Test --configuration Release --framework ${{ matrix.dotnet-framework }} --no-build --verbosity normal --blame-crash --collect:"XPlat Code Coverage"
+        run: dotnet test Secp256k1.Net.Test --configuration Release --framework ${{ matrix.dotnet.framework }} --no-build --verbosity normal --blame-crash --collect:"XPlat Code Coverage"
       - uses: codecov/codecov-action@v3
         with:
           files: "**/TestResults/*/*.cobertura.xml"

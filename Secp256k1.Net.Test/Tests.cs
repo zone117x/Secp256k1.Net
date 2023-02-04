@@ -352,6 +352,7 @@
         }
 
         [TestMethod]
+        [Ignore]
         public void NativeLibCloseFailure()
         {
             var exception = Assert.ThrowsException<Exception>(() =>

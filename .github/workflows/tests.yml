@@ -29,13 +29,13 @@ jobs:
         run: dotnet build Secp256k1.Net.Test --configuration Release --framework ${{ matrix.dotnet.framework }} --no-restore
       - name: Test
         run: dotnet test Secp256k1.Net.Test --configuration Release --framework ${{ matrix.dotnet.framework }} --no-build --verbosity normal --blame-crash --collect:"XPlat Code Coverage"
-      - uses: codecov/codecov-action@v3
-        with:
-          files: "**/TestResults/*/*.cobertura.xml"
-          verbose: true
       - name: Print crash logs
         if: failure()
         uses: actions/upload-artifact@v3
         with:
           name: TestResultSequence.xml
           path: ./**/TestResults/*/Sequence_*.xml
+      - uses: codecov/codecov-action@v3
+        with:
+          files: "**/TestResults/*/*.cobertura.xml"
+          verbose: true

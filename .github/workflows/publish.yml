@@ -21,10 +21,13 @@ jobs:
           dotnet-version: 7.0.x
       - name: Install dependencies
         run: dotnet restore
+        working-directory: Secp256k1.Net
       - name: Build
         run: dotnet build --configuration Release --no-restore --version-suffix "$NUGET_PACKAGE_VERSION"
+        working-directory: Secp256k1.Net
       - name: Build package
         run: dotnet pack --configuration Release --no-build --version-suffix "$NUGET_PACKAGE_VERSION"
+        working-directory: Secp256k1.Net
       - name: Publish the package to nuget.org
         run: dotnet nuget push */bin/Release/*.nupkg -k $NUGET_AUTH_TOKEN -s https://api.nuget.org/v3/index.json
         env:

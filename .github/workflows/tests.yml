@@ -28,7 +28,7 @@ jobs:
       - name: Build
         run: dotnet build --configuration Release --no-restore
       - name: Test
-        run: dotnet test --no-build --verbosity normal --collect:"XPlat Code Coverage"
+        run: dotnet test --no-build --verbosity detailed --collect:"XPlat Code Coverage"
       - uses: codecov/codecov-action@v3
         with:
           files: "**/TestResults/*/*.cobertura.xml"

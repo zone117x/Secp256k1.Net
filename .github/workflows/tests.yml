@@ -33,4 +33,9 @@ jobs:
         with:
           files: "**/TestResults/*/*.cobertura.xml"
           verbose: true
-  
+      - name: Print crash logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: TestResultSequence.xml
+          path: ./**/TestResults/*/Sequence_*.xml

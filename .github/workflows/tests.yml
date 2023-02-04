@@ -12,6 +12,7 @@ jobs:
         working-directory: Secp256k1.Net.Test
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
         dotnet-version: ['6.0.x', '7.0.x']

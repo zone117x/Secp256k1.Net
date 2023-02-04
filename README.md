@@ -1,6 +1,6 @@
 # Secp256k1.Net
 
-[![NuGet](https://img.shields.io/nuget/v/Secp256k1.Net.svg)](https://www.nuget.org/packages/Secp256k1.Net/) [![NuGet](https://img.shields.io/nuget/dt/Secp256k1.Net.svg)](https://www.nuget.org/packages/Secp256k1.Net/)
+[![NuGet](https://img.shields.io/nuget/v/Secp256k1.Net.svg)](https://www.nuget.org/packages/Secp256k1.Net/) [![NuGet](https://img.shields.io/nuget/dt/Secp256k1.Net.svg)](https://www.nuget.org/packages/Secp256k1.Net/) [![CI](https://github.com/zone117x/Secp256k1.Net/actions/workflows/tests.yml/badge.svg)](https://github.com/zone117x/Secp256k1.Net/actions/workflows/tests.yml) [![codecov](https://codecov.io/gh/zone117x/Secp256k1.Net/branch/master/graph/badge.svg?token=fCERq55vh9)](https://codecov.io/gh/zone117x/Secp256k1.Net)
 
 
 Cross platform C# wrapper for the native [secp256k1 library](https://github.com/zone117x/secp256k1/blob/master/Secp256k1.Native.nuspec).

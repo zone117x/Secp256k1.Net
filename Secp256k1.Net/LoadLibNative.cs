@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Secp256k1Net
 {
-    static class LoadLibNative
+    internal static class LoadLibNative
     {
         static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
         static readonly bool IsMacOS = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
@@ -45,25 +45,33 @@ namespace Secp256k1Net
 
         public static void CloseLibrary(IntPtr lib)
         {
+            int result;
             if (lib == IntPtr.Zero)
             {
                 return;
             }
             if (IsWindows)
             {
-                DynamicLinkingWindows.FreeLibrary(lib);
+                var freeResult = DynamicLinkingWindows.FreeLibrary(lib);
+                // If the function fails, the return value is zero
+                result = freeResult ? 0 : 1;
             }
             else if (IsMacOS)
             {
-                DynamicLinkingMacOS.dlclose(lib);
+                result = DynamicLinkingMacOS.dlclose(lib);
             }
             else if (IsLinux)
             {
-                DynamicLinkingLinux.dlclose(lib);
+                result = DynamicLinkingLinux.dlclose(lib);
             }
             else
             {
                 throw new Exception("Unsupported platform");
+            }
+
+            if (result != 0)
+            {
+                throw new Exception($"Library closing failed with result: {result}", GetLastError());
             }
         }
 

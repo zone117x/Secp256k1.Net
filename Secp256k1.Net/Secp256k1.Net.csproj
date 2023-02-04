@@ -1,59 +1,52 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <LangVersion>latest</LangVersion>
-    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
-    <Company />
-    <Authors>Matthew Little</Authors>
-    <PackageTags>Secp256k1 libsecp256k1 ECDSA ethereum bitcoin</PackageTags>
-    <Description>.NET wrapper for native secp256k1 library</Description>
-    <PackageProjectUrl>https://github.com/zone117x/Secp256k1.Net</PackageProjectUrl>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <NoWarn>1591,1573</NoWarn>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <Version Condition="'$(VersionSuffix)' != ''">$(VersionSuffix)</Version>
-    <Version Condition="'$(VersionSuffix)' == ''">0.1.0</Version>
-    <RootNamespace>Secp256k1Net</RootNamespace>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Secp256k1.Native" Version="0.1.24-alpha" PrivateAssets="all" />
-    <PackageReference Include="System.Memory" Version="4.5.5" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="../README.md" Pack="true" PackagePath="/"/>
-  </ItemGroup>
-
-  <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <LangVersion>latest</LangVersion>
+        <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+        <Company />
+        <Authors>Matthew Little</Authors>
+        <PackageTags>Secp256k1 libsecp256k1 ECDSA ethereum bitcoin</PackageTags>
+        <Description>.NET wrapper for native secp256k1 library</Description>
+        <PackageProjectUrl>https://github.com/zone117x/Secp256k1.Net</PackageProjectUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <NoWarn>1591,1573</NoWarn>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <RootNamespace>Secp256k1Net</RootNamespace>
+        <Version Condition="'$(VersionSuffix)' != ''">$(VersionSuffix)</Version>
+        <Version Condition="'$(VersionSuffix)' == ''">0.1.0</Version>
+    </PropertyGroup>
     <ItemGroup>
-      <_PackageFiles Include="$(OutputPath)/native/**/*">
-        <BuildAction>Content</BuildAction>
-        <PackagePath>content/native/</PackagePath>
-        <!--<CopyToOutput>true</CopyToOutput>-->
-        <!--<PackageCopyToOutput>true</PackageCopyToOutput>-->
-      </_PackageFiles>
+        <None Include="../README.md" Pack="true" PackagePath="/" />
     </ItemGroup>
-  </Target>
-
-  <ItemGroup>
-    <_PackageFiles Include="Secp256k1.Net.targets">
-      <BuildAction>None</BuildAction>
-      <PackagePath>build/</PackagePath>
-    </_PackageFiles>
-  </ItemGroup>
-  
-  
+    <ItemGroup>
+        <InternalsVisibleTo Include="Secp256k1.Net.Test" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Secp256k1.Native" Version="0.1.24-alpha" PrivateAssets="all" />
+        <PackageReference Include="System.Memory" Version="4.5.5" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
+    </ItemGroup>
+    <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">
+        <ItemGroup>
+            <_PackageFiles Include="$(OutputPath)/native/**/*">
+                <BuildAction>Content</BuildAction>
+                <PackagePath>content/native/</PackagePath>
+                <!--<CopyToOutput>true</CopyToOutput>-->
+                <!--<PackageCopyToOutput>true</PackageCopyToOutput>-->
+            </_PackageFiles>
+        </ItemGroup>
+    </Target>
+    <ItemGroup>
+        <_PackageFiles Include="Secp256k1.Net.targets">
+            <BuildAction>None</BuildAction>
+            <PackagePath>build/</PackagePath>
+        </_PackageFiles>
+    </ItemGroup>
 </Project>

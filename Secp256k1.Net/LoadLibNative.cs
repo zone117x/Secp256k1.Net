@@ -52,9 +52,9 @@ namespace Secp256k1Net
             }
             if (IsWindows)
             {
-                result = DynamicLinkingWindows.FreeLibrary(lib);
+                var freeResult = DynamicLinkingWindows.FreeLibrary(lib);
                 // If the function fails, the return value is zero
-                result = result == 0 ? 1 : result;
+                result = freeResult ? 0 : 1;
             }
             else if (IsMacOS)
             {

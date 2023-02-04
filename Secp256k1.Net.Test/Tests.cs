@@ -317,9 +317,18 @@
         [TestMethod]
         public void NativeLibResolveLoadClose()
         {
-            var libPath = LibPathResolver.Resolve(Secp256k1.LIB);
-            var libPtr = LoadLibNative.LoadLib(libPath);
-            LoadLibNative.CloseLibrary(libPtr);
+            var origLibPath = LibPathResolver.Resolve(Secp256k1.LIB);
+            var tempLibPath = Path.GetTempFileName();
+            try
+            {
+                File.Copy(origLibPath, tempLibPath, overwrite: true);
+                var libPtr = LoadLibNative.LoadLib(tempLibPath);
+                LoadLibNative.CloseLibrary(libPtr);
+            }
+            finally
+            {
+                File.Delete(tempLibPath);
+            }
         }
 
         [TestMethod]
@@ -357,18 +366,11 @@
         {
             var libPath = LibPathResolver.Resolve(Secp256k1.LIB);
             var libPtr = LoadLibNative.LoadLib(libPath);
-            try
+            var exception = Assert.ThrowsException<Exception>(() =>
             {
-                var exception = Assert.ThrowsException<Exception>(() =>
-                {
-                    LoadLibNative.GetDelegate<Action>(libPtr, "invalid_symbol_name_test_123456");
-                });
-                StringAssert.Contains(exception.Message, "symbol failed");
-            }
-            finally
-            {
-                LoadLibNative.CloseLibrary(libPtr);
-            }
+                LoadLibNative.GetDelegate<Action>(libPtr, "invalid_symbol_name_test_123456");
+            });
+            StringAssert.Contains(exception.Message, "symbol failed");
         }
     }
 }

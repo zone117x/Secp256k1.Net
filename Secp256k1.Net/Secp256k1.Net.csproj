@@ -12,6 +12,7 @@
     <Description>.NET wrapper for native secp256k1 library</Description>
     <PackageProjectUrl>https://github.com/zone117x/Secp256k1.Net</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <NoWarn>1591,1573</NoWarn>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>

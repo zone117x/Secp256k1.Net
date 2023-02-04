@@ -33,6 +33,10 @@
     <PackageReference Include="System.Memory" Version="4.5.5" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="/"/>
+  </ItemGroup>
+
   <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">
     <ItemGroup>
       <_PackageFiles Include="$(OutputPath)/native/**/*">

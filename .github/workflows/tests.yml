@@ -39,3 +39,16 @@ jobs:
         with:
           files: "**/TestResults/*/*.cobertura.xml"
           verbose: true
+
+  test-net-framework:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: dotnet build Secp256k1.Net.Test --configuration Release --framework net461
+      - name: Test
+        run: dotnet vstest Secp256k1.Net.Test\bin\Release\net461\Secp256k1.Net.Test.dll /Framework:".NETFramework,Version=v4.6.1" /Platform:"x64" --collect:"XPlat Code Coverage"
+      - uses: codecov/codecov-action@v3
+        with:
+          files: "**/TestResults/*/*.cobertura.xml"
+          verbose: true

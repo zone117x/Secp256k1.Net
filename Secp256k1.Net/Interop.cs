@@ -286,9 +286,12 @@ namespace Secp256k1Net
         void* output,   // unsigned char *output
         void* pubkey,   // const secp256k1_pubkey *pubkey
         void* privkey,  // const unsigned char *privkey
-        IntPtr hashfp,  // secp256k1_ecdh_hash_function hashfp,
+        secp256k1_ecdh_hash_function hashfp,  // secp256k1_ecdh_hash_function hashfp,
         IntPtr data      // void *data
     );
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public unsafe delegate int secp256k1_ecdh_hash_function(void* output, void* x, void* y, IntPtr data);
 
     // Flags copied from
     // https://github.com/bitcoin-core/secp256k1/blob/452d8e4d2a2f9f1b5be6b02e18f1ba102e5ca0b4/include/secp256k1.h#L157

@@ -211,7 +211,7 @@ namespace Secp256k1Net.Test
         }
 
         [TestMethod]
-        public void SigningTest()
+        public void SignatureRecoveryTest()
         {
             using var secp256k1 = new Secp256k1();
 
@@ -243,6 +243,12 @@ namespace Secp256k1Net.Test
             var serializedSignature = ecdsa_r.Concat(ecdsa_s).ToArray();
             signature = new byte[Secp256k1.UNSERIALIZED_SIGNATURE_SIZE];
             Assert.IsTrue(secp256k1.RecoverableSignatureParseCompact(signature, serializedSignature, recoveryId));
+
+            // Create a serialized signature in compact format (64 bytes + recovery ID)
+            var serializedSignatureOutput = new byte[Secp256k1.SERIALIZED_SIGNATURE_SIZE];
+            Assert.IsTrue(secp256k1.RecoverableSignatureSerializeCompact(serializedSignatureOutput, out var recoveryIdOutput, signature));
+            Assert.AreEqual(recoveryId, (byte)recoveryIdOutput);
+            Assert.AreEqual(Convert.ToHexString(serializedSignature), Convert.ToHexString(serializedSignatureOutput));
 
             // Recover the public key
             publicKeyOutput = new byte[Secp256k1.PUBKEY_LENGTH];

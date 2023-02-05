@@ -133,6 +133,16 @@ namespace Secp256k1Net.Test
             // Serialize the public key to uncompressed format
             var serializedUncompressedPublicKey = new byte[Secp256k1.SERIALIZED_UNCOMPRESSED_PUBKEY_LENGTH];
             Assert.IsTrue(secp256k1.PublicKeySerialize(serializedUncompressedPublicKey, publicKey, Flags.SECP256K1_EC_UNCOMPRESSED));
+
+            // Parse public key from serialized compressed public key
+            var parsedPublicKey1 = new byte[Secp256k1.PUBKEY_LENGTH];
+            Assert.IsTrue(secp256k1.PublicKeyParse(parsedPublicKey1, serializedCompressedPublicKey));
+            Assert.AreEqual(Convert.ToHexString(publicKey), Convert.ToHexString(parsedPublicKey1));
+
+            // Parse public key from serialied uncompressed public key
+            var parsedPublicKey2 = new byte[Secp256k1.PUBKEY_LENGTH];
+            Assert.IsTrue(secp256k1.PublicKeyParse(parsedPublicKey2, serializedUncompressedPublicKey));
+            Assert.AreEqual(Convert.ToHexString(publicKey), Convert.ToHexString(parsedPublicKey2));
         }
 
         [TestMethod]

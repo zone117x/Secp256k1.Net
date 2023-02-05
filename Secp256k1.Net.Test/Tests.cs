@@ -1,4 +1,9 @@
-﻿namespace Secp256k1Net.Test
+﻿using System;
+using System.IO;
+using System.Linq;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+namespace Secp256k1Net.Test
 {
     [TestClass]
     public class Tests
@@ -10,8 +15,9 @@
             using var secp256k1 = new Secp256k1();
 
             // Generate a private key
-            byte[] privateKey;
-            do privateKey = System.Security.Cryptography.RandomNumberGenerator.GetBytes(Secp256k1.PRIVKEY_LENGTH);
+            var privateKey = new byte[Secp256k1.PRIVKEY_LENGTH];
+            var rnd = System.Security.Cryptography.RandomNumberGenerator.Create();
+            do { rnd.GetBytes(privateKey); }
             while (!secp256k1.SecretKeyVerify(privateKey));
 
             // Create public key from private key
@@ -24,7 +30,7 @@
 
             // Sign a message hash
             var messageBytes = System.Text.Encoding.UTF8.GetBytes("Hello world.");
-            var messageHash = System.Security.Cryptography.SHA256.HashData(messageBytes);
+            var messageHash = System.Security.Cryptography.SHA256.Create().ComputeHash(messageBytes);
             var signature = new byte[Secp256k1.SIGNATURE_LENGTH];
             Assert.IsTrue(secp256k1.Sign(signature, messageHash, privateKey));
 
@@ -127,6 +133,16 @@
             // Serialize the public key to uncompressed format
             var serializedUncompressedPublicKey = new byte[Secp256k1.SERIALIZED_UNCOMPRESSED_PUBKEY_LENGTH];
             Assert.IsTrue(secp256k1.PublicKeySerialize(serializedUncompressedPublicKey, publicKey, Flags.SECP256K1_EC_UNCOMPRESSED));
+
+            // Parse public key from serialized compressed public key
+            var parsedPublicKey1 = new byte[Secp256k1.PUBKEY_LENGTH];
+            Assert.IsTrue(secp256k1.PublicKeyParse(parsedPublicKey1, serializedCompressedPublicKey));
+            Assert.AreEqual(Convert.ToHexString(publicKey), Convert.ToHexString(parsedPublicKey1));
+
+            // Parse public key from serialied uncompressed public key
+            var parsedPublicKey2 = new byte[Secp256k1.PUBKEY_LENGTH];
+            Assert.IsTrue(secp256k1.PublicKeyParse(parsedPublicKey2, serializedUncompressedPublicKey));
+            Assert.AreEqual(Convert.ToHexString(publicKey), Convert.ToHexString(parsedPublicKey2));
         }
 
         [TestMethod]
@@ -140,7 +156,7 @@
             };
 
             var msgBytes = System.Text.Encoding.UTF8.GetBytes("Hello!!");
-            var msgHash = System.Security.Cryptography.SHA256.HashData(msgBytes);
+            var msgHash = System.Security.Cryptography.SHA256.Create().ComputeHash(msgBytes);
             Assert.AreEqual(Secp256k1.HASH_LENGTH, msgHash.Length);
 
             var signature = new byte[Secp256k1.SIGNATURE_LENGTH];
@@ -318,7 +334,7 @@
         public void NativeLibResolveLoadClose()
         {
             var origLibPath = LibPathResolver.Resolve(Secp256k1.LIB);
-            var tempLibPath = Path.GetTempFileName();
+            var tempLibPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             try
             {
                 File.Copy(origLibPath, tempLibPath, overwrite: true);
@@ -357,7 +373,7 @@
         {
             var exception = Assert.ThrowsException<Exception>(() =>
             {
-                LoadLibNative.CloseLibrary(IntPtr.MaxValue);
+                LoadLibNative.CloseLibrary(new IntPtr(int.MaxValue));
             });
             StringAssert.Contains(exception.Message, "closing failed");
         }
@@ -374,4 +390,20 @@
             StringAssert.Contains(exception.Message, "symbol failed");
         }
     }
+
+#if !NET5_0_OR_GREATER
+    static class Convert
+    {
+        public static byte[] FromHexString(string s)
+        {
+            return Enumerable.Range(0, s.Length / 2).Select(x => System.Convert.ToByte(s.Substring(x * 2, 2), 16)).ToArray();
+        }
+
+        public static string ToHexString(ReadOnlySpan<byte> bytes)
+        {
+            return BitConverter.ToString(bytes.ToArray()).Replace("-", "");
+        }
+    }
+#endif
+
 }

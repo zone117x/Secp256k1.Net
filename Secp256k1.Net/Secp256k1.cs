@@ -521,12 +521,9 @@ namespace Secp256k1Net
                 pubPtr = &MemoryMarshal.GetReference(publicKey),
                 privPtr = &MemoryMarshal.GetReference(privateKey))
             {
-                return secp256k1_ecdh.Value(_ctx, resPtr, pubPtr, privPtr, IntPtr.Zero, IntPtr.Zero) == 1;
+                return secp256k1_ecdh.Value(_ctx, resPtr, pubPtr, privPtr, null, IntPtr.Zero) == 1;
             }
         }
-
-
-        delegate int secp256k1_ecdh_hash_function(void* output, void* x, void* y, IntPtr data);
 
         /// <summary>
         /// Compute an EC Diffie-Hellman secret in constant time.
@@ -562,20 +559,11 @@ namespace Secp256k1Net
                 return hashFunction(outputSpan, xSpan, ySpan, d);
             };
 
-            GCHandle gch = GCHandle.Alloc(hashFunctionPtr);
-            try
+            fixed (byte* resPtr = &MemoryMarshal.GetReference(resultOutput),
+                pubPtr = &MemoryMarshal.GetReference(publicKey),
+                privPtr = &MemoryMarshal.GetReference(privateKey))
             {
-                var fp = Marshal.GetFunctionPointerForDelegate(hashFunctionPtr);
-                fixed (byte* resPtr = &MemoryMarshal.GetReference(resultOutput),
-                    pubPtr = &MemoryMarshal.GetReference(publicKey),
-                    privPtr = &MemoryMarshal.GetReference(privateKey))
-                {
-                    return secp256k1_ecdh.Value(_ctx, resPtr, pubPtr, privPtr, fp, data) == 1;
-                }
-            }
-            finally
-            {
-                gch.Free();
+                return secp256k1_ecdh.Value(_ctx, resPtr, pubPtr, privPtr, hashFunctionPtr, data) == 1;
             }
         }
 

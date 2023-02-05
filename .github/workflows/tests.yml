@@ -39,3 +39,18 @@ jobs:
         with:
           files: "**/TestResults/*/*.cobertura.xml"
           verbose: true
+
+  test-net-framework:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, x86]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install dependencies
+        run: dotnet restore Secp256k1.Net.Test
+      - name: Build
+        run: dotnet build Secp256k1.Net.Test --configuration Release --framework net461 --no-restore
+      - name: Test
+        run: dotnet vstest Secp256k1.Net.Test\bin\Release\net461\Secp256k1.Net.Test.dll /Framework:".NETFramework,Version=v4.6.1" /Platform:"${{ matrix.arch }}"

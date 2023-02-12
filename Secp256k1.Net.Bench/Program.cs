@@ -7,7 +7,7 @@ using SHA256 = System.Security.Cryptography.SHA256;
 
 namespace Secp256k1Net.Bench
 {
-    [SimpleJob(RuntimeMoniker.HostProcess)]
+    [CsvMeasurementsExporter]
     public class EcdsaSignVerify
     {
         private readonly byte[] privKey;

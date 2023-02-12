@@ -16,7 +16,6 @@ jobs:
           { framework: net6.0, version: '6.0.x' },
           { framework: net7.0, version: '7.0.x' }
         ]
-
     steps:
       - uses: actions/checkout@v3
       - name: Setup .NET Core SDK ${{ matrix.dotnet.version }}
@@ -54,3 +53,30 @@ jobs:
         run: dotnet build Secp256k1.Net.Test --configuration Release --framework net461 --no-restore
       - name: Test
         run: dotnet vstest Secp256k1.Net.Test\bin\Release\net461\Secp256k1.Net.Test.dll /Framework:".NETFramework,Version=v4.6.1" /Platform:"${{ matrix.arch }}"
+
+  benchmark:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+        dotnet: [
+          { framework: net7.0, version: '7.0.x' }
+        ]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup .NET Core SDK ${{ matrix.dotnet.version }}
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{ matrix.dotnet.version }}
+      - name: Install dependencies
+        run: dotnet restore Secp256k1.Net.Bench
+      - name: Build
+        run: dotnet build Secp256k1.Net.Bench --configuration Release --framework ${{ matrix.dotnet.framework }} --no-restore
+      - name: Run bench
+        run: dotnet run --project Secp256k1.Net.Bench --configuration Release --framework ${{ matrix.dotnet.framework }} --no-build
+      - name: Upload report
+        uses: actions/upload-artifact@v3
+        with:
+          name: benchmarks-${{ matrix.os }}-${{ matrix.dotnet.framework }}-report
+          path: BenchmarkDotNet.Artifacts/results/*

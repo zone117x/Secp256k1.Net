@@ -11,7 +11,6 @@ namespace Secp256k1Net
     /// </summary>
     /// <param name="flags">which parts of the context to initialize.</param>
     /// <returns>a newly created context object.</returns>
-    [SymbolName(nameof(secp256k1_context_create))]
     public delegate IntPtr secp256k1_context_create(uint flags);
     
     
@@ -29,7 +28,6 @@ namespace Secp256k1Net
     /// <param name="ctx">ctx: an existing context to destroy (cannot be NULL).</param>
     /// <param name="fun">fun: illegal callback function.</param>
     /// <param name="data">data: callback marker, it is set by user together with callback.</param>
-    [SymbolName(nameof(secp256k1_context_set_illegal_callback))]
     public unsafe delegate void secp256k1_context_set_illegal_callback(IntPtr ctx, ErrorCallbackDelegate fun, void* data);
 
     /// <summary>
@@ -38,14 +36,12 @@ namespace Secp256k1Net
     /// <param name="ctx">ctx: an existing context to destroy (cannot be NULL).</param>
     /// <param name="fun">fun: illegal callback function.</param>
     /// <param name="data">data: callback marker, it is set by user together with callback.</param>
-    [SymbolName(nameof(secp256k1_context_set_error_callback))]
     public unsafe delegate void secp256k1_context_set_error_callback(IntPtr ctx, ErrorCallbackDelegate fun, void* data);
     
     /// <summary>
     /// Destroy a secp256k1 context object. The context pointer may not be used afterwards.
     /// </summary>
     /// <param name="ctx">ctx: an existing context to destroy (cannot be NULL).</param>
-    [SymbolName(nameof(secp256k1_context_destroy))]
     public delegate void secp256k1_context_destroy(IntPtr ctx);
 
     /// <summary>
@@ -61,7 +57,6 @@ namespace Secp256k1Net
     /// 1: signature created
     /// 0: the nonce generation function failed, or the private key was invalid.
     /// </returns>
-    [SymbolName(nameof(secp256k1_ecdsa_sign_recoverable))]
     public unsafe delegate int secp256k1_ecdsa_sign_recoverable(IntPtr ctx,
         void* sig,      // secp256k1_ecdsa_recoverable_signature *sig 
         void* msg32,    // const unsigned char* msg32
@@ -80,7 +75,6 @@ namespace Secp256k1Net
     /// 1: secret was valid, public key stores
     /// 0: secret was invalid, try again
     /// </returns>
-    [SymbolName(nameof(secp256k1_ec_pubkey_create))]
     public unsafe delegate int secp256k1_ec_pubkey_create(IntPtr ctx,
         void* pubKeyOut,    // secp256k1_pubkey *pubkey,
         void* privKeyIn     // const unsigned char *seckey
@@ -97,7 +91,6 @@ namespace Secp256k1Net
     /// <param name="input">pointer to a serialized public key.</param>
     /// <param name="inputlen">length of the array pointed to by input</param>
     /// <returns>1 if the public key was fully valid, 0 if the public key could not be parsed or is invalid.</returns>
-    [SymbolName(nameof(secp256k1_ec_pubkey_parse))]
     public unsafe delegate int secp256k1_ec_pubkey_parse(IntPtr ctx,
         void* pubkey,   // secp256k1_pubkey* pubkey,  
         void* input,    // const unsigned char* input,
@@ -113,7 +106,6 @@ namespace Secp256k1Net
     /// <param name="pubkey">a pointer to a secp256k1_pubkey containing an initialized public key.</param>
     /// <param name="flags">SECP256K1_EC_COMPRESSED if serialization should be in compressed format, otherwise SECP256K1_EC_UNCOMPRESSED.</param>
     /// <returns>1 always</returns>
-    [SymbolName(nameof(secp256k1_ec_pubkey_serialize))]
     public unsafe delegate int secp256k1_ec_pubkey_serialize(IntPtr ctx,
         void* output,       // unsigned char* output
         ref uint outputlen, // size_t *outputlen
@@ -127,7 +119,6 @@ namespace Secp256k1Net
     /// <param name="ctx">a secp256k1 context object.</param>
     /// <param name="seckey">Pointer to a 32-byte secret key.</param>
     /// <returns>1 if secret key is valid, 0 if secret key is invalid.</returns>
-    [SymbolName(nameof(secp256k1_ec_seckey_verify))]
     public unsafe delegate int secp256k1_ec_seckey_verify(IntPtr ctx,
         void* seckey // const unsigned char* seckey
     );
@@ -139,7 +130,6 @@ namespace Secp256k1Net
     /// <param name="sigout">(Output) pointer to an array where the normalized signature will be placed (cannot be NULL)</param>
     /// <param name="sigin">(Input) pointer to an array where a signature to normalize resides (cannot be NULL)</param>
     /// <returns>1: correct signature, 0: incorrect or unparseable signature</returns>
-    [SymbolName(nameof(secp256k1_ecdsa_signature_normalize))]
     public unsafe delegate int secp256k1_ecdsa_signature_normalize(IntPtr ctx,
         void* sigout,   // secp256k1_ecdsa_signature* sigout
         void* sigin     // const secp256k1_ecdsa_signature* sigin
@@ -158,11 +148,28 @@ namespace Secp256k1Net
     /// <param name="input">(Input) pointer to an array where a signature to parse resides (cannot be NULL)</param>
     /// <param name="inputlen">length of the array pointed to by input</param>
     /// <returns>1: correct signature, 0: incorrect or unparseable signature</returns>
-    [SymbolName(nameof(secp256k1_ecdsa_signature_parse_der))]
     public unsafe delegate int secp256k1_ecdsa_signature_parse_der(IntPtr ctx,
         void* sig,    // secp256k1_ecdsa_signature* sig
         void* input,  // const unsigned char *input
         uint inputlen // size_t inputlen
+    );
+
+    /// <summary>
+    /// Parse an ECDSA signature in compact (64 bytes) format.
+    /// The signature must consist of a 32-byte big endian R value, followed by a
+    /// 32-byte big endian S value. If R or S fall outside of[0..order - 1], the
+    /// encoding is invalid. R and S with value 0 are allowed in the encoding.
+    /// After the call, sig will always be initialized.If parsing failed or R or
+    /// S are zero, the resulting sig value is guaranteed to fail verification for
+    /// any message and public key.
+    /// </summary>
+    /// <param name="ctx">a secp256k1 context object (cannot be NULL)</param>
+    /// <param name="output">(Output) pointer to a signature object (cannot be NULL)</param>    
+    /// <param name="sig">(Input) pointer to the 64-byte array to parse (cannot be NULL)</param>
+    /// <returns>1: correct signature, 0: incorrect or unserializeble signature</returns>
+    public unsafe delegate int secp256k1_ecdsa_signature_parse_compact(IntPtr ctx,
+        void* output, // secp256k1_ecdsa_signature* sig (64 bytes)
+        void* sig // const unsigned char* input64
     );
 
     /// <summary>
@@ -175,11 +182,22 @@ namespace Secp256k1Net
     /// <param name="outputlen">which is initially set to the size of output, and is overwritten with the written size (cannot be NULL)</param>
     /// <param name="sig">(Input) pointer to an array where a signature to parse resides (cannot be NULL)</param>
     /// <returns>1: correct signature, 0: incorrect or unserializeble signature</returns>
-    [SymbolName(nameof(secp256k1_ecdsa_signature_serialize_der))]
     public unsafe delegate int secp256k1_ecdsa_signature_serialize_der(IntPtr ctx,
         void* output, // unsigned char *output
         ref uint outputlen, // size_t *outputlen
         void* sig  // const secp256k1_ecdsa_signature* sig        
+    );
+
+    /// <summary>
+    /// Serialize an ECDSA signature in compact (64 byte) format.
+    /// </summary>
+    /// <param name="ctx">a secp256k1 context object (cannot be NULL)</param>
+    /// <param name="output">(Output) a pointer to a 64-byte array to store the compact serialization (cannot be NULL)</param>    
+    /// <param name="sig">(Input) a pointer to an initialized signature object (cannot be NULL)</param>
+    /// <returns>1: correct signature, 0: incorrect or unserializeble signature</returns>
+    public unsafe delegate int secp256k1_ecdsa_signature_serialize_compact(IntPtr ctx,
+        void* output, // unsigned char* output64
+        void* sig // const secp256k1_ecdsa_signature* sig
     );
 
     /// <summary>
@@ -190,7 +208,6 @@ namespace Secp256k1Net
     /// <param name="recid">(Output) a pointer to an integer to hold the recovery id (can be NULL).</param>
     /// <param name="sig">a pointer to an initialized signature object (cannot be NULL).</param>
     /// <returns>1 always</returns>
-    [SymbolName(nameof(secp256k1_ecdsa_recoverable_signature_serialize_compact))]
     public unsafe delegate int secp256k1_ecdsa_recoverable_signature_serialize_compact(IntPtr ctx,
         void* output64, // unsigned char* output64
         ref int recid,  // int* recid
@@ -208,7 +225,6 @@ namespace Secp256k1Net
     /// 1: public key successfully recovered (which guarantees a correct signature).
     /// 0: otherwise.
     /// </returns>
-    [SymbolName(nameof(secp256k1_ecdsa_recover))]
     public unsafe delegate int secp256k1_ecdsa_recover(IntPtr ctx,
         void* pubkey,   // secp256k1_pubkey* pubkey
         void* sig,      // const secp256k1_ecdsa_recoverable_signature* sig
@@ -223,7 +239,6 @@ namespace Secp256k1Net
     /// <param name="input64">a pointer to a 64-byte compact signature</param>
     /// <param name="recid">the recovery id (0, 1, 2 or 3)</param>
     /// <returns>1 when the signature could be parsed, 0 otherwise</returns>
-    [SymbolName(nameof(secp256k1_ecdsa_recoverable_signature_parse_compact))]
     public unsafe delegate int secp256k1_ecdsa_recoverable_signature_parse_compact(IntPtr ctx,
         void* sig,      // secp256k1_ecdsa_recoverable_signature* sig
         void* input64,  // const unsigned char* input64
@@ -244,7 +259,6 @@ namespace Secp256k1Net
     /// <param name="msg32">the 32-byte message hash being verified (cannot be NULL)</param>
     /// <param name="pubkey">pointer to an initialized public key to verify with (cannot be NULL)</param>
     /// <returns>1: correct signature, 0: incorrect or unparseable signature</returns>
-    [SymbolName(nameof(secp256k1_ecdsa_verify))]
     public unsafe delegate int secp256k1_ecdsa_verify(IntPtr ctx,
         void* sig,      // const secp256k1_ecdsa_signature *sig,
         void* msg32,    // const unsigned char *msg32,
@@ -262,7 +276,6 @@ namespace Secp256k1Net
     /// <param name="noncefp">Pointer to a nonce generation function. If NULL, secp256k1_nonce_function_default is used.</param>
     /// <param name="ndata">Pointer to arbitrary data used by the nonce generation function (can be NULL).</param>
     /// <returns>1: signature created, 0: the nonce generation function failed, or the private key was invalid.</returns>
-    [SymbolName(nameof(secp256k1_ecdsa_sign))]
     public unsafe delegate int secp256k1_ecdsa_sign(IntPtr ctx,
         void* sig,      // secp256k1_ecdsa_signature *sig
         void* msg32,    // const unsigned char *msg32
@@ -281,7 +294,6 @@ namespace Secp256k1Net
     /// <param name="hashfp">Pointer to a hash function. If NULL, secp256k1_ecdh_hash_function_sha256 is used.</param>
     /// <param name="data">Arbitrary data pointer that is passed through.</param>
     /// <returns>1: exponentiation was successful, 0: scalar was invalid(zero or overflow)</returns>
-    [SymbolName(nameof(secp256k1_ecdh))]
     public unsafe delegate int secp256k1_ecdh(IntPtr ctx,
         void* output,   // unsigned char *output
         void* pubkey,   // const secp256k1_pubkey *pubkey

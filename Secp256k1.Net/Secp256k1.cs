@@ -34,24 +34,46 @@ namespace Secp256k1Net
         public const int SECRET_LENGTH = 32;
 
 
-        static readonly Lazy<secp256k1_context_create> secp256k1_context_create;
-        static readonly Lazy<secp256k1_context_set_illegal_callback> secp256k1_context_set_illegal_callback;
-        static readonly Lazy<secp256k1_context_set_error_callback> secp256k1_context_set_error_callback;
-        static readonly Lazy<secp256k1_context_destroy> secp256k1_context_destroy;
-        static readonly Lazy<secp256k1_ec_pubkey_create> secp256k1_ec_pubkey_create;
-        static readonly Lazy<secp256k1_ec_seckey_verify> secp256k1_ec_seckey_verify;
-        static readonly Lazy<secp256k1_ec_pubkey_serialize> secp256k1_ec_pubkey_serialize;
-        static readonly Lazy<secp256k1_ec_pubkey_parse> secp256k1_ec_pubkey_parse;
-        static readonly Lazy<secp256k1_ecdsa_recoverable_signature_parse_compact> secp256k1_ecdsa_recoverable_signature_parse_compact;
-        static readonly Lazy<secp256k1_ecdsa_recoverable_signature_serialize_compact> secp256k1_ecdsa_recoverable_signature_serialize_compact;
-        static readonly Lazy<secp256k1_ecdsa_sign_recoverable> secp256k1_ecdsa_sign_recoverable;
-        static readonly Lazy<secp256k1_ecdsa_sign> secp256k1_ecdsa_sign;
-        static readonly Lazy<secp256k1_ecdsa_recover> secp256k1_ecdsa_recover;
-        static readonly Lazy<secp256k1_ecdsa_signature_normalize> secp256k1_ecdsa_signature_normalize;
-        static readonly Lazy<secp256k1_ecdsa_signature_parse_der> secp256k1_ecdsa_signature_parse_der;
-        static readonly Lazy<secp256k1_ecdsa_signature_serialize_der> secp256k1_ecdsa_signature_serialize_der;
-        static readonly Lazy<secp256k1_ecdsa_verify> secp256k1_ecdsa_verify;
-        static readonly Lazy<secp256k1_ecdh> secp256k1_ecdh;
+        static readonly Lazy<secp256k1_context_create> secp256k1_context_create
+            = LazyDelegate<secp256k1_context_create>(nameof(secp256k1_context_create));
+        static readonly Lazy<secp256k1_context_set_illegal_callback> secp256k1_context_set_illegal_callback
+            = LazyDelegate<secp256k1_context_set_illegal_callback>(nameof(secp256k1_context_set_illegal_callback));
+        static readonly Lazy<secp256k1_context_set_error_callback> secp256k1_context_set_error_callback
+            = LazyDelegate<secp256k1_context_set_error_callback>(nameof(secp256k1_context_set_error_callback));
+        static readonly Lazy<secp256k1_context_destroy> secp256k1_context_destroy
+            = LazyDelegate<secp256k1_context_destroy>(nameof(secp256k1_context_destroy));
+        static readonly Lazy<secp256k1_ec_pubkey_create> secp256k1_ec_pubkey_create
+            = LazyDelegate<secp256k1_ec_pubkey_create>(nameof(secp256k1_ec_pubkey_create));
+        static readonly Lazy<secp256k1_ec_seckey_verify> secp256k1_ec_seckey_verify
+            = LazyDelegate<secp256k1_ec_seckey_verify>(nameof(secp256k1_ec_seckey_verify));
+        static readonly Lazy<secp256k1_ec_pubkey_serialize> secp256k1_ec_pubkey_serialize
+            = LazyDelegate<secp256k1_ec_pubkey_serialize>(nameof(secp256k1_ec_pubkey_serialize));
+        static readonly Lazy<secp256k1_ec_pubkey_parse> secp256k1_ec_pubkey_parse
+            = LazyDelegate<secp256k1_ec_pubkey_parse>(nameof(secp256k1_ec_pubkey_parse));
+        static readonly Lazy<secp256k1_ecdsa_recoverable_signature_parse_compact> secp256k1_ecdsa_recoverable_signature_parse_compact
+            = LazyDelegate<secp256k1_ecdsa_recoverable_signature_parse_compact>(nameof(secp256k1_ecdsa_recoverable_signature_parse_compact));
+        static readonly Lazy<secp256k1_ecdsa_recoverable_signature_serialize_compact> secp256k1_ecdsa_recoverable_signature_serialize_compact
+            = LazyDelegate<secp256k1_ecdsa_recoverable_signature_serialize_compact>(nameof(secp256k1_ecdsa_recoverable_signature_serialize_compact));
+        static readonly Lazy<secp256k1_ecdsa_sign_recoverable> secp256k1_ecdsa_sign_recoverable
+            = LazyDelegate<secp256k1_ecdsa_sign_recoverable>(nameof(secp256k1_ecdsa_sign_recoverable));
+        static readonly Lazy<secp256k1_ecdsa_sign> secp256k1_ecdsa_sign
+            = LazyDelegate<secp256k1_ecdsa_sign>(nameof(secp256k1_ecdsa_sign));
+        static readonly Lazy<secp256k1_ecdsa_recover> secp256k1_ecdsa_recover
+            = LazyDelegate<secp256k1_ecdsa_recover>(nameof(secp256k1_ecdsa_recover));
+        static readonly Lazy<secp256k1_ecdsa_signature_normalize> secp256k1_ecdsa_signature_normalize
+            = LazyDelegate<secp256k1_ecdsa_signature_normalize>(nameof(secp256k1_ecdsa_signature_normalize));
+        static readonly Lazy<secp256k1_ecdsa_signature_parse_der> secp256k1_ecdsa_signature_parse_der
+            = LazyDelegate<secp256k1_ecdsa_signature_parse_der>(nameof(secp256k1_ecdsa_signature_parse_der));
+        static readonly Lazy<secp256k1_ecdsa_signature_parse_compact> secp256k1_ecdsa_signature_parse_compact
+            = LazyDelegate<secp256k1_ecdsa_signature_parse_compact>(nameof(secp256k1_ecdsa_signature_parse_compact));
+        static readonly Lazy<secp256k1_ecdsa_signature_serialize_der> secp256k1_ecdsa_signature_serialize_der
+            = LazyDelegate<secp256k1_ecdsa_signature_serialize_der>(nameof(secp256k1_ecdsa_signature_serialize_der));
+        static readonly Lazy<secp256k1_ecdsa_signature_serialize_compact> secp256k1_ecdsa_signature_serialize_compact
+            = LazyDelegate<secp256k1_ecdsa_signature_serialize_compact>(nameof(secp256k1_ecdsa_signature_serialize_compact));
+        static readonly Lazy<secp256k1_ecdsa_verify> secp256k1_ecdsa_verify
+            = LazyDelegate<secp256k1_ecdsa_verify>(nameof(secp256k1_ecdsa_verify));
+        static readonly Lazy<secp256k1_ecdh> secp256k1_ecdh
+            = LazyDelegate<secp256k1_ecdh>(nameof(secp256k1_ecdh));
 
         internal const string LIB = "secp256k1";
 
@@ -70,28 +92,6 @@ namespace Secp256k1Net
             Console.Error.WriteLine(message);
         }
 
-        static Secp256k1()
-        {
-            secp256k1_context_create = LazyDelegate<secp256k1_context_create>();
-            secp256k1_context_destroy = LazyDelegate<secp256k1_context_destroy>();
-            secp256k1_context_set_illegal_callback = LazyDelegate<secp256k1_context_set_illegal_callback>();
-            secp256k1_context_set_error_callback = LazyDelegate<secp256k1_context_set_error_callback>();
-            secp256k1_ec_pubkey_create = LazyDelegate<secp256k1_ec_pubkey_create>();
-            secp256k1_ec_seckey_verify = LazyDelegate<secp256k1_ec_seckey_verify>();
-            secp256k1_ec_pubkey_serialize = LazyDelegate<secp256k1_ec_pubkey_serialize>();
-            secp256k1_ec_pubkey_parse = LazyDelegate<secp256k1_ec_pubkey_parse>();
-            secp256k1_ecdsa_recoverable_signature_parse_compact = LazyDelegate<secp256k1_ecdsa_recoverable_signature_parse_compact>();
-            secp256k1_ecdsa_recoverable_signature_serialize_compact = LazyDelegate<secp256k1_ecdsa_recoverable_signature_serialize_compact>();
-            secp256k1_ecdsa_recover = LazyDelegate<secp256k1_ecdsa_recover>();
-            secp256k1_ecdsa_signature_normalize = LazyDelegate<secp256k1_ecdsa_signature_normalize>();
-            secp256k1_ecdsa_signature_parse_der = LazyDelegate<secp256k1_ecdsa_signature_parse_der>();
-            secp256k1_ecdsa_signature_serialize_der = LazyDelegate<secp256k1_ecdsa_signature_serialize_der>();
-            secp256k1_ecdsa_verify = LazyDelegate<secp256k1_ecdsa_verify>();
-            secp256k1_ecdsa_sign = LazyDelegate<secp256k1_ecdsa_sign>();
-            secp256k1_ecdsa_sign_recoverable = LazyDelegate<secp256k1_ecdsa_sign_recoverable>();
-            secp256k1_ecdh = LazyDelegate<secp256k1_ecdh>();
-        }
-
         public Secp256k1(ErrorCallbackDelegate errorCallback = null)
         {
             _ctx = secp256k1_context_create.Value((uint)(Flags.SECP256K1_CONTEXT_SIGN | Flags.SECP256K1_CONTEXT_VERIFY));
@@ -99,11 +99,10 @@ namespace Secp256k1Net
             SetErrorCallback(errorCallback ?? DefaultErrorCallback, null);
         }
 
-        static Lazy<TDelegate> LazyDelegate<TDelegate>()
+        static Lazy<TDelegate> LazyDelegate<TDelegate>(string symbol)
         {
             return new Lazy<TDelegate>(() =>
             {
-                var symbol = SymbolNameCache<TDelegate>.SymbolName;
                 return LoadLibNative.GetDelegate<TDelegate>(_libPtr.Value, symbol);
             }, isThreadSafe: false);
         }
@@ -383,7 +382,6 @@ namespace Secp256k1Net
         /// <param name="signatureOutput">(Output) a signature object</param>
         /// <param name="signatureInput">(Input) a signature to be parsed</param>
         /// <returns>True when the signature could be parsed, false otherwise.</returns>       
-
         public bool SignatureParseDer(Span<byte> signatureOutput, Span<byte> signatureInput)
         {
             if (signatureOutput.Length < SIGNATURE_LENGTH)
@@ -408,7 +406,6 @@ namespace Secp256k1Net
         /// <param name="signatureInput">(Input) a signature to be parsed</param>
         /// <param name="singatureOutputLength">(Output) lenght of serialized DER signature</param>
         /// <returns>True when the signature could be serialized, false otherwise.</returns>
-
         public bool SignatureSerializeDer(Span<byte> signatureOutput, Span<byte> signatureInput, out int singatureOutputLength)
         {                
             if (signatureOutput.Length < SERIALIZED_DER_SIGNATURE_MAX_SIZE)
@@ -423,6 +420,64 @@ namespace Secp256k1Net
             {
                 var result = secp256k1_ecdsa_signature_serialize_der.Value(_ctx, sig, ref sigOutputLength, input);
                 singatureOutputLength = (int)sigOutputLength;
+                return result == 1;
+            }
+        }
+
+        /// <summary>
+        /// Serialize an ECDSA signature in compact (64 byte) format.
+        /// </summary>
+        /// <param name="signatureOutput">(Output) a 64-byte array to store the compact serialization</param>
+        /// <param name="signatureInput">(Input) an initialized signature object</param>
+        /// <returns>True when the signature could be serialized, false otherwise.</returns>
+        public bool SignatureSerializeCompact(Span<byte> signatureOutput, Span<byte> signatureInput)
+        {
+            if (signatureOutput.Length < SERIALIZED_SIGNATURE_SIZE)
+            {
+                throw new ArgumentException($"{nameof(signatureOutput)} must be {SIGNATURE_LENGTH} bytes");
+            }
+
+            if (signatureInput.Length < SIGNATURE_LENGTH)
+            {
+                throw new ArgumentException($"{nameof(signatureInput)} must be {SIGNATURE_LENGTH} bytes");
+            }
+
+            fixed (byte* output = &MemoryMarshal.GetReference(signatureOutput),
+                sig = &MemoryMarshal.GetReference(signatureInput))
+            {
+                var result = secp256k1_ecdsa_signature_serialize_compact.Value(_ctx, output, sig);
+                return result == 1;
+            }
+        }
+
+        /// <summary>
+        /// Parse an ECDSA signature in compact (64 bytes) format.
+        /// The signature must consist of a 32-byte big endian R value, followed by a
+        /// 32-byte big endian S value. If R or S fall outside of[0..order - 1], the
+        /// encoding is invalid. R and S with value 0 are allowed in the encoding.
+        /// After the call, sig will always be initialized.If parsing failed or R or
+        /// S are zero, the resulting sig value is guaranteed to fail verification for
+        /// any message and public key.
+        /// </summary>
+        /// <param name="signatureOutput">(Output) a 64-byte array to store the parsed signature</param>
+        /// <param name="signatureInput">(Input) a 64-byte array of the serialized signature</param>
+        /// <returns>True when the signature could be parsed, false otherwise.</returns>
+        public bool SignatureParseCompact(Span<byte> signatureOutput, Span<byte> signatureInput)
+        {
+            if (signatureOutput.Length < SIGNATURE_LENGTH)
+            {
+                throw new ArgumentException($"{nameof(signatureOutput)} must be {SIGNATURE_LENGTH} bytes");
+            }
+
+            if (signatureInput.Length < SERIALIZED_SIGNATURE_SIZE)
+            {
+                throw new ArgumentException($"{nameof(signatureInput)} must be {SIGNATURE_LENGTH} bytes");
+            }
+
+            fixed (byte* output = &MemoryMarshal.GetReference(signatureOutput),
+                sig = &MemoryMarshal.GetReference(signatureInput))
+            {
+                var result = secp256k1_ecdsa_signature_parse_compact.Value(_ctx, output, sig);
                 return result == 1;
             }
         }

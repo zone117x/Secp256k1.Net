@@ -110,3 +110,111 @@ Assert.Equal(Convert.ToHexString(derSignature), Convert.ToHexString(derSignature
 ```
 
 See the [tests project](Secp256k1.Net.Test/Tests.cs) for more examples. 
+
+# Benchmarks
+
+``` ini
+
+BenchmarkDotNet=v0.13.4, OS=macOS Monterey 12.6.2 (21G320) [Darwin 21.6.0]
+Apple M1 Pro, 1 CPU, 10 logical and 10 physical cores
+.NET SDK=7.0.102
+  [Host]     : .NET 7.0.2 (7.0.222.60605), Arm64 RyuJIT AdvSIMD
+  DefaultJob : .NET 7.0.2 (7.0.222.60605), Arm64 RyuJIT AdvSIMD
+
+
+```
+|       Method |       feature |        Mean |     Error |    StdDev | Ratio | RatioSD |
+|------------- |-------------- |------------:|----------:|----------:|------:|--------:|
+| **Secp256k1Net** |      **SignOnly** |    **53.00 μs** |  **0.044 μs** |  **0.037 μs** |  **1.00** |    **0.00** |
+|     Nbitcoin |      SignOnly |   186.25 μs |  0.255 μs |  0.226 μs |  3.51 |    0.01 |
+|    Nethereum |      SignOnly |   579.06 μs |  1.272 μs |  0.993 μs | 10.93 |    0.02 |
+| BouncyCastle |      SignOnly |   582.83 μs |  6.968 μs |  5.818 μs | 11.00 |    0.11 |
+|     Chainers |      SignOnly |   778.34 μs | 15.176 μs | 14.905 μs | 14.72 |    0.30 |
+|    StarkBank |      SignOnly | 1,800.91 μs |  4.751 μs |  4.444 μs | 34.00 |    0.10 |
+|              |               |             |           |           |       |         |
+| **Secp256k1Net** | **SignAndVerify** |    **90.97 μs** |  **0.084 μs** |  **0.075 μs** |  **1.00** |    **0.00** |
+|     Nbitcoin | SignAndVerify |   373.22 μs |  1.822 μs |  1.521 μs |  4.10 |    0.02 |
+|    Nethereum | SignAndVerify | 1,679.02 μs |  3.984 μs |  3.327 μs | 18.46 |    0.04 |
+| BouncyCastle | SignAndVerify | 1,701.31 μs | 18.157 μs | 16.985 μs | 18.72 |    0.18 |
+|    StarkBank | SignAndVerify | 5,315.49 μs | 15.796 μs | 14.002 μs | 58.43 |    0.15 |
+
+---
+
+``` ini
+
+BenchmarkDotNet=v0.13.4, OS=macOS Monterey 12.6.3 (21G419) [Darwin 21.6.0]
+Intel Xeon CPU E5-1650 v2 3.50GHz (Max: 3.34GHz), 1 CPU, 3 logical and 3 physical cores
+.NET SDK=7.0.102
+  [Host]     : .NET 7.0.2 (7.0.222.60605), X64 RyuJIT AVX
+  DefaultJob : .NET 7.0.2 (7.0.222.60605), X64 RyuJIT AVX
+
+
+```
+|       Method |       feature |        Mean |      Error |     StdDev |      Median | Ratio | RatioSD |
+|------------- |-------------- |------------:|-----------:|-----------:|------------:|------:|--------:|
+| **Secp256k1Net** |      **SignOnly** |    **97.17 μs** |   **4.112 μs** |  **11.666 μs** |    **93.27 μs** |  **1.00** |    **0.00** |
+|     Nbitcoin |      SignOnly |   362.74 μs |  15.863 μs |  45.769 μs |   357.29 μs |  3.79 |    0.65 |
+|    Nethereum |      SignOnly | 1,122.70 μs |  28.246 μs |  78.740 μs | 1,098.21 μs | 11.71 |    1.46 |
+| BouncyCastle |      SignOnly | 1,079.60 μs |  21.453 μs |  43.823 μs | 1,067.88 μs | 11.18 |    1.36 |
+|     Chainers |      SignOnly | 1,300.33 μs |  23.165 μs |  30.121 μs | 1,301.86 μs | 12.49 |    1.65 |
+|    StarkBank |      SignOnly | 2,564.26 μs |  41.055 μs |  40.322 μs | 2,566.36 μs | 25.16 |    2.97 |
+|              |               |             |            |            |             |       |         |
+| **Secp256k1Net** | **SignAndVerify** |   **146.25 μs** |   **2.679 μs** |   **2.506 μs** |   **145.54 μs** |  **1.00** |    **0.00** |
+|     Nbitcoin | SignAndVerify |   724.20 μs |   7.401 μs |   6.561 μs |   723.84 μs |  4.95 |    0.09 |
+|    Nethereum | SignAndVerify | 3,048.38 μs |  59.507 μs |  55.663 μs | 3,058.23 μs | 20.85 |    0.57 |
+| BouncyCastle | SignAndVerify | 2,997.17 μs |  51.521 μs |  45.672 μs | 2,999.00 μs | 20.48 |    0.41 |
+|    StarkBank | SignAndVerify | 8,008.58 μs | 159.859 μs | 304.149 μs | 8,022.61 μs | 53.30 |    2.05 |
+
+---
+
+``` ini
+
+BenchmarkDotNet=v0.13.4, OS=ubuntu 22.04
+Intel Xeon Platinum 8370C CPU 2.80GHz, 1 CPU, 2 logical and 2 physical cores
+.NET SDK=7.0.102
+  [Host]     : .NET 7.0.2 (7.0.222.60605), X64 RyuJIT AVX2
+  DefaultJob : .NET 7.0.2 (7.0.222.60605), X64 RyuJIT AVX2
+
+
+```
+|       Method |       feature |        Mean |     Error |    StdDev | Ratio | RatioSD |
+|------------- |-------------- |------------:|----------:|----------:|------:|--------:|
+| **Secp256k1Net** |      **SignOnly** |    **88.61 μs** |  **0.047 μs** |  **0.041 μs** |  **1.00** |    **0.00** |
+|     Nbitcoin |      SignOnly |   303.01 μs |  0.478 μs |  0.447 μs |  3.42 |    0.01 |
+|    Nethereum |      SignOnly |   988.51 μs |  4.649 μs |  4.348 μs | 11.16 |    0.05 |
+| BouncyCastle |      SignOnly | 1,005.06 μs |  4.370 μs |  4.087 μs | 11.35 |    0.05 |
+|     Chainers |      SignOnly | 1,545.85 μs | 29.765 μs | 29.233 μs | 17.42 |    0.35 |
+|    StarkBank |      SignOnly | 2,441.18 μs |  5.709 μs |  5.340 μs | 27.55 |    0.06 |
+|              |               |             |           |           |       |         |
+| **Secp256k1Net** | **SignAndVerify** |   **146.08 μs** |  **0.047 μs** |  **0.039 μs** |  **1.00** |    **0.00** |
+|     Nbitcoin | SignAndVerify |   631.46 μs |  0.782 μs |  0.693 μs |  4.32 |    0.01 |
+|    Nethereum | SignAndVerify | 2,800.69 μs | 19.084 μs | 17.851 μs | 19.17 |    0.13 |
+| BouncyCastle | SignAndVerify | 2,878.09 μs | 16.666 μs | 14.774 μs | 19.71 |    0.10 |
+|    StarkBank | SignAndVerify | 7,121.17 μs | 13.625 μs | 12.745 μs | 48.77 |    0.08 |
+
+---
+
+``` ini
+
+BenchmarkDotNet=v0.13.4, OS=Windows 10 (10.0.20348.1487), VM=Hyper-V
+Intel Xeon CPU E5-2673 v4 2.30GHz, 1 CPU, 2 logical and 2 physical cores
+.NET SDK=7.0.102
+  [Host]     : .NET 7.0.2 (7.0.222.60605), X64 RyuJIT AVX2
+  DefaultJob : .NET 7.0.2 (7.0.222.60605), X64 RyuJIT AVX2
+
+
+```
+|       Method |       feature |       Mean |     Error |    StdDev | Ratio | RatioSD |
+|------------- |-------------- |-----------:|----------:|----------:|------:|--------:|
+| **Secp256k1Net** |      **SignOnly** |   **165.8 μs** |   **3.28 μs** |   **3.07 μs** |  **1.00** |    **0.00** |
+|     Nbitcoin |      SignOnly |   374.1 μs |   7.43 μs |   8.84 μs |  2.25 |    0.06 |
+|    Nethereum |      SignOnly | 1,206.2 μs |  20.57 μs |  20.21 μs |  7.28 |    0.21 |
+| BouncyCastle |      SignOnly | 1,200.1 μs |  20.21 μs |  18.91 μs |  7.24 |    0.17 |
+|     Chainers |      SignOnly | 1,613.4 μs |  31.76 μs |  50.38 μs |  9.78 |    0.31 |
+|    StarkBank |      SignOnly | 3,341.0 μs |  63.47 μs |  73.09 μs | 20.17 |    0.57 |
+|              |               |            |           |           |       |         |
+| **Secp256k1Net** | **SignAndVerify** |   **274.4 μs** |   **5.30 μs** |   **7.26 μs** |  **1.00** |    **0.00** |
+|     Nbitcoin | SignAndVerify |   807.3 μs |  16.02 μs |  32.00 μs |  3.00 |    0.16 |
+|    Nethereum | SignAndVerify | 3,490.7 μs |  68.01 μs | 101.79 μs | 12.74 |    0.47 |
+| BouncyCastle | SignAndVerify | 3,438.9 μs |  68.07 μs | 109.93 μs | 12.52 |    0.52 |
+|    StarkBank | SignAndVerify | 9,331.1 μs | 184.57 μs | 318.37 μs | 34.38 |    1.49 |

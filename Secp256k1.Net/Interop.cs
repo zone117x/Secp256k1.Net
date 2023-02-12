@@ -183,6 +183,19 @@ namespace Secp256k1Net
     );
 
     /// <summary>
+    /// Serialize an ECDSA signature in compact (64 byte) format.
+    /// </summary>
+    /// <param name="ctx">a secp256k1 context object (cannot be NULL)</param>
+    /// <param name="output">(Output) a pointer to a 64-byte array to store the compact serialization (cannot be NULL)</param>    
+    /// <param name="sig">(Input) a pointer to an initialized signature object (cannot be NULL)</param>
+    /// <returns>1: correct signature, 0: incorrect or unserializeble signature</returns>
+    [SymbolName(nameof(secp256k1_ecdsa_signature_serialize_compact))]
+    public unsafe delegate int secp256k1_ecdsa_signature_serialize_compact(IntPtr ctx,
+        void* output, // unsigned char* output64
+        void* sig // const secp256k1_ecdsa_signature* sig
+    );
+
+    /// <summary>
     /// Serialize an ECDSA signature in compact format (64 bytes + recovery id).
     /// </summary>
     /// <param name="ctx">a secp256k1 context object</param>

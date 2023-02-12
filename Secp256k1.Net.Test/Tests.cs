@@ -165,6 +165,29 @@ namespace Secp256k1Net.Test
         }
 
         [TestMethod]
+        public void SerializeSignature()
+        {
+            using var secp256k1 = new Secp256k1();
+            var keypair = new
+            {
+                PrivateKey = Convert.FromHexString("7ef7543476bf146020cb59f9968a25ec67c3c73dbebad8a0b53a3256170dcdfe"),
+                PublicKey = Convert.FromHexString("2208d5dc41d4f3ed555aff761e9bb0b99fbe6d1503b98711944be6a362242ebfa1c788c7a4e13f6aaa4099f9d2175fc031e5aa3ba08eb280e87dfb43bdae207f")
+            };
+
+            var msgBytes = System.Text.Encoding.UTF8.GetBytes("Hello!!");
+            var msgHash = System.Security.Cryptography.SHA256.Create().ComputeHash(msgBytes);
+            Assert.AreEqual(Secp256k1.HASH_LENGTH, msgHash.Length);
+
+            var signature = new byte[Secp256k1.SIGNATURE_LENGTH];
+            Assert.IsTrue(secp256k1.Sign(signature, msgHash, keypair.PrivateKey));
+
+            var serialiedSignature = new byte[Secp256k1.SIGNATURE_LENGTH];
+            Assert.IsTrue(secp256k1.SignatureSerializeCompact(serialiedSignature, signature));
+
+            // TODO: secp256k1_ecdsa_signature_parse_compact
+        }
+
+        [TestMethod]
         public void DerSignatureTest()
         {
             using var secp256k1 = new Secp256k1();

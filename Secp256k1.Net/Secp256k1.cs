@@ -49,6 +49,7 @@ namespace Secp256k1Net
         static readonly Lazy<secp256k1_ecdsa_recover> secp256k1_ecdsa_recover;
         static readonly Lazy<secp256k1_ecdsa_signature_normalize> secp256k1_ecdsa_signature_normalize;
         static readonly Lazy<secp256k1_ecdsa_signature_parse_der> secp256k1_ecdsa_signature_parse_der;
+        static readonly Lazy<secp256k1_ecdsa_signature_parse_compact> secp256k1_ecdsa_signature_parse_compact;
         static readonly Lazy<secp256k1_ecdsa_signature_serialize_der> secp256k1_ecdsa_signature_serialize_der;
         static readonly Lazy<secp256k1_ecdsa_signature_serialize_compact> secp256k1_ecdsa_signature_serialize_compact;
         static readonly Lazy<secp256k1_ecdsa_verify> secp256k1_ecdsa_verify;
@@ -86,6 +87,7 @@ namespace Secp256k1Net
             secp256k1_ecdsa_recover = LazyDelegate<secp256k1_ecdsa_recover>();
             secp256k1_ecdsa_signature_normalize = LazyDelegate<secp256k1_ecdsa_signature_normalize>();
             secp256k1_ecdsa_signature_parse_der = LazyDelegate<secp256k1_ecdsa_signature_parse_der>();
+            secp256k1_ecdsa_signature_parse_compact = LazyDelegate<secp256k1_ecdsa_signature_parse_compact>();
             secp256k1_ecdsa_signature_serialize_der = LazyDelegate<secp256k1_ecdsa_signature_serialize_der>();
             secp256k1_ecdsa_signature_serialize_compact = LazyDelegate<secp256k1_ecdsa_signature_serialize_compact>();
             secp256k1_ecdsa_verify = LazyDelegate<secp256k1_ecdsa_verify>();
@@ -449,6 +451,38 @@ namespace Secp256k1Net
                 sig = &MemoryMarshal.GetReference(signatureInput))
             {
                 var result = secp256k1_ecdsa_signature_serialize_compact.Value(_ctx, output, sig);
+                return result == 1;
+            }
+        }
+
+        /// <summary>
+        /// Parse an ECDSA signature in compact (64 bytes) format.
+        /// The signature must consist of a 32-byte big endian R value, followed by a
+        /// 32-byte big endian S value. If R or S fall outside of[0..order - 1], the
+        /// encoding is invalid. R and S with value 0 are allowed in the encoding.
+        /// After the call, sig will always be initialized.If parsing failed or R or
+        /// S are zero, the resulting sig value is guaranteed to fail verification for
+        /// any message and public key.
+        /// </summary>
+        /// <param name="signatureOutput">(Output) a 64-byte array to store the parsed signature</param>
+        /// <param name="signatureInput">(Input) a 64-byte array of the serialized signature</param>
+        /// <returns>True when the signature could be parsed, false otherwise.</returns>
+        public bool SignatureParseCompact(Span<byte> signatureOutput, Span<byte> signatureInput)
+        {
+            if (signatureOutput.Length < SIGNATURE_LENGTH)
+            {
+                throw new ArgumentException($"{nameof(signatureOutput)} must be {SIGNATURE_LENGTH} bytes");
+            }
+
+            if (signatureInput.Length < SERIALIZED_SIGNATURE_SIZE)
+            {
+                throw new ArgumentException($"{nameof(signatureInput)} must be {SIGNATURE_LENGTH} bytes");
+            }
+
+            fixed (byte* output = &MemoryMarshal.GetReference(signatureOutput),
+                sig = &MemoryMarshal.GetReference(signatureInput))
+            {
+                var result = secp256k1_ecdsa_signature_parse_compact.Value(_ctx, output, sig);
                 return result == 1;
             }
         }

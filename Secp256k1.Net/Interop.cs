@@ -166,6 +166,25 @@ namespace Secp256k1Net
     );
 
     /// <summary>
+    /// Parse an ECDSA signature in compact (64 bytes) format.
+    /// The signature must consist of a 32-byte big endian R value, followed by a
+    /// 32-byte big endian S value. If R or S fall outside of[0..order - 1], the
+    /// encoding is invalid. R and S with value 0 are allowed in the encoding.
+    /// After the call, sig will always be initialized.If parsing failed or R or
+    /// S are zero, the resulting sig value is guaranteed to fail verification for
+    /// any message and public key.
+    /// </summary>
+    /// <param name="ctx">a secp256k1 context object (cannot be NULL)</param>
+    /// <param name="output">(Output) pointer to a signature object (cannot be NULL)</param>    
+    /// <param name="sig">(Input) pointer to the 64-byte array to parse (cannot be NULL)</param>
+    /// <returns>1: correct signature, 0: incorrect or unserializeble signature</returns>
+    [SymbolName(nameof(secp256k1_ecdsa_signature_parse_compact))]
+    public unsafe delegate int secp256k1_ecdsa_signature_parse_compact(IntPtr ctx,
+        void* output, // secp256k1_ecdsa_signature* sig (64 bytes)
+        void* sig // const unsigned char* input64
+    );
+
+    /// <summary>
     /// Serialize an ECDSA signature in DER format (72 bytes maximum)
     /// This function will accept any valid ECDSA encoded signature
     /// After the call, output will always be initialized.

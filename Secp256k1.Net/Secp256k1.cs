@@ -32,6 +32,7 @@ namespace Secp256k1Net
         public const int SIGNATURE_LENGTH = 64;
         public const int HASH_LENGTH = 32;
         public const int SECRET_LENGTH = 32;
+        public const int NONCE_LENGTH = 32;
 
 
         static readonly Lazy<secp256k1_context_create> secp256k1_context_create
@@ -74,7 +75,11 @@ namespace Secp256k1Net
             = LazyDelegate<secp256k1_ecdsa_verify>(nameof(secp256k1_ecdsa_verify));
         static readonly Lazy<secp256k1_ecdh> secp256k1_ecdh
             = LazyDelegate<secp256k1_ecdh>(nameof(secp256k1_ecdh));
-
+        static readonly Lazy<secp256k1_ec_pubkey_tweak_mul> secp256k1_ec_pubkey_tweak_mul
+            = LazyDelegate<secp256k1_ec_pubkey_tweak_mul>(nameof(secp256k1_ec_pubkey_tweak_mul));
+        static readonly Lazy<secp256k1_nonce_function_rfc6979> secp256k1_nonce_function_rfc6979
+            = LazyDelegateExternConst<secp256k1_nonce_function_rfc6979>(nameof(secp256k1_nonce_function_rfc6979));
+        
         internal const string LIB = "secp256k1";
 
         public static string LibPath => _libPath.Value;
@@ -104,6 +109,14 @@ namespace Secp256k1Net
             return new Lazy<TDelegate>(() =>
             {
                 return LoadLibNative.GetDelegate<TDelegate>(_libPtr.Value, symbol);
+            }, isThreadSafe: false);
+        }
+        
+        static Lazy<TDelegate> LazyDelegateExternConst<TDelegate>(string symbol)
+        {
+            return new Lazy<TDelegate>(() =>
+            {
+                return LoadLibNative.GetDelegateExternConst<TDelegate>(_libPtr.Value, symbol);
             }, isThreadSafe: false);
         }
 
@@ -622,6 +635,46 @@ namespace Secp256k1Net
             }
         }
 
+        public bool PublicKeyMultiply(Span<byte> publicKey, Span<byte> tweak)
+        {
+            if (publicKey.Length < PUBKEY_LENGTH)
+            {
+                throw new ArgumentException($"{nameof(publicKey)} must be {PUBKEY_LENGTH} bytes");
+            }
+            if (tweak.Length < SECRET_LENGTH)
+            {
+                throw new ArgumentException($"{nameof(tweak)} must be {SECRET_LENGTH} bytes");
+            }
+            fixed (byte* pubPtr = &MemoryMarshal.GetReference(publicKey),
+                   tweakPtr = &MemoryMarshal.GetReference(tweak))
+            {
+                return secp256k1_ec_pubkey_tweak_mul.Value(_ctx, pubPtr, tweakPtr) == 1;
+            }
+        }
+
+        public bool Rfc6979Nonce(Span<byte> nonceOutput, Span<byte> hash, Span<byte> secretKey, Span<byte> algo, Span<byte> data, uint attempt)
+        {
+            if (nonceOutput.Length < NONCE_LENGTH)
+            {
+                throw new ArgumentException($"{nameof(nonceOutput)} must be {NONCE_LENGTH} bytes");
+            }
+            if (hash.Length < HASH_LENGTH)
+            {
+                throw new ArgumentException($"{nameof(hash)} must be {HASH_LENGTH} bytes");
+            }
+            if (secretKey.Length < SECRET_LENGTH)
+            {
+                throw new ArgumentException($"{nameof(secretKey)} must be {SECRET_LENGTH} bytes");
+            }
+            fixed (byte* nonceOutPtr = &MemoryMarshal.GetReference(nonceOutput),
+                   hashPtr = &MemoryMarshal.GetReference(hash),
+                   secPtr = &MemoryMarshal.GetReference(secretKey),
+                   algoPtr = &MemoryMarshal.GetReference(algo),
+                   dataPtr = &MemoryMarshal.GetReference(data))
+            {
+                return secp256k1_nonce_function_rfc6979.Value(nonceOutPtr, hashPtr, secPtr, algoPtr, dataPtr, attempt) == 1;
+            }
+        }
 
         public void Dispose()
         {

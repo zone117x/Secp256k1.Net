@@ -423,6 +423,36 @@ namespace Secp256k1Net.Test
             });
             StringAssert.Contains(exception.Message, "symbol failed");
         }
+
+        [TestMethod]
+        public void PublicKeyMultiplyTest()
+        {
+            using var secp256k1 = new Secp256k1();
+            var publicKey =
+                Convert.FromHexString(
+                    "2208d5dc41d4f3ed555aff761e9bb0b99fbe6d1503b98711944be6a362242ebfa1c788c7a4e13f6aaa4099f9d2175fc031e5aa3ba08eb280e87dfb43bdae207f");
+            var publicKeyOutput =
+                Convert.FromHexString(
+                    "F626FF3EF22B127F75374BCD3202229E5AE12B3FB405E6687AFA6527ED300EA31269CC0E59E0D1E37B8FA56B0EA1435FF7F66EA3391EB94BA31E70C99FD70C38");
+            var tweak = Convert.FromHexString("d8bdb07407bb011137ef7ba6a7f07c6a55c1e3600a6aa138e34ab5c16439ceda");
+            Assert.IsTrue(secp256k1.PublicKeyMultiply(publicKey, tweak));
+            Assert.IsTrue(publicKeyOutput.SequenceEqual(publicKey));
+
+        }
+
+        [TestMethod]
+        public void Rfc6979NonceTest()
+        {
+            // Reference test cases in https://github.com/decred/dcrd/blob/113758cab3304375cbfb7bfbc8e5d75406315d8b/dcrec/secp256k1/nonce_test.go#L40-L143
+            using var secp256k1 = new Secp256k1();
+            var nonce = Convert.FromHexString("154E92760F77AD9AF6B547EDD6F14AD0FAE023EB2221BC8BE2911675D8A686A3");
+            var hash = Convert.FromHexString("0000000000000000000000000000000000000000000000000000000000000001");
+            var secretKey = Convert.FromHexString("0011111111111111111111111111111111111111111111111111111111111111");
+            var nonceOutput = new byte[Secp256k1.NONCE_LENGTH];
+            var s = Convert.ToHexString(nonceOutput);
+            Assert.IsTrue(secp256k1.Rfc6979Nonce(nonceOutput, hash, secretKey, null, null, 0));
+            Assert.IsTrue(nonceOutput.SequenceEqual(nonce));
+        }
     }
 
 #if !NET5_0_OR_GREATER

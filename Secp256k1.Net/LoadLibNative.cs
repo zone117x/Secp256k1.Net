@@ -131,5 +131,32 @@ namespace Secp256k1Net
 
             return Marshal.GetDelegateForFunctionPointer<TDelegate>(functionPtr);
         }
+        public static TDelegate GetDelegateExternConst<TDelegate>(IntPtr libPtr, string symbolName)
+        {
+            IntPtr functionPtr;
+            if (IsWindows)
+            {
+                functionPtr = DynamicLinkingWindows.GetProcAddress(libPtr, symbolName);
+            }
+            else if (IsMacOS)
+            {
+                functionPtr = DynamicLinkingMacOS.dlsym(libPtr, symbolName);
+            }
+            else if (IsLinux)
+            {
+                functionPtr = DynamicLinkingLinux.dlsym(libPtr, symbolName);
+            }
+            else
+            {
+                throw new Exception("Unsupported platform");
+            }
+
+            if (functionPtr == IntPtr.Zero)
+            {
+                throw new Exception($"Library symbol failed, symbol: {symbolName}", GetLastError());
+            }
+
+            return Marshal.GetDelegateForFunctionPointer<TDelegate>(Marshal.ReadIntPtr( functionPtr));
+        }
     }
 }

@@ -302,6 +302,10 @@ namespace Secp256k1Net
         IntPtr data      // void *data
     );
 
+    public unsafe delegate int secp256k1_ec_pubkey_tweak_mul(IntPtr ctx, void* pubkey, void* tweak);
+
+    public unsafe delegate int secp256k1_nonce_function_rfc6979(void* nonce32, void* hash, void* seckey, void* algo, void* data, uint attempt);
+
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public unsafe delegate int secp256k1_ecdh_hash_function(void* output, void* x, void* y, IntPtr data);
 

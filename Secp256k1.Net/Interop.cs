@@ -306,6 +306,11 @@ namespace Secp256k1Net
 
     public unsafe delegate int secp256k1_nonce_function_rfc6979(void* nonce32, void* hash, void* seckey, void* algo, void* data, uint attempt);
 
+    public unsafe delegate int secp256k1_ec_pubkey_negate(IntPtr ctx, void* pubkey);
+
+    public unsafe delegate int
+        secp256k1_ec_pubkey_combine(IntPtr ctx, void* outpubkey, IntPtr inpubkeys, uint inputlen);
+
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public unsafe delegate int secp256k1_ecdh_hash_function(void* output, void* x, void* y, IntPtr data);
 

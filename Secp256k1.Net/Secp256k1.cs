@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Secp256k1Net
@@ -79,7 +77,12 @@ namespace Secp256k1Net
             = LazyDelegate<secp256k1_ec_pubkey_tweak_mul>(nameof(secp256k1_ec_pubkey_tweak_mul));
         static readonly Lazy<secp256k1_nonce_function_rfc6979> secp256k1_nonce_function_rfc6979
             = LazyDelegateExternConst<secp256k1_nonce_function_rfc6979>(nameof(secp256k1_nonce_function_rfc6979));
-        
+        static readonly Lazy<secp256k1_ec_pubkey_negate> secp256k1_ec_pubkey_negate =
+            LazyDelegate<secp256k1_ec_pubkey_negate>(nameof(secp256k1_ec_pubkey_negate));
+
+        private static readonly Lazy<secp256k1_ec_pubkey_combine> secp256k1_ec_pubkey_combine =
+            LazyDelegate<secp256k1_ec_pubkey_combine>(nameof(secp256k1_ec_pubkey_combine));
+
         internal const string LIB = "secp256k1";
 
         public static string LibPath => _libPath.Value;
@@ -634,7 +637,52 @@ namespace Secp256k1Net
                 return secp256k1_ecdh.Value(_ctx, resPtr, pubPtr, privPtr, hashFunctionPtr, data) == 1;
             }
         }
-
+        public bool PublicKeysCombine(Span<byte> outPublicKey, Span<byte> publicKey1, Span<byte> publicKey2)
+        {
+            if ( outPublicKey.Length < PUBKEY_LENGTH)
+            {
+                throw new ArgumentException($"{nameof(outPublicKey)} must be {PUBKEY_LENGTH} bytes");
+            }
+            
+            if ( publicKey1.Length < PUBKEY_LENGTH)
+            {
+                throw new ArgumentException($"{nameof(publicKey1)} must be {PUBKEY_LENGTH} bytes");
+            }
+            if ( publicKey2.Length < PUBKEY_LENGTH)
+            {
+                throw new ArgumentException($"{nameof(publicKey2)} must be {PUBKEY_LENGTH} bytes");
+            }
+            
+            var intPtrSize = Marshal.SizeOf(typeof(IntPtr));
+            var nativeArray = Marshal.AllocHGlobal(intPtrSize * 2);
+            try
+            {
+                fixed (
+                    byte* outPubPtr = &MemoryMarshal.GetReference(outPublicKey),
+                    inPubPtr1 = &MemoryMarshal.GetReference(publicKey1), 
+                    inPubPtr2 = &MemoryMarshal.GetReference(publicKey2))
+                {
+                    Marshal.WriteIntPtr(nativeArray, 0, (IntPtr)inPubPtr1);
+                    Marshal.WriteIntPtr(nativeArray, intPtrSize, (IntPtr)inPubPtr2);
+                    return secp256k1_ec_pubkey_combine.Value(_ctx, outPubPtr, nativeArray, 2) == 1;
+                }
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(nativeArray);
+            }
+        }
+        public bool PublicKeyNegate(Span<byte> publicKey)
+        {
+            if (publicKey.Length < PUBKEY_LENGTH)
+            {
+                throw new ArgumentException($"{nameof(publicKey)} must be {PUBKEY_LENGTH} bytes");
+            }
+            fixed (byte* pubPtr = &MemoryMarshal.GetReference(publicKey))
+            {
+                return secp256k1_ec_pubkey_negate.Value(_ctx, pubPtr) == 1;
+            }
+        }
         public bool PublicKeyMultiply(Span<byte> publicKey, Span<byte> tweak)
         {
             if (publicKey.Length < PUBKEY_LENGTH)

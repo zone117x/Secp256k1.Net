@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Secp256k1Net.Test
@@ -425,12 +426,48 @@ namespace Secp256k1Net.Test
         }
 
         [TestMethod]
+        public void PublicKeyNegateTest()
+        {
+            using var secp256k1 = new Secp256k1();
+            var publicKeyOriginal =
+                Convert.FromHexString(
+                    "2208D5DC41D4F3ED555AFF761E9BB0B99FBE6D1503B98711944BE6A362242EBFA1C788C7A4E13F6AAA4099F9D2175FC031E5AA3BA08EB280E87DFB43BDAE207F");
+            var publicKeyOutput =
+                Convert.FromHexString(
+                    "2208D5DC41D4F3ED555AFF761E9BB0B99FBE6D1503B98711944BE6A362242EBF8E3477385A1EC09555BF66062DE8A03FCE1A55C45F714D7F178204BC4251DF80");
+
+            var publicKey = new byte[publicKeyOriginal.Length];
+            Buffer.BlockCopy(publicKeyOriginal, 0, publicKey, 0, publicKeyOriginal.Length);
+            Assert.IsTrue(secp256k1.PublicKeyNegate(publicKey));
+            Assert.IsTrue(publicKeyOutput.SequenceEqual(publicKey));
+        }
+        
+        [TestMethod]
+        public void PublicKeysCombineTest()
+        {
+            using var secp256k1 = new Secp256k1();
+            var publicKey1 =
+                Convert.FromHexString(
+                    "2208D5DC41D4F3ED555AFF761E9BB0B99FBE6D1503B98711944BE6A362242EBFA1C788C7A4E13F6AAA4099F9D2175FC031E5AA3BA08EB280E87DFB43BDAE207F");
+            var publicKey2 =
+                Convert.FromHexString(
+                    "62127C4563F711169B1D3E56A34F218302A2587C3725BD418B9388933373E095D45EC4D74CA734599598C89D7719BDA5FB799AFEEC89C6940D569E05BD5A1BBA");
+            var expectedPublicKeyOutput =
+                Convert.FromHexString(
+                    "75B39FA41258C450F987CB50CC151AA8FADC7BBFFA2B059C50A74A8434DE00726B635A12A12EEDB61E7736AB39740A5B78D2259EC9DF0692A321043D88156DB5");
+                
+            var publicKeyOutput = new byte[Secp256k1.PUBKEY_LENGTH];
+            Assert.IsTrue(secp256k1.PublicKeysCombine(publicKeyOutput, publicKey1, publicKey2));
+            Assert.IsTrue(publicKeyOutput.SequenceEqual(expectedPublicKeyOutput));
+        }
+        
+        [TestMethod]
         public void PublicKeyMultiplyTest()
         {
             using var secp256k1 = new Secp256k1();
             var publicKey =
                 Convert.FromHexString(
-                    "2208d5dc41d4f3ed555aff761e9bb0b99fbe6d1503b98711944be6a362242ebfa1c788c7a4e13f6aaa4099f9d2175fc031e5aa3ba08eb280e87dfb43bdae207f");
+                    "2208D5DC41D4F3ED555AFF761E9BB0B99FBE6D1503B98711944BE6A362242EBFA1C788C7A4E13F6AAA4099F9D2175FC031E5AA3BA08EB280E87DFB43BDAE207F");
             var publicKeyOutput =
                 Convert.FromHexString(
                     "F626FF3EF22B127F75374BCD3202229E5AE12B3FB405E6687AFA6527ED300EA31269CC0E59E0D1E37B8FA56B0EA1435FF7F66EA3391EB94BA31E70C99FD70C38");

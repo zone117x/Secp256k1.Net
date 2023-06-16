@@ -636,11 +636,20 @@ namespace Secp256k1Net
                 return secp256k1_ecdh.Value(_ctx, resPtr, pubPtr, privPtr, hashFunctionPtr, data) == 1;
             }
         }
-        public bool PublicKeysCombine(Span<byte> outPublicKey, Span<byte> publicKey1, Span<byte> publicKey2)
+
+        /// <summary>
+        /// Adds two public keys.
+        /// </summary>
+        /// <param name="outputPublicKey">The sum public key to be written to.</param>
+        /// <param name="publicKey1">The first public key.</param>
+        /// <param name="publicKey2">The second public key.</param>
+        /// <returns>True if the sum of the public keys is valid, false if the sum of the public keys is not valid.</returns>
+        /// <exception cref="ArgumentException"></exception>
+        public bool PublicKeysCombine(Span<byte> outputPublicKey, Span<byte> publicKey1, Span<byte> publicKey2)
         {
-            if ( outPublicKey.Length < PUBKEY_LENGTH)
+            if ( outputPublicKey.Length < PUBKEY_LENGTH)
             {
-                throw new ArgumentException($"{nameof(outPublicKey)} must be {PUBKEY_LENGTH} bytes");
+                throw new ArgumentException($"{nameof(outputPublicKey)} must be {PUBKEY_LENGTH} bytes");
             }
             
             if ( publicKey1.Length < PUBKEY_LENGTH)
@@ -657,7 +666,7 @@ namespace Secp256k1Net
             try
             {
                 fixed (
-                    byte* outPubPtr = &MemoryMarshal.GetReference(outPublicKey),
+                    byte* outPubPtr = &MemoryMarshal.GetReference(outputPublicKey),
                     inPubPtr1 = &MemoryMarshal.GetReference(publicKey1), 
                     inPubPtr2 = &MemoryMarshal.GetReference(publicKey2))
                 {
@@ -671,6 +680,12 @@ namespace Secp256k1Net
                 Marshal.FreeHGlobal(nativeArray);
             }
         }
+        /// <summary>
+        /// Negates a public key in place.
+        /// </summary>
+        /// <param name="publicKey">The 65 byte public key which will be negated in place.</param>
+        /// <returns>True always.</returns>
+        /// <exception cref="ArgumentException"></exception>
         public bool PublicKeyNegate(Span<byte> publicKey)
         {
             if (publicKey.Length < PUBKEY_LENGTH)
@@ -682,6 +697,14 @@ namespace Secp256k1Net
                 return secp256k1_ec_pubkey_negate.Value(_ctx, pubPtr) == 1;
             }
         }
+
+        /// <summary>
+        /// Multiplies the public key with a 32 byte scalar.
+        /// </summary>
+        /// <param name="publicKey">The public key to be multiplied and the result to be written to.</param>
+        /// <param name="tweak">The 32 byte scalar.</param>
+        /// <returns>True if the arguments are valid and false otherwise.</returns>
+        /// <exception cref="ArgumentException"></exception>
         public bool PublicKeyMultiply(Span<byte> publicKey, Span<byte> tweak)
         {
             if (publicKey.Length < PUBKEY_LENGTH)
@@ -699,6 +722,17 @@ namespace Secp256k1Net
             }
         }
 
+        /// <summary>
+        /// Deterministically generate a 32 byte nonce according to RFC6979 standard.
+        /// </summary>
+        /// <param name="nonceOutput">The 32 byte output nonce to be written to.</param>
+        /// <param name="hash">The 32 byte message hash being verified.</param>
+        /// <param name="secretKey">The 32 byte secret key.</param>
+        /// <param name="algo">A 16 byte array describing the signature algorithm (will be NULL for ECDSA for compatibility).</param>
+        /// <param name="data">Arbitrary data that is passed through.</param>
+        /// <param name="attempt">How many iterations we have tried to find a nonce. This will almost always be 0, but different attempt values are required to result in a different nonce.</param>
+        /// <returns>True if a nonce was successfully generated, false otherwise.</returns>
+        /// <exception cref="ArgumentException"></exception>
         public bool Rfc6979Nonce(Span<byte> nonceOutput, Span<byte> hash, Span<byte> secretKey, Span<byte> algo, Span<byte> data, uint attempt)
         {
             if (nonceOutput.Length < NONCE_LENGTH)

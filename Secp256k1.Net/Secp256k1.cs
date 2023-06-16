@@ -75,8 +75,8 @@ namespace Secp256k1Net
             = LazyDelegate<secp256k1_ecdh>(nameof(secp256k1_ecdh));
         static readonly Lazy<secp256k1_ec_pubkey_tweak_mul> secp256k1_ec_pubkey_tweak_mul
             = LazyDelegate<secp256k1_ec_pubkey_tweak_mul>(nameof(secp256k1_ec_pubkey_tweak_mul));
-        static readonly Lazy<secp256k1_nonce_function_rfc6979> secp256k1_nonce_function_rfc6979
-            = LazyDelegateExternConst<secp256k1_nonce_function_rfc6979>(nameof(secp256k1_nonce_function_rfc6979));
+        static readonly Lazy<secp256k1_nonce_function> secp256k1_nonce_function_rfc6979
+            = LazyDelegate<secp256k1_nonce_function>(nameof(secp256k1_nonce_function_rfc6979), Marshal.ReadIntPtr);
         static readonly Lazy<secp256k1_ec_pubkey_negate> secp256k1_ec_pubkey_negate =
             LazyDelegate<secp256k1_ec_pubkey_negate>(nameof(secp256k1_ec_pubkey_negate));
 
@@ -106,7 +106,6 @@ namespace Secp256k1Net
 
             SetErrorCallback(errorCallback ?? DefaultErrorCallback, null);
         }
-
         static Lazy<TDelegate> LazyDelegate<TDelegate>(string symbol)
         {
             return new Lazy<TDelegate>(() =>
@@ -114,12 +113,12 @@ namespace Secp256k1Net
                 return LoadLibNative.GetDelegate<TDelegate>(_libPtr.Value, symbol);
             }, isThreadSafe: false);
         }
-        
-        static Lazy<TDelegate> LazyDelegateExternConst<TDelegate>(string symbol)
+
+        static Lazy<TDelegate> LazyDelegate<TDelegate>(string symbol, Func<IntPtr, IntPtr> pointerDereferenceFunc)
         {
             return new Lazy<TDelegate>(() =>
             {
-                return LoadLibNative.GetDelegateExternConst<TDelegate>(_libPtr.Value, symbol);
+                return LoadLibNative.GetDelegate<TDelegate>(_libPtr.Value, symbol, pointerDereferenceFunc);
             }, isThreadSafe: false);
         }
 

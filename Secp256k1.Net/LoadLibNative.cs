@@ -104,59 +104,48 @@ namespace Secp256k1Net
             }
         }
 
+        public static IntPtr GetSymbolPointer(IntPtr libPtr, string symbolName)
+        {
+            IntPtr symbolPtr;
+            if (IsWindows)
+            {
+                symbolPtr = DynamicLinkingWindows.GetProcAddress(libPtr, symbolName);
+            }
+            else if (IsMacOS)
+            {
+                symbolPtr = DynamicLinkingMacOS.dlsym(libPtr, symbolName);
+            }
+            else if (IsLinux)
+            {
+                symbolPtr = DynamicLinkingLinux.dlsym(libPtr, symbolName);
+            }
+            else
+            {
+                throw new Exception("Unsupported platform");
+            }
+
+            if (symbolPtr == IntPtr.Zero)
+            {
+                throw new Exception($"Library symbol failed, symbol: {symbolName}", GetLastError());
+            }
+
+            return symbolPtr;
+        }
+
         public static TDelegate GetDelegate<TDelegate>(IntPtr libPtr, string symbolName)
         {
-            IntPtr functionPtr;
-            if (IsWindows)
-            {
-                functionPtr = DynamicLinkingWindows.GetProcAddress(libPtr, symbolName);
-            }
-            else if (IsMacOS)
-            {
-                functionPtr = DynamicLinkingMacOS.dlsym(libPtr, symbolName);
-            }
-            else if (IsLinux)
-            {
-                functionPtr = DynamicLinkingLinux.dlsym(libPtr, symbolName);
-            }
-            else
-            {
-                throw new Exception("Unsupported platform");
-            }
-
-            if (functionPtr == IntPtr.Zero)
-            {
-                throw new Exception($"Library symbol failed, symbol: {symbolName}", GetLastError());
-            }
-
+            var functionPtr = GetSymbolPointer(libPtr, symbolName);
             return Marshal.GetDelegateForFunctionPointer<TDelegate>(functionPtr);
         }
-        public static TDelegate GetDelegateExternConst<TDelegate>(IntPtr libPtr, string symbolName)
+
+        public static TDelegate GetDelegate<TDelegate>(IntPtr libPtr, string symbolName, Func<IntPtr, IntPtr> pointerDereferenceFunc)
         {
-            IntPtr functionPtr;
-            if (IsWindows)
+            var functionPtr = GetSymbolPointer(libPtr, symbolName);
+            if (pointerDereferenceFunc != null)
             {
-                functionPtr = DynamicLinkingWindows.GetProcAddress(libPtr, symbolName);
+                functionPtr = pointerDereferenceFunc(functionPtr);
             }
-            else if (IsMacOS)
-            {
-                functionPtr = DynamicLinkingMacOS.dlsym(libPtr, symbolName);
-            }
-            else if (IsLinux)
-            {
-                functionPtr = DynamicLinkingLinux.dlsym(libPtr, symbolName);
-            }
-            else
-            {
-                throw new Exception("Unsupported platform");
-            }
-
-            if (functionPtr == IntPtr.Zero)
-            {
-                throw new Exception($"Library symbol failed, symbol: {symbolName}", GetLastError());
-            }
-
-            return Marshal.GetDelegateForFunctionPointer<TDelegate>(Marshal.ReadIntPtr( functionPtr));
+            return Marshal.GetDelegateForFunctionPointer<TDelegate>(functionPtr);
         }
     }
 }

@@ -304,7 +304,7 @@ namespace Secp256k1Net
 
     public unsafe delegate int secp256k1_ec_pubkey_tweak_mul(IntPtr ctx, void* pubkey, void* tweak);
 
-    public unsafe delegate int secp256k1_nonce_function_rfc6979(void* nonce32, void* hash, void* seckey, void* algo, void* data, uint attempt);
+    public unsafe delegate int secp256k1_nonce_function(void* nonce32, void* hash, void* seckey, void* algo, void* data, uint attempt);
 
     public unsafe delegate int secp256k1_ec_pubkey_negate(IntPtr ctx, void* pubkey);
 

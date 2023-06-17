@@ -302,6 +302,46 @@ namespace Secp256k1Net
         IntPtr data      // void *data
     );
 
+    /// <summary>
+    /// Tweak a public key by adding tweak times the generator to it.
+    /// </summary>
+    /// <param name="ctx">Pointer to a context object (cannot be NULL).</param>
+    /// <param name="pubkey">(Input/Output) Pointer to a public key object. It will be set to an invalid value if this function returns 0.</param>
+    /// <param name="tweak">Pointer to a 32-byte tweak. If the tweak is invalid according to secp256k1_ec_seckey_verify, this function returns 0. For uniformly random 32-byte arrays the chance of being invalid is negligible (around 1 in 2^128).</param>
+    /// <returns>0 if the arguments are invalid. 1 otherwise.</returns>
+    public unsafe delegate int secp256k1_ec_pubkey_tweak_mul(IntPtr ctx, void* pubkey, void* tweak);
+
+    /// <summary>
+    /// Deterministically generate a nonce.
+    /// </summary>
+    /// <param name="nonce32">(Output) Pointer to a 32-byte array to be filled by the function.</param>
+    /// <param name="hash">The 32-byte message hash being verified (will not be NULL)</param>
+    /// <param name="seckey">Pointer to a 32-byte secret key (will not be NULL)</param>
+    /// <param name="algo">Pointer to a 16-byte array describing the signature algorithm (will be NULL for ECDSA for compatibility).</param>
+    /// <param name="data">Arbitrary data pointer that is passed through.</param>
+    /// <param name="attempt">How many iterations we have tried to find a nonce. This will almost always be 0, but different attempt values are required to result in a different nonce.</param>
+    /// <returns>1 if a nonce was successfully generated. 0 will cause signing to fail.</returns>
+    public unsafe delegate int secp256k1_nonce_function(void* nonce32, void* hash, void* seckey, void* algo, void* data, uint attempt);
+
+    /// <summary>
+    /// Negates a public key in place.
+    /// </summary>
+    /// <param name="ctx">Pointer to a context object (cannot be NULL).</param>
+    /// <param name="pubkey">(Input/Output) Pointer to the public key to be negated.</param>
+    /// <returns>1 always</returns>
+    public unsafe delegate int secp256k1_ec_pubkey_negate(IntPtr ctx, void* pubkey);
+
+    /// <summary>
+    /// Add a number of public keys together.
+    /// </summary>
+    /// <param name="ctx">Pointer to a context object (cannot be NULL).</param>
+    /// <param name="outpubkey">(Output) Pointer to a public key object for placing the resulting public key.</param>
+    /// <param name="inpubkeys">Pointer to array of pointers to public keys.</param>
+    /// <param name="inputlen">The number of public keys to add together (must be at least 1).</param>
+    /// <returns>1: the sum of the public keys is valid. 0: the sum of the public keys is not valid.</returns>
+    public unsafe delegate int
+        secp256k1_ec_pubkey_combine(IntPtr ctx, void* outpubkey, IntPtr inpubkeys, uint inputlen);
+
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public unsafe delegate int secp256k1_ecdh_hash_function(void* output, void* x, void* y, IntPtr data);
 

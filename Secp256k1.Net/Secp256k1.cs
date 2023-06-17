@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Secp256k1Net
@@ -32,6 +30,7 @@ namespace Secp256k1Net
         public const int SIGNATURE_LENGTH = 64;
         public const int HASH_LENGTH = 32;
         public const int SECRET_LENGTH = 32;
+        public const int NONCE_LENGTH = 32;
 
 
         static readonly Lazy<secp256k1_context_create> secp256k1_context_create
@@ -74,6 +73,15 @@ namespace Secp256k1Net
             = LazyDelegate<secp256k1_ecdsa_verify>(nameof(secp256k1_ecdsa_verify));
         static readonly Lazy<secp256k1_ecdh> secp256k1_ecdh
             = LazyDelegate<secp256k1_ecdh>(nameof(secp256k1_ecdh));
+        static readonly Lazy<secp256k1_ec_pubkey_tweak_mul> secp256k1_ec_pubkey_tweak_mul
+            = LazyDelegate<secp256k1_ec_pubkey_tweak_mul>(nameof(secp256k1_ec_pubkey_tweak_mul));
+        static readonly Lazy<secp256k1_nonce_function> secp256k1_nonce_function_rfc6979
+            = LazyDelegate<secp256k1_nonce_function>(nameof(secp256k1_nonce_function_rfc6979), Marshal.ReadIntPtr);
+        static readonly Lazy<secp256k1_ec_pubkey_negate> secp256k1_ec_pubkey_negate =
+            LazyDelegate<secp256k1_ec_pubkey_negate>(nameof(secp256k1_ec_pubkey_negate));
+
+        private static readonly Lazy<secp256k1_ec_pubkey_combine> secp256k1_ec_pubkey_combine =
+            LazyDelegate<secp256k1_ec_pubkey_combine>(nameof(secp256k1_ec_pubkey_combine));
 
         internal const string LIB = "secp256k1";
 
@@ -98,12 +106,19 @@ namespace Secp256k1Net
 
             SetErrorCallback(errorCallback ?? DefaultErrorCallback, null);
         }
-
         static Lazy<TDelegate> LazyDelegate<TDelegate>(string symbol)
         {
             return new Lazy<TDelegate>(() =>
             {
                 return LoadLibNative.GetDelegate<TDelegate>(_libPtr.Value, symbol);
+            }, isThreadSafe: false);
+        }
+
+        static Lazy<TDelegate> LazyDelegate<TDelegate>(string symbol, Func<IntPtr, IntPtr> pointerDereferenceFunc)
+        {
+            return new Lazy<TDelegate>(() =>
+            {
+                return LoadLibNative.GetDelegate<TDelegate>(_libPtr.Value, symbol, pointerDereferenceFunc);
             }, isThreadSafe: false);
         }
 
@@ -622,6 +637,125 @@ namespace Secp256k1Net
             }
         }
 
+        /// <summary>
+        /// Adds two public keys.
+        /// </summary>
+        /// <param name="outputPublicKey">The sum public key to be written to.</param>
+        /// <param name="publicKey1">The first public key.</param>
+        /// <param name="publicKey2">The second public key.</param>
+        /// <returns>True if the sum of the public keys is valid, false if the sum of the public keys is not valid.</returns>
+        /// <exception cref="ArgumentException"></exception>
+        public bool PublicKeysCombine(Span<byte> outputPublicKey, Span<byte> publicKey1, Span<byte> publicKey2)
+        {
+            if ( outputPublicKey.Length < PUBKEY_LENGTH)
+            {
+                throw new ArgumentException($"{nameof(outputPublicKey)} must be {PUBKEY_LENGTH} bytes");
+            }
+            
+            if ( publicKey1.Length < PUBKEY_LENGTH)
+            {
+                throw new ArgumentException($"{nameof(publicKey1)} must be {PUBKEY_LENGTH} bytes");
+            }
+            if ( publicKey2.Length < PUBKEY_LENGTH)
+            {
+                throw new ArgumentException($"{nameof(publicKey2)} must be {PUBKEY_LENGTH} bytes");
+            }
+            
+            var intPtrSize = Marshal.SizeOf(typeof(IntPtr));
+            var nativeArray = Marshal.AllocHGlobal(intPtrSize * 2);
+            try
+            {
+                fixed (
+                    byte* outPubPtr = &MemoryMarshal.GetReference(outputPublicKey),
+                    inPubPtr1 = &MemoryMarshal.GetReference(publicKey1), 
+                    inPubPtr2 = &MemoryMarshal.GetReference(publicKey2))
+                {
+                    Marshal.WriteIntPtr(nativeArray, 0, (IntPtr)inPubPtr1);
+                    Marshal.WriteIntPtr(nativeArray, intPtrSize, (IntPtr)inPubPtr2);
+                    return secp256k1_ec_pubkey_combine.Value(_ctx, outPubPtr, nativeArray, 2) == 1;
+                }
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(nativeArray);
+            }
+        }
+        /// <summary>
+        /// Negates a public key in place.
+        /// </summary>
+        /// <param name="publicKey">The 65 byte public key which will be negated in place.</param>
+        /// <returns>True always.</returns>
+        /// <exception cref="ArgumentException"></exception>
+        public bool PublicKeyNegate(Span<byte> publicKey)
+        {
+            if (publicKey.Length < PUBKEY_LENGTH)
+            {
+                throw new ArgumentException($"{nameof(publicKey)} must be {PUBKEY_LENGTH} bytes");
+            }
+            fixed (byte* pubPtr = &MemoryMarshal.GetReference(publicKey))
+            {
+                return secp256k1_ec_pubkey_negate.Value(_ctx, pubPtr) == 1;
+            }
+        }
+
+        /// <summary>
+        /// Multiplies the public key with a 32 byte scalar.
+        /// </summary>
+        /// <param name="publicKey">The public key to be multiplied and the result to be written to.</param>
+        /// <param name="tweak">The 32 byte scalar.</param>
+        /// <returns>True if the arguments are valid and false otherwise.</returns>
+        /// <exception cref="ArgumentException"></exception>
+        public bool PublicKeyMultiply(Span<byte> publicKey, Span<byte> tweak)
+        {
+            if (publicKey.Length < PUBKEY_LENGTH)
+            {
+                throw new ArgumentException($"{nameof(publicKey)} must be {PUBKEY_LENGTH} bytes");
+            }
+            if (tweak.Length < SECRET_LENGTH)
+            {
+                throw new ArgumentException($"{nameof(tweak)} must be {SECRET_LENGTH} bytes");
+            }
+            fixed (byte* pubPtr = &MemoryMarshal.GetReference(publicKey),
+                   tweakPtr = &MemoryMarshal.GetReference(tweak))
+            {
+                return secp256k1_ec_pubkey_tweak_mul.Value(_ctx, pubPtr, tweakPtr) == 1;
+            }
+        }
+
+        /// <summary>
+        /// Deterministically generate a 32 byte nonce according to RFC6979 standard.
+        /// </summary>
+        /// <param name="nonceOutput">The 32 byte output nonce to be written to.</param>
+        /// <param name="hash">The 32 byte message hash being verified.</param>
+        /// <param name="secretKey">The 32 byte secret key.</param>
+        /// <param name="algo">A 16 byte array describing the signature algorithm (will be NULL for ECDSA for compatibility).</param>
+        /// <param name="data">Arbitrary data that is passed through.</param>
+        /// <param name="attempt">How many iterations we have tried to find a nonce. This will almost always be 0, but different attempt values are required to result in a different nonce.</param>
+        /// <returns>True if a nonce was successfully generated, false otherwise.</returns>
+        /// <exception cref="ArgumentException"></exception>
+        public bool Rfc6979Nonce(Span<byte> nonceOutput, Span<byte> hash, Span<byte> secretKey, Span<byte> algo, Span<byte> data, uint attempt)
+        {
+            if (nonceOutput.Length < NONCE_LENGTH)
+            {
+                throw new ArgumentException($"{nameof(nonceOutput)} must be {NONCE_LENGTH} bytes");
+            }
+            if (hash.Length < HASH_LENGTH)
+            {
+                throw new ArgumentException($"{nameof(hash)} must be {HASH_LENGTH} bytes");
+            }
+            if (secretKey.Length < SECRET_LENGTH)
+            {
+                throw new ArgumentException($"{nameof(secretKey)} must be {SECRET_LENGTH} bytes");
+            }
+            fixed (byte* nonceOutPtr = &MemoryMarshal.GetReference(nonceOutput),
+                   hashPtr = &MemoryMarshal.GetReference(hash),
+                   secPtr = &MemoryMarshal.GetReference(secretKey),
+                   algoPtr = &MemoryMarshal.GetReference(algo),
+                   dataPtr = &MemoryMarshal.GetReference(data))
+            {
+                return secp256k1_nonce_function_rfc6979.Value(nonceOutPtr, hashPtr, secPtr, algoPtr, dataPtr, attempt) == 1;
+            }
+        }
 
         public void Dispose()
         {

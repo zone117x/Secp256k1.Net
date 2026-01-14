@@ -29,8 +29,8 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Secp256k1.Native" Version="0.1.24-alpha" PrivateAssets="all" />
-        <PackageReference Include="System.Memory" Version="4.5.5" />
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
+        <PackageReference Include="System.Memory" Version="4.6.3" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.102" PrivateAssets="All" />
     </ItemGroup>
     <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">
         <ItemGroup>

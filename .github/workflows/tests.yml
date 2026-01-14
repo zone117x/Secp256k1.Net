@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [master, develop]
   pull_request:
 
 jobs:
@@ -13,7 +13,7 @@ jobs:
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
         dotnet: [
-          { framework: net6.0, version: '6.0.x' },
+          { framework: net8.0, version: '8.0.x' },
           { framework: net10.0, version: '10.0.x' }
         ]
     steps:
@@ -27,16 +27,26 @@ jobs:
       - name: Build
         run: dotnet build Secp256k1.Net.Test --configuration Release --framework ${{ matrix.dotnet.framework }} --no-restore
       - name: Test
-        run: dotnet test Secp256k1.Net.Test --configuration Release --framework ${{ matrix.dotnet.framework }} --no-build --verbosity normal --blame-crash --collect:"XPlat Code Coverage"
+        run: dotnet test Secp256k1.Net.Test --configuration Release --framework ${{ matrix.dotnet.framework }} --no-build --verbosity normal --blame-crash -p:CollectCoverage=true -p:CoverletOutputFormat=cobertura -p:CoverletOutput=./TestResults/
+      - name: List coverage files
+        if: always()
+        run: |
+          echo "Looking for coverage files:"
+          find . -name "*.cobertura.xml" -o -name "coverage*.xml" 2>/dev/null || echo "No coverage files found"
+          ls -la ./Secp256k1.Net.Test/TestResults/ 2>/dev/null || echo "No TestResults in test project"
+        shell: bash
+        continue-on-error: true
       - name: Print crash logs
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: TestResultSequence.xml
+          name: TestResultSequence-${{ matrix.os }}-${{ matrix.dotnet.framework }}
           path: ./**/TestResults/*/Sequence_*.xml
       - uses: codecov/codecov-action@v4
         with:
-          files: "**/TestResults/*/*.cobertura.xml"
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./**/coverage.cobertura.xml
+          fail_ci_if_error: false
           verbose: true
 
   test-net-framework:
@@ -50,9 +60,9 @@ jobs:
       - name: Install dependencies
         run: dotnet restore Secp256k1.Net.Test
       - name: Build
-        run: dotnet build Secp256k1.Net.Test --configuration Release --framework net461 --no-restore
+        run: dotnet build Secp256k1.Net.Test --configuration Release --framework net462 --no-restore
       - name: Test
-        run: dotnet vstest Secp256k1.Net.Test\bin\Release\net461\Secp256k1.Net.Test.dll /Framework:".NETFramework,Version=v4.6.1" /Platform:"${{ matrix.arch }}"
+        run: dotnet vstest Secp256k1.Net.Test\bin\Release\net462\Secp256k1.Net.Test.exe /Framework:".NETFramework,Version=v4.6.2" /Platform:"${{ matrix.arch }}"
 
   benchmark:
     runs-on: ${{ matrix.os }}

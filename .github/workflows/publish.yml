@@ -8,8 +8,10 @@ on:
         required: true
 
 jobs:
-  npm-package:
+  publish:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # Required for NuGet Trusted Publishing OIDC
     env:
       NUGET_PACKAGE_VERSION: ${{ github.event.inputs.nuget-package-version }}
     steps:
@@ -25,7 +27,9 @@ jobs:
         run: dotnet build Secp256k1.Net --configuration Release --no-restore --version-suffix "$NUGET_PACKAGE_VERSION"
       - name: Build package
         run: dotnet pack Secp256k1.Net --configuration Release --no-build --version-suffix "$NUGET_PACKAGE_VERSION"
+      - name: NuGet login (OIDC → temp API key)
+        uses: nuget/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
       - name: Publish the package to nuget.org
-        run: dotnet nuget push */bin/Release/*.nupkg -k $NUGET_AUTH_TOKEN -s https://api.nuget.org/v3/index.json
-        env:
-          NUGET_AUTH_TOKEN: ${{ secrets.NUGET_TOKEN }}
+        run: dotnet nuget push */bin/Release/*.nupkg --source https://api.nuget.org/v3/index.json

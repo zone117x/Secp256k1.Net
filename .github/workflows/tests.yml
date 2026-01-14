@@ -13,7 +13,7 @@ jobs:
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
         dotnet: [
-          { framework: net6.0, version: '6.0.x' },
+          { framework: net8.0, version: '8.0.x' },
           { framework: net10.0, version: '10.0.x' }
         ]
     steps:

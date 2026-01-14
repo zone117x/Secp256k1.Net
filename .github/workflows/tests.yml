@@ -27,16 +27,18 @@ jobs:
       - name: Build
         run: dotnet build Secp256k1.Net.Test --configuration Release --framework ${{ matrix.dotnet.framework }} --no-restore
       - name: Test
-        run: dotnet test Secp256k1.Net.Test --configuration Release --framework ${{ matrix.dotnet.framework }} --no-build --verbosity normal --blame-crash --collect:"XPlat Code Coverage"
+        run: dotnet test Secp256k1.Net.Test --configuration Release --framework ${{ matrix.dotnet.framework }} --no-build --verbosity normal --blame-crash --collect:"XPlat Code Coverage" --results-directory ./TestResults
       - name: Print crash logs
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: TestResultSequence.xml
+          name: TestResultSequence-${{ matrix.os }}-${{ matrix.dotnet.framework }}
           path: ./**/TestResults/*/Sequence_*.xml
       - uses: codecov/codecov-action@v4
         with:
-          files: "**/TestResults/*/*.cobertura.xml"
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: ./TestResults
+          fail_ci_if_error: false
           verbose: true
 
   test-net-framework:

@@ -72,18 +72,45 @@ namespace Secp256k1Net
 
         static IEnumerable<string> GetSearchLocations()
         {
-            yield return Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            yield return Path.GetDirectoryName(Assembly.GetCallingAssembly().Location);
-            yield return Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-            foreach(var extraPath in ExtraNativeLibSearchPaths)
+            //When publishing to a single file assembly locations will be empty
+            string execPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            if(execPath is not null)
+            {
+                yield return execPath;
+            }
+
+            string callingPath = Path.GetDirectoryName(Assembly.GetCallingAssembly().Location);
+            if(callingPath is not null)
+            {
+                yield return callingPath;
+            }
+
+            var entryAssembly = Assembly.GetEntryAssembly();
+            if(entryAssembly is not null)
+            {
+                string entryPath = Path.GetDirectoryName(entryAssembly.Location);
+                if(entryPath is not null)
+                {
+                    yield return entryPath;
+                }
+            }
+
+            if(AppContext.BaseDirectory is not null)
+            {
+                yield return AppContext.BaseDirectory;
+            }
+
+            foreach(string extraPath in ExtraNativeLibSearchPaths)
             {
                 yield return extraPath;
             }
-            // If the this lib is being executed from its nuget package directory then the native
-            // files should be found up a couple directories.
-            yield return Path.GetFullPath(
-                Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-                "../../content"));
+
+            if(execPath is not null)
+            {
+                // If the this lib is being executed from its nuget package directory then the native
+                // files should be found up a couple directories.
+                yield return Path.GetFullPath(execPath, "../../content");
+            }
         }
 
         static IEnumerable<string> SearchContainerPaths(string containerDir, string library, (string Prefix, string LibPrefix, string Extension) platform)

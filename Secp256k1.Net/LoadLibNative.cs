@@ -141,7 +141,7 @@ namespace Secp256k1Net
         public static TDelegate GetDelegate<TDelegate>(IntPtr libPtr, string symbolName, Func<IntPtr, IntPtr> pointerDereferenceFunc)
         {
             var ptr = GetSymbolPointer(libPtr, symbolName);
-            var functionPtr = pointerDereferenceFunc?.Invoke(ptr) ?? ptr;
+            var functionPtr = pointerDereferenceFunc.Invoke(ptr);
             return Marshal.GetDelegateForFunctionPointer<TDelegate>(functionPtr);
         }
     }

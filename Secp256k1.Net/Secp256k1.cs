@@ -18,7 +18,6 @@ namespace Secp256k1Net
 
     public unsafe class Secp256k1 : IDisposable
     {
-        public IntPtr Context => _ctx;
 
         public const int SERIALIZED_UNCOMPRESSED_PUBKEY_LENGTH = 65;
         public const int SERIALIZED_COMPRESSED_PUBKEY_LENGTH = 33;

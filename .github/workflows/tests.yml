@@ -27,13 +27,13 @@ jobs:
       - name: Build
         run: dotnet build Secp256k1.Net.Test --configuration Release --framework ${{ matrix.dotnet.framework }} --no-restore
       - name: Test
-        run: dotnet test Secp256k1.Net.Test --configuration Release --framework ${{ matrix.dotnet.framework }} --no-build --verbosity normal --blame-crash --collect:"XPlat Code Coverage" --results-directory ./TestResults
+        run: dotnet test Secp256k1.Net.Test --configuration Release --framework ${{ matrix.dotnet.framework }} --no-build --verbosity normal --blame-crash -p:CollectCoverage=true -p:CoverletOutputFormat=cobertura -p:CoverletOutput=./TestResults/
       - name: List coverage files
         if: always()
         run: |
-          echo "Contents of TestResults:"
-          find ./TestResults -type f -name "*.xml" 2>/dev/null || echo "No TestResults directory or no XML files"
-          ls -laR ./TestResults 2>/dev/null || echo "Cannot list TestResults"
+          echo "Looking for coverage files:"
+          find . -name "*.cobertura.xml" -o -name "coverage*.xml" 2>/dev/null || echo "No coverage files found"
+          ls -la ./Secp256k1.Net.Test/TestResults/ 2>/dev/null || echo "No TestResults in test project"
         shell: bash
         continue-on-error: true
       - name: Print crash logs
@@ -45,7 +45,7 @@ jobs:
       - uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./TestResults/**/coverage.cobertura.xml
+          files: ./**/coverage.cobertura.xml
           fail_ci_if_error: false
           verbose: true
 
@@ -62,7 +62,7 @@ jobs:
       - name: Build
         run: dotnet build Secp256k1.Net.Test --configuration Release --framework net462 --no-restore
       - name: Test
-        run: dotnet vstest Secp256k1.Net.Test\bin\Release\net462\Secp256k1.Net.Test.dll /Framework:".NETFramework,Version=v4.6.2" /Platform:"${{ matrix.arch }}"
+        run: dotnet vstest Secp256k1.Net.Test\bin\Release\net462\Secp256k1.Net.Test.exe /Framework:".NETFramework,Version=v4.6.2" /Platform:"${{ matrix.arch }}"
 
   benchmark:
     runs-on: ${{ matrix.os }}

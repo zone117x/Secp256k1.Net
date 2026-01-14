@@ -29,7 +29,8 @@ jobs:
         run: dotnet pack Secp256k1.Net --configuration Release --no-build --version-suffix "$NUGET_PACKAGE_VERSION"
       - name: NuGet login (OIDC → temp API key)
         uses: nuget/login@v1
+        id: nuget-login
         with:
           user: ${{ secrets.NUGET_USER }}
       - name: Publish the package to nuget.org
-        run: dotnet nuget push */bin/Release/*.nupkg --source https://api.nuget.org/v3/index.json
+        run: dotnet nuget push */bin/Release/*.nupkg --api-key ${{ steps.nuget-login.outputs.nuget-api-key }} --source https://api.nuget.org/v3/index.json

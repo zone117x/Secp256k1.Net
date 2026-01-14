@@ -111,7 +111,7 @@ namespace Secp256k1Net
             return new Lazy<TDelegate>(() =>
             {
                 return LoadLibNative.GetDelegate<TDelegate>(_libPtr.Value, symbol);
-            }, isThreadSafe: false);
+            });
         }
 
         static Lazy<TDelegate> LazyDelegate<TDelegate>(string symbol, Func<IntPtr, IntPtr> pointerDereferenceFunc)
@@ -119,7 +119,7 @@ namespace Secp256k1Net
             return new Lazy<TDelegate>(() =>
             {
                 return LoadLibNative.GetDelegate<TDelegate>(_libPtr.Value, symbol, pointerDereferenceFunc);
-            }, isThreadSafe: false);
+            });
         }
 
         /// <summary>

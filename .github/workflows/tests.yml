@@ -28,6 +28,11 @@ jobs:
         run: dotnet build Secp256k1.Net.Test --configuration Release --framework ${{ matrix.dotnet.framework }} --no-restore
       - name: Test
         run: dotnet test Secp256k1.Net.Test --configuration Release --framework ${{ matrix.dotnet.framework }} --no-build --verbosity normal --blame-crash --collect:"XPlat Code Coverage" --results-directory ./TestResults
+      - name: List coverage files
+        if: always()
+        run: find ./TestResults -name "*.xml" -type f 2>/dev/null || Get-ChildItem -Path ./TestResults -Recurse -Filter *.xml 2>$null || echo "No XML files found"
+        shell: bash
+        continue-on-error: true
       - name: Print crash logs
         if: failure()
         uses: actions/upload-artifact@v4
@@ -37,7 +42,7 @@ jobs:
       - uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          directory: ./TestResults
+          files: ./TestResults/**/coverage.cobertura.xml
           fail_ci_if_error: false
           verbose: true
 

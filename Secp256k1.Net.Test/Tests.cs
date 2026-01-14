@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Secp256k1Net.Test
@@ -489,6 +490,49 @@ namespace Secp256k1Net.Test
             var s = Convert.ToHexString(nonceOutput);
             Assert.IsTrue(secp256k1.Rfc6979Nonce(nonceOutput, hash, secretKey, null, null, 0));
             Assert.IsTrue(nonceOutput.SequenceEqual(nonce));
+        }
+
+        [TestMethod]
+        public void ConcurrentInstanceCreation()
+        {
+            // Test that creating Secp256k1 instances from multiple threads concurrently
+            // does not cause threading issues with Lazy<T> initialization
+            const int threadCount = 10;
+            const int iterationsPerThread = 100;
+            var exceptions = new System.Collections.Concurrent.ConcurrentBag<Exception>();
+            var barrier = new System.Threading.Barrier(threadCount);
+
+            var tasks = Enumerable.Range(0, threadCount)
+                .Select(_ => Task.Run(() =>
+                {
+                    try
+                    {
+                        // Synchronize all threads to start at the same time
+                        barrier.SignalAndWait();
+
+                        for (int i = 0; i < iterationsPerThread; i++)
+                        {
+                            using var secp256k1 = new Secp256k1();
+
+                            // Do some basic operation to ensure the instance works
+                            var privateKey = new byte[Secp256k1.PRIVKEY_LENGTH];
+                            var publicKey = new byte[Secp256k1.PUBKEY_LENGTH];
+                            new Random().NextBytes(privateKey);
+                            secp256k1.PublicKeyCreate(publicKey, privateKey);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        exceptions.Add(ex);
+                    }
+                }))
+                .ToArray();
+
+            Task.WaitAll(tasks);
+
+            Assert.AreEqual(0, exceptions.Count, 
+                $"Concurrent instance creation failed with {exceptions.Count} exception(s): " +
+                $"{string.Join("; ", exceptions.Select(e => e.Message))}");
         }
     }
 

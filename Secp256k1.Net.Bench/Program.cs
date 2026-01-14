@@ -10,6 +10,23 @@ using BenchmarkDotNet.Configs;
 
 namespace Secp256k1Net.Bench
 {
+    // Use ShortRun job for faster CI execution (fewer iterations, less accurate but still useful)
+    // Set CI=true environment variable to enable, otherwise uses default (more accurate) settings
+    public class CiBenchmarkConfig : ManualConfig
+    {
+        public CiBenchmarkConfig()
+        {
+            if (Environment.GetEnvironmentVariable("CI") == "true")
+            {
+                AddJob(Job.ShortRun);
+            }
+            else
+            {
+                AddJob(Job.Default);
+            }
+        }
+    }
+
     record class KeyPair(byte[] PrivateKey, byte[] PublicKeyCompressed, byte[] PublicKeyUncompressed);
     record class Msg(string MsgString, byte[] MsgBytes, byte[] MsgHash);
 
@@ -37,6 +54,7 @@ namespace Secp256k1Net.Bench
         }
     }
 
+    [Config(typeof(CiBenchmarkConfig))]
     [CsvMeasurementsExporter]
     [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
     [CategoriesColumn]

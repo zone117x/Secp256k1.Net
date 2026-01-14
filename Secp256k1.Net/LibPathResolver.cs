@@ -72,7 +72,6 @@ namespace Secp256k1Net
 
         static IEnumerable<string> GetSearchLocations()
         {
-            //When publishing to a single file assembly locations will be empty
             string execPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             if(execPath is not null)
             {
@@ -109,7 +108,7 @@ namespace Secp256k1Net
             {
                 // If the this lib is being executed from its nuget package directory then the native
                 // files should be found up a couple directories.
-                yield return Path.GetFullPath(execPath, "../../content");
+                yield return Path.GetFullPath(Path.Combine(execPath, "../../content"));
             }
         }
 

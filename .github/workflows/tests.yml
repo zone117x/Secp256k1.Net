@@ -57,9 +57,9 @@ jobs:
       - name: Install dependencies
         run: dotnet restore Secp256k1.Net.Test
       - name: Build
-        run: dotnet build Secp256k1.Net.Test --configuration Release --framework net461 --no-restore
+        run: dotnet build Secp256k1.Net.Test --configuration Release --framework net462 --no-restore
       - name: Test
-        run: dotnet vstest Secp256k1.Net.Test\bin\Release\net461\Secp256k1.Net.Test.dll /Framework:".NETFramework,Version=v4.6.1" /Platform:"${{ matrix.arch }}"
+        run: dotnet vstest Secp256k1.Net.Test\bin\Release\net462\Secp256k1.Net.Test.dll /Framework:".NETFramework,Version=v4.6.1" /Platform:"${{ matrix.arch }}"
 
   benchmark:
     runs-on: ${{ matrix.os }}

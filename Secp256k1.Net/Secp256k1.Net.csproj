@@ -28,7 +28,7 @@
         <InternalsVisibleTo Include="Secp256k1.Net.Test" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Secp256k1.Native" Version="0.1.24-alpha" PrivateAssets="all" />
+        <PackageReference Include="Secp256k1.Native" Version="0.2.0-alpha.1" PrivateAssets="all" />
         <PackageReference Include="System.Memory" Version="4.6.3" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.102" PrivateAssets="All" />
     </ItemGroup>

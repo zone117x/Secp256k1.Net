@@ -25,4 +25,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Secp256k1.Net\Secp256k1.Net.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
 </Project>

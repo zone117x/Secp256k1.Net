@@ -109,7 +109,8 @@ function Build-Legacy {
 }
 
 function Run-Test {
-    $OutputDir = "$ScriptDir/bin/Release/net462"
+    $RID = if ($Arch -eq "x64") { "win-x64" } else { "win-x86" }
+    $OutputDir = "$ScriptDir/bin/Release/net462/$RID"
 
     Write-Host "==> Running test..."
     Write-Host ""

@@ -23,8 +23,7 @@ namespace Secp256k1Net
             }
             else if (IsLinux)
             {
-                const int RTLD_NOW = 2;
-                libPtr = DynamicLinkingLinux.dlopen(libPath, RTLD_NOW);
+                libPtr = DynamicLinkingLinux.dlopen(libPath, DynamicLinkingLinux.RTLD_NOW);
             }
             else if (IsMacOS)
             {

@@ -27,6 +27,28 @@ namespace Secp256k1Net
             [(OSX, Arm64)] = ("osx-arm64", "lib", ".dylib"),
         };
 
+        // Musl (Alpine) variants - checked first on musl systems
+        static readonly Dictionary<PlatInfo, (string Prefix, string LibPrefix, string Extension)> MuslPlatformPaths = new Dictionary<PlatInfo, (string, string, string)>
+        {
+            [(Linux, X64)] = ("linux-musl-x64", "lib", ".so"),
+            [(Linux, Arm64)] = ("linux-musl-arm64", "lib", ".so"),
+        };
+
+        static readonly Lazy<bool> IsMuslLinux = new Lazy<bool>(() =>
+        {
+            if (!IsOSPlatform(Linux))
+                return false;
+            try
+            {
+                // Alpine Linux has this file
+                return File.Exists("/etc/alpine-release");
+            }
+            catch
+            {
+                return false;
+            }
+        });
+
         static readonly OSPlatform[] SupportedPlatforms = { Windows, OSX, Linux };
         static string SupportedPlatformDescriptions() => string.Join("\n", PlatformPaths.Keys.Select(GetPlatformDesc));
 
@@ -53,16 +75,27 @@ namespace Secp256k1Net
 
             var searchedPaths = new HashSet<string>();
 
+            // On musl Linux (Alpine), try musl-specific paths first, then fall back to glibc paths
+            var platformsToTry = new List<(string Prefix, string LibPrefix, string Extension)>();
+            if (IsMuslLinux.Value && MuslPlatformPaths.TryGetValue(CurrentPlatformInfo, out var muslPlatform))
+            {
+                platformsToTry.Add(muslPlatform);
+            }
+            platformsToTry.Add(platform);
+
             foreach (var containerDir in GetSearchLocations())
             {
-                foreach (var libPath in SearchContainerPaths(containerDir, library, platform))
+                foreach (var platformToTry in platformsToTry)
                 {
-                    if (!searchedPaths.Contains(libPath) && File.Exists(libPath))
+                    foreach (var libPath in SearchContainerPaths(containerDir, library, platformToTry))
                     {
-                        Cache.TryAdd(library, libPath);
-                        return libPath;
+                        if (!searchedPaths.Contains(libPath) && File.Exists(libPath))
+                        {
+                            Cache.TryAdd(library, libPath);
+                            return libPath;
+                        }
+                        searchedPaths.Add(libPath);
                     }
-                    searchedPaths.Add(libPath);
                 }
             }
 
@@ -73,38 +106,38 @@ namespace Secp256k1Net
         static IEnumerable<string> GetSearchLocations()
         {
             string execPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            if(execPath is not null)
+            if (execPath is not null)
             {
                 yield return execPath;
             }
 
             string callingPath = Path.GetDirectoryName(Assembly.GetCallingAssembly().Location);
-            if(callingPath is not null)
+            if (callingPath is not null)
             {
                 yield return callingPath;
             }
 
             var entryAssembly = Assembly.GetEntryAssembly();
-            if(entryAssembly is not null)
+            if (entryAssembly is not null)
             {
                 string entryPath = Path.GetDirectoryName(entryAssembly.Location);
-                if(entryPath is not null)
+                if (entryPath is not null)
                 {
                     yield return entryPath;
                 }
             }
 
-            if(AppContext.BaseDirectory is not null)
+            if (AppContext.BaseDirectory is not null)
             {
                 yield return AppContext.BaseDirectory;
             }
 
-            foreach(string extraPath in ExtraNativeLibSearchPaths)
+            foreach (string extraPath in ExtraNativeLibSearchPaths)
             {
                 yield return extraPath;
             }
 
-            if(execPath is not null)
+            if (execPath is not null)
             {
                 // If the this lib is being executed from its nuget package directory then the native
                 // files should be found up a couple directories.
@@ -114,7 +147,7 @@ namespace Secp256k1Net
 
         static IEnumerable<string> SearchContainerPaths(string containerDir, string library, (string Prefix, string LibPrefix, string Extension) platform)
         {
-            foreach(var subDir in GetSearchSubDir(library, platform))
+            foreach (var subDir in GetSearchSubDir(library, platform))
             {
                 yield return Path.Combine(containerDir, subDir);
                 yield return Path.Combine(containerDir, "publish", subDir);

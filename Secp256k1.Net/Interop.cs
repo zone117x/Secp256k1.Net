@@ -28,7 +28,7 @@ namespace Secp256k1Net
     /// <param name="ctx">ctx: an existing context to destroy (cannot be NULL).</param>
     /// <param name="fun">fun: illegal callback function.</param>
     /// <param name="data">data: callback marker, it is set by user together with callback.</param>
-    public unsafe delegate void secp256k1_context_set_illegal_callback(IntPtr ctx, ErrorCallbackDelegate fun, void* data);
+    public unsafe delegate void secp256k1_context_set_illegal_callback(IntPtr ctx, IntPtr fun, void* data);
 
     /// <summary>
     /// Sets and error callback for secp256k1 context object. This callback is called for errors.
@@ -36,7 +36,7 @@ namespace Secp256k1Net
     /// <param name="ctx">ctx: an existing context to destroy (cannot be NULL).</param>
     /// <param name="fun">fun: illegal callback function.</param>
     /// <param name="data">data: callback marker, it is set by user together with callback.</param>
-    public unsafe delegate void secp256k1_context_set_error_callback(IntPtr ctx, ErrorCallbackDelegate fun, void* data);
+    public unsafe delegate void secp256k1_context_set_error_callback(IntPtr ctx, IntPtr fun, void* data);
     
     /// <summary>
     /// Destroy a secp256k1 context object. The context pointer may not be used afterwards.
@@ -108,7 +108,7 @@ namespace Secp256k1Net
     /// <returns>1 always</returns>
     public unsafe delegate int secp256k1_ec_pubkey_serialize(IntPtr ctx,
         void* output,       // unsigned char* output
-        ref uint outputlen, // size_t *outputlen
+        nuint* outputlen,   // size_t *outputlen - must be nuint* to match native size_t
         void* pubkey,       // const secp256k1_pubkey* pubkey
         uint flags          // unsigned int flags
     );
@@ -178,14 +178,14 @@ namespace Secp256k1Net
     /// After the call, output will always be initialized.
     /// </summary>
     /// <param name="ctx">a secp256k1 context object (cannot be NULL)</param>
-    /// <param name="output">(Output) pointer to an array where the serialized signature will be placed (cannot be NULL)</param>    
+    /// <param name="output">(Output) pointer to an array where the serialized signature will be placed (cannot be NULL)</param>
     /// <param name="outputlen">which is initially set to the size of output, and is overwritten with the written size (cannot be NULL)</param>
     /// <param name="sig">(Input) pointer to an array where a signature to parse resides (cannot be NULL)</param>
     /// <returns>1: correct signature, 0: incorrect or unserializeble signature</returns>
     public unsafe delegate int secp256k1_ecdsa_signature_serialize_der(IntPtr ctx,
-        void* output, // unsigned char *output
-        ref uint outputlen, // size_t *outputlen
-        void* sig  // const secp256k1_ecdsa_signature* sig        
+        void* output,       // unsigned char *output
+        nuint* outputlen,   // size_t *outputlen - must be nuint* to match native size_t
+        void* sig           // const secp256k1_ecdsa_signature* sig
     );
 
     /// <summary>
@@ -298,8 +298,8 @@ namespace Secp256k1Net
         void* output,   // unsigned char *output
         void* pubkey,   // const secp256k1_pubkey *pubkey
         void* privkey,  // const unsigned char *privkey
-        secp256k1_ecdh_hash_function hashfp,  // secp256k1_ecdh_hash_function hashfp,
-        IntPtr data      // void *data
+        IntPtr hashfp,  // secp256k1_ecdh_hash_function hashfp
+        IntPtr data     // void *data
     );
 
     /// <summary>

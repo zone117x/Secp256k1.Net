@@ -16,7 +16,7 @@ namespace Secp256k1Net
     public delegate int EcdhHashFunction(Span<byte> output, Span<byte> x, Span<byte> y, IntPtr data);
 
 
-    public unsafe class Secp256k1 : IDisposable
+    public unsafe partial class Secp256k1 : IDisposable
     {
 
         public const int SERIALIZED_UNCOMPRESSED_PUBKEY_LENGTH = 65;
@@ -31,69 +31,40 @@ namespace Secp256k1Net
         public const int SECRET_LENGTH = 32;
         public const int NONCE_LENGTH = 32;
 
-
-        static readonly Lazy<secp256k1_context_create> secp256k1_context_create
-            = LazyDelegate<secp256k1_context_create>(nameof(secp256k1_context_create));
-        static readonly Lazy<secp256k1_context_set_illegal_callback> secp256k1_context_set_illegal_callback
-            = LazyDelegate<secp256k1_context_set_illegal_callback>(nameof(secp256k1_context_set_illegal_callback));
-        static readonly Lazy<secp256k1_context_set_error_callback> secp256k1_context_set_error_callback
-            = LazyDelegate<secp256k1_context_set_error_callback>(nameof(secp256k1_context_set_error_callback));
-        static readonly Lazy<secp256k1_context_destroy> secp256k1_context_destroy
-            = LazyDelegate<secp256k1_context_destroy>(nameof(secp256k1_context_destroy));
-        static readonly Lazy<secp256k1_ec_pubkey_create> secp256k1_ec_pubkey_create
-            = LazyDelegate<secp256k1_ec_pubkey_create>(nameof(secp256k1_ec_pubkey_create));
-        static readonly Lazy<secp256k1_ec_seckey_verify> secp256k1_ec_seckey_verify
-            = LazyDelegate<secp256k1_ec_seckey_verify>(nameof(secp256k1_ec_seckey_verify));
-        static readonly Lazy<secp256k1_ec_pubkey_serialize> secp256k1_ec_pubkey_serialize
-            = LazyDelegate<secp256k1_ec_pubkey_serialize>(nameof(secp256k1_ec_pubkey_serialize));
-        static readonly Lazy<secp256k1_ec_pubkey_parse> secp256k1_ec_pubkey_parse
-            = LazyDelegate<secp256k1_ec_pubkey_parse>(nameof(secp256k1_ec_pubkey_parse));
-        static readonly Lazy<secp256k1_ecdsa_recoverable_signature_parse_compact> secp256k1_ecdsa_recoverable_signature_parse_compact
-            = LazyDelegate<secp256k1_ecdsa_recoverable_signature_parse_compact>(nameof(secp256k1_ecdsa_recoverable_signature_parse_compact));
-        static readonly Lazy<secp256k1_ecdsa_recoverable_signature_serialize_compact> secp256k1_ecdsa_recoverable_signature_serialize_compact
-            = LazyDelegate<secp256k1_ecdsa_recoverable_signature_serialize_compact>(nameof(secp256k1_ecdsa_recoverable_signature_serialize_compact));
-        static readonly Lazy<secp256k1_ecdsa_sign_recoverable> secp256k1_ecdsa_sign_recoverable
-            = LazyDelegate<secp256k1_ecdsa_sign_recoverable>(nameof(secp256k1_ecdsa_sign_recoverable));
-        static readonly Lazy<secp256k1_ecdsa_sign> secp256k1_ecdsa_sign
-            = LazyDelegate<secp256k1_ecdsa_sign>(nameof(secp256k1_ecdsa_sign));
-        static readonly Lazy<secp256k1_ecdsa_recover> secp256k1_ecdsa_recover
-            = LazyDelegate<secp256k1_ecdsa_recover>(nameof(secp256k1_ecdsa_recover));
-        static readonly Lazy<secp256k1_ecdsa_signature_normalize> secp256k1_ecdsa_signature_normalize
-            = LazyDelegate<secp256k1_ecdsa_signature_normalize>(nameof(secp256k1_ecdsa_signature_normalize));
-        static readonly Lazy<secp256k1_ecdsa_signature_parse_der> secp256k1_ecdsa_signature_parse_der
-            = LazyDelegate<secp256k1_ecdsa_signature_parse_der>(nameof(secp256k1_ecdsa_signature_parse_der));
-        static readonly Lazy<secp256k1_ecdsa_signature_parse_compact> secp256k1_ecdsa_signature_parse_compact
-            = LazyDelegate<secp256k1_ecdsa_signature_parse_compact>(nameof(secp256k1_ecdsa_signature_parse_compact));
-        static readonly Lazy<secp256k1_ecdsa_signature_serialize_der> secp256k1_ecdsa_signature_serialize_der
-            = LazyDelegate<secp256k1_ecdsa_signature_serialize_der>(nameof(secp256k1_ecdsa_signature_serialize_der));
-        static readonly Lazy<secp256k1_ecdsa_signature_serialize_compact> secp256k1_ecdsa_signature_serialize_compact
-            = LazyDelegate<secp256k1_ecdsa_signature_serialize_compact>(nameof(secp256k1_ecdsa_signature_serialize_compact));
-        static readonly Lazy<secp256k1_ecdsa_verify> secp256k1_ecdsa_verify
-            = LazyDelegate<secp256k1_ecdsa_verify>(nameof(secp256k1_ecdsa_verify));
-        static readonly Lazy<secp256k1_ecdh> secp256k1_ecdh
-            = LazyDelegate<secp256k1_ecdh>(nameof(secp256k1_ecdh));
-        static readonly Lazy<secp256k1_ec_pubkey_tweak_mul> secp256k1_ec_pubkey_tweak_mul
-            = LazyDelegate<secp256k1_ec_pubkey_tweak_mul>(nameof(secp256k1_ec_pubkey_tweak_mul));
-        static readonly Lazy<secp256k1_nonce_function> secp256k1_nonce_function_rfc6979
-            = LazyDelegate<secp256k1_nonce_function>(nameof(secp256k1_nonce_function_rfc6979), Marshal.ReadIntPtr);
-        static readonly Lazy<secp256k1_ec_pubkey_negate> secp256k1_ec_pubkey_negate =
-            LazyDelegate<secp256k1_ec_pubkey_negate>(nameof(secp256k1_ec_pubkey_negate));
-
-        private static readonly Lazy<secp256k1_ec_pubkey_combine> secp256k1_ec_pubkey_combine =
-            LazyDelegate<secp256k1_ec_pubkey_combine>(nameof(secp256k1_ec_pubkey_combine));
-
         internal const string LIB = "secp256k1";
 
-        public static string LibPath => _libPath.Value;
-        static readonly Lazy<string> _libPath = new Lazy<string>(() => LibPathResolver.Resolve(LIB));
-        static readonly Lazy<IntPtr> _libPtr = new Lazy<IntPtr>(() => LoadLibNative.LoadLib(_libPath.Value));
+        // Native function symbol names
+        private const string SYM_context_create = "secp256k1_context_create";
+        private const string SYM_context_destroy = "secp256k1_context_destroy";
+        private const string SYM_context_set_illegal_callback = "secp256k1_context_set_illegal_callback";
+        private const string SYM_context_set_error_callback = "secp256k1_context_set_error_callback";
+        private const string SYM_ec_pubkey_create = "secp256k1_ec_pubkey_create";
+        private const string SYM_ec_seckey_verify = "secp256k1_ec_seckey_verify";
+        private const string SYM_ec_pubkey_serialize = "secp256k1_ec_pubkey_serialize";
+        private const string SYM_ec_pubkey_parse = "secp256k1_ec_pubkey_parse";
+        private const string SYM_ecdsa_sign_recoverable = "secp256k1_ecdsa_sign_recoverable";
+        private const string SYM_ecdsa_sign = "secp256k1_ecdsa_sign";
+        private const string SYM_ecdsa_recoverable_signature_parse_compact = "secp256k1_ecdsa_recoverable_signature_parse_compact";
+        private const string SYM_ecdsa_recoverable_signature_serialize_compact = "secp256k1_ecdsa_recoverable_signature_serialize_compact";
+        private const string SYM_ecdsa_recover = "secp256k1_ecdsa_recover";
+        private const string SYM_ecdsa_signature_normalize = "secp256k1_ecdsa_signature_normalize";
+        private const string SYM_ecdsa_signature_parse_der = "secp256k1_ecdsa_signature_parse_der";
+        private const string SYM_ecdsa_signature_parse_compact = "secp256k1_ecdsa_signature_parse_compact";
+        private const string SYM_ecdsa_signature_serialize_der = "secp256k1_ecdsa_signature_serialize_der";
+        private const string SYM_ecdsa_signature_serialize_compact = "secp256k1_ecdsa_signature_serialize_compact";
+        private const string SYM_ecdsa_verify = "secp256k1_ecdsa_verify";
+        private const string SYM_ecdh = "secp256k1_ecdh";
+        private const string SYM_ec_pubkey_tweak_mul = "secp256k1_ec_pubkey_tweak_mul";
+        private const string SYM_ec_pubkey_negate = "secp256k1_ec_pubkey_negate";
+        private const string SYM_ec_pubkey_combine = "secp256k1_ec_pubkey_combine";
+        private const string SYM_nonce_function_rfc6979 = "secp256k1_nonce_function_rfc6979";
 
         IntPtr _ctx;
-        
+
         private ErrorCallbackDelegate _errorCallback;
         private GCHandle _errorCallbackHandle;
         private IntPtr _errorCallbackPtr;
-        
+
         private static void DefaultErrorCallback(string message, void* data)
         {
             Console.Error.WriteLine(message);
@@ -101,24 +72,10 @@ namespace Secp256k1Net
 
         public Secp256k1(ErrorCallbackDelegate errorCallback = null)
         {
-            _ctx = secp256k1_context_create.Value((uint)(Flags.SECP256K1_CONTEXT_SIGN | Flags.SECP256K1_CONTEXT_VERIFY));
+            EnsureInitialized();
+            _ctx = _context_create((uint)(Flags.SECP256K1_CONTEXT_SIGN | Flags.SECP256K1_CONTEXT_VERIFY));
 
             SetErrorCallback(errorCallback ?? DefaultErrorCallback, null);
-        }
-        static Lazy<TDelegate> LazyDelegate<TDelegate>(string symbol)
-        {
-            return new Lazy<TDelegate>(() =>
-            {
-                return LoadLibNative.GetDelegate<TDelegate>(_libPtr.Value, symbol);
-            });
-        }
-
-        static Lazy<TDelegate> LazyDelegate<TDelegate>(string symbol, Func<IntPtr, IntPtr> pointerDereferenceFunc)
-        {
-            return new Lazy<TDelegate>(() =>
-            {
-                return LoadLibNative.GetDelegate<TDelegate>(_libPtr.Value, symbol, pointerDereferenceFunc);
-            });
         }
 
         /// <summary>
@@ -135,9 +92,9 @@ namespace Secp256k1Net
             _errorCallback = cb;
             _errorCallbackHandle = GCHandle.Alloc(_errorCallback);
             _errorCallbackPtr = Marshal.GetFunctionPointerForDelegate(_errorCallback);
-            
-            secp256k1_context_set_illegal_callback.Value(_ctx, _errorCallback, data);
-            secp256k1_context_set_error_callback.Value(_ctx, _errorCallback, data);
+
+            _context_set_illegal_callback(_ctx, _errorCallbackPtr, data);
+            _context_set_error_callback(_ctx, _errorCallbackPtr, data);
         }
 
         /// <summary>
@@ -168,7 +125,7 @@ namespace Secp256k1Net
                 sigPtr = &MemoryMarshal.GetReference(signature),
                 msgPtr = &MemoryMarshal.GetReference(message))
             {
-                return secp256k1_ecdsa_recover.Value(_ctx, publicKeyPtr, sigPtr, msgPtr) == 1;
+                return _ecdsa_recover(_ctx, publicKeyPtr, sigPtr, msgPtr) == 1;
             }
         }
 
@@ -186,7 +143,7 @@ namespace Secp256k1Net
 
             fixed (byte* privKeyPtr = &MemoryMarshal.GetReference(secretKey))
             {
-                return secp256k1_ec_seckey_verify.Value(_ctx, privKeyPtr) == 1;
+                return _ec_seckey_verify(_ctx, privKeyPtr) == 1;
             }
         }
 
@@ -212,7 +169,7 @@ namespace Secp256k1Net
             fixed (byte* pubKeyPtr = &MemoryMarshal.GetReference(publicKeyOutput),
                 privKeyPtr = &MemoryMarshal.GetReference(privateKeyInput))
             {
-                return secp256k1_ec_pubkey_create.Value(_ctx, pubKeyPtr, privKeyPtr) == 1;
+                return _ec_pubkey_create(_ctx, pubKeyPtr, privKeyPtr) == 1;
             }
         }
 
@@ -237,7 +194,7 @@ namespace Secp256k1Net
             fixed (byte* sigPtr = &MemoryMarshal.GetReference(signatureOutput),
                 inputPtr = &MemoryMarshal.GetReference(compactSignature))
             {
-                return secp256k1_ecdsa_recoverable_signature_parse_compact.Value(_ctx, sigPtr, inputPtr, recoveryID) == 1;
+                return _ecdsa_recoverable_signature_parse_compact(_ctx, sigPtr, inputPtr, recoveryID) == 1;
             }
         }
 
@@ -270,7 +227,7 @@ namespace Secp256k1Net
                 secPtr = &MemoryMarshal.GetReference(secretKey.Slice(secretKey.Length - 32)))
             {
 
-                return secp256k1_ecdsa_sign_recoverable.Value(_ctx, sigPtr, msgPtr, secPtr, IntPtr.Zero, IntPtr.Zero) == 1;
+                return _ecdsa_sign_recoverable(_ctx, sigPtr, msgPtr, secPtr, IntPtr.Zero, IntPtr.Zero) == 1;
             }
         }
 
@@ -296,11 +253,15 @@ namespace Secp256k1Net
             fixed (byte* compactSigPtr = &MemoryMarshal.GetReference(compactSignatureOutput),
                 sigPtr = &MemoryMarshal.GetReference(signature))
             {
-                var result = secp256k1_ecdsa_recoverable_signature_serialize_compact.Value(_ctx, compactSigPtr, ref recID, sigPtr);
+#if NET8_0_OR_GREATER
+                var result = _ecdsa_recoverable_signature_serialize_compact(_ctx, compactSigPtr, &recID, sigPtr);
+#else
+                var result = _ecdsa_recoverable_signature_serialize_compact(_ctx, compactSigPtr, ref recID, sigPtr);
+#endif
                 recoveryID = recID;
 
                 return result == 1;
-            }            
+            }
         }
 
         /// <summary>
@@ -323,13 +284,13 @@ namespace Secp256k1Net
                 throw new ArgumentException($"{nameof(publicKey)} must be {PUBKEY_LENGTH} bytes");
             }
 
-            uint newLength = (uint)serializedPubKeyLength;
+            nuint newLength = (nuint)serializedPubKeyLength;
 
             fixed (byte* serializedPtr = &MemoryMarshal.GetReference(serializedPublicKeyOutput),
                 pubKeyPtr = &MemoryMarshal.GetReference(publicKey))
             {
-                var result = secp256k1_ec_pubkey_serialize.Value(_ctx, serializedPtr, ref newLength, pubKeyPtr, (uint) flags);
-                return result == 1 && newLength == serializedPubKeyLength;
+                var result = _ec_pubkey_serialize(_ctx, serializedPtr, &newLength, pubKeyPtr, (uint)flags);
+                return result == 1 && newLength == (nuint)serializedPubKeyLength;
             }
         }
 
@@ -357,7 +318,7 @@ namespace Secp256k1Net
             fixed (byte* pubKeyPtr = &MemoryMarshal.GetReference(publicKeyOutput),
                 serializedPtr = &MemoryMarshal.GetReference(serializedPublicKey))
             {
-                return secp256k1_ec_pubkey_parse.Value(_ctx, pubKeyPtr, serializedPtr, (uint) inputLen) == 1;
+                return _ec_pubkey_parse(_ctx, pubKeyPtr, serializedPtr, (uint) inputLen) == 1;
             }
         }
 
@@ -381,7 +342,7 @@ namespace Secp256k1Net
             fixed (byte* outPtr = &MemoryMarshal.GetReference(normalizedSignatureOutput),
                 intPtr = &MemoryMarshal.GetReference(signatureInput))
             {
-                return secp256k1_ecdsa_signature_normalize.Value(_ctx, outPtr, intPtr) == 1;
+                return _ecdsa_signature_normalize(_ctx, outPtr, intPtr) == 1;
             }
         }
 
@@ -395,7 +356,7 @@ namespace Secp256k1Net
         /// </summary>
         /// <param name="signatureOutput">(Output) a signature object</param>
         /// <param name="signatureInput">(Input) a signature to be parsed</param>
-        /// <returns>True when the signature could be parsed, false otherwise.</returns>       
+        /// <returns>True when the signature could be parsed, false otherwise.</returns>
         public bool SignatureParseDer(Span<byte> signatureOutput, Span<byte> signatureInput)
         {
             if (signatureOutput.Length < SIGNATURE_LENGTH)
@@ -408,7 +369,7 @@ namespace Secp256k1Net
             fixed (byte* sig = &MemoryMarshal.GetReference(signatureOutput),
                 input = &MemoryMarshal.GetReference(signatureInput))
             {
-                return secp256k1_ecdsa_signature_parse_der.Value(_ctx, sig, input, inputlen) == 1;
+                return _ecdsa_signature_parse_der(_ctx, sig, input, inputlen) == 1;
             }
         }
 
@@ -421,18 +382,18 @@ namespace Secp256k1Net
         /// <param name="singatureOutputLength">(Output) lenght of serialized DER signature</param>
         /// <returns>True when the signature could be serialized, false otherwise.</returns>
         public bool SignatureSerializeDer(Span<byte> signatureOutput, Span<byte> signatureInput, out int singatureOutputLength)
-        {                
+        {
             if (signatureOutput.Length < SERIALIZED_DER_SIGNATURE_MAX_SIZE)
             {
                 throw new ArgumentException($"{nameof(signatureOutput)} must be {SERIALIZED_DER_SIGNATURE_MAX_SIZE} bytes as maximum to void truncate signature");
             }
 
-            uint sigOutputLength = (uint)SERIALIZED_DER_SIGNATURE_MAX_SIZE;
-            
+            nuint sigOutputLength = (nuint)SERIALIZED_DER_SIGNATURE_MAX_SIZE;
+
             fixed (byte* sig = &MemoryMarshal.GetReference(signatureOutput),
                 input = &MemoryMarshal.GetReference(signatureInput))
             {
-                var result = secp256k1_ecdsa_signature_serialize_der.Value(_ctx, sig, ref sigOutputLength, input);
+                var result = _ecdsa_signature_serialize_der(_ctx, sig, &sigOutputLength, input);
                 singatureOutputLength = (int)sigOutputLength;
                 return result == 1;
             }
@@ -459,7 +420,7 @@ namespace Secp256k1Net
             fixed (byte* output = &MemoryMarshal.GetReference(signatureOutput),
                 sig = &MemoryMarshal.GetReference(signatureInput))
             {
-                var result = secp256k1_ecdsa_signature_serialize_compact.Value(_ctx, output, sig);
+                var result = _ecdsa_signature_serialize_compact(_ctx, output, sig);
                 return result == 1;
             }
         }
@@ -491,7 +452,7 @@ namespace Secp256k1Net
             fixed (byte* output = &MemoryMarshal.GetReference(signatureOutput),
                 sig = &MemoryMarshal.GetReference(signatureInput))
             {
-                var result = secp256k1_ecdsa_signature_parse_compact.Value(_ctx, output, sig);
+                var result = _ecdsa_signature_parse_compact(_ctx, output, sig);
                 return result == 1;
             }
         }
@@ -528,7 +489,7 @@ namespace Secp256k1Net
                 msgPtr = &MemoryMarshal.GetReference(messageHash),
                 pubPtr = &MemoryMarshal.GetReference(publicKey))
             {
-                return secp256k1_ecdsa_verify.Value(_ctx, sigPtr, msgPtr, pubPtr) == 1;
+                return _ecdsa_verify(_ctx, sigPtr, msgPtr, pubPtr) == 1;
             }
         }
 
@@ -560,7 +521,7 @@ namespace Secp256k1Net
                 msgPtr = &MemoryMarshal.GetReference(messageHash),
                 secPtr = &MemoryMarshal.GetReference(secretKey))
             {
-                return secp256k1_ecdsa_sign.Value(_ctx, sigPtr, msgPtr, secPtr, IntPtr.Zero, IntPtr.Zero.ToPointer()) == 1;
+                return _ecdsa_sign(_ctx, sigPtr, msgPtr, secPtr, IntPtr.Zero, IntPtr.Zero.ToPointer()) == 1;
             }
         }
 
@@ -590,7 +551,7 @@ namespace Secp256k1Net
                 pubPtr = &MemoryMarshal.GetReference(publicKey),
                 privPtr = &MemoryMarshal.GetReference(privateKey))
             {
-                return secp256k1_ecdh.Value(_ctx, resPtr, pubPtr, privPtr, null, IntPtr.Zero) == 1;
+                return _ecdh(_ctx, resPtr, pubPtr, privPtr, IntPtr.Zero, IntPtr.Zero) == 1;
             }
         }
 
@@ -628,11 +589,13 @@ namespace Secp256k1Net
                 return hashFunction(outputSpan, xSpan, ySpan, d);
             };
 
+            var hashFuncPtr = Marshal.GetFunctionPointerForDelegate(hashFunctionPtr);
+
             fixed (byte* resPtr = &MemoryMarshal.GetReference(resultOutput),
                 pubPtr = &MemoryMarshal.GetReference(publicKey),
                 privPtr = &MemoryMarshal.GetReference(privateKey))
             {
-                return secp256k1_ecdh.Value(_ctx, resPtr, pubPtr, privPtr, hashFunctionPtr, data) == 1;
+                return _ecdh(_ctx, resPtr, pubPtr, privPtr, hashFuncPtr, data) == 1;
             }
         }
 
@@ -650,7 +613,7 @@ namespace Secp256k1Net
             {
                 throw new ArgumentException($"{nameof(outputPublicKey)} must be {PUBKEY_LENGTH} bytes");
             }
-            
+
             if ( publicKey1.Length < PUBKEY_LENGTH)
             {
                 throw new ArgumentException($"{nameof(publicKey1)} must be {PUBKEY_LENGTH} bytes");
@@ -659,19 +622,19 @@ namespace Secp256k1Net
             {
                 throw new ArgumentException($"{nameof(publicKey2)} must be {PUBKEY_LENGTH} bytes");
             }
-            
+
             var intPtrSize = Marshal.SizeOf(typeof(IntPtr));
             var nativeArray = Marshal.AllocHGlobal(intPtrSize * 2);
             try
             {
                 fixed (
                     byte* outPubPtr = &MemoryMarshal.GetReference(outputPublicKey),
-                    inPubPtr1 = &MemoryMarshal.GetReference(publicKey1), 
+                    inPubPtr1 = &MemoryMarshal.GetReference(publicKey1),
                     inPubPtr2 = &MemoryMarshal.GetReference(publicKey2))
                 {
                     Marshal.WriteIntPtr(nativeArray, 0, (IntPtr)inPubPtr1);
                     Marshal.WriteIntPtr(nativeArray, intPtrSize, (IntPtr)inPubPtr2);
-                    return secp256k1_ec_pubkey_combine.Value(_ctx, outPubPtr, nativeArray, 2) == 1;
+                    return _ec_pubkey_combine(_ctx, outPubPtr, nativeArray, 2) == 1;
                 }
             }
             finally
@@ -693,7 +656,7 @@ namespace Secp256k1Net
             }
             fixed (byte* pubPtr = &MemoryMarshal.GetReference(publicKey))
             {
-                return secp256k1_ec_pubkey_negate.Value(_ctx, pubPtr) == 1;
+                return _ec_pubkey_negate(_ctx, pubPtr) == 1;
             }
         }
 
@@ -717,7 +680,7 @@ namespace Secp256k1Net
             fixed (byte* pubPtr = &MemoryMarshal.GetReference(publicKey),
                    tweakPtr = &MemoryMarshal.GetReference(tweak))
             {
-                return secp256k1_ec_pubkey_tweak_mul.Value(_ctx, pubPtr, tweakPtr) == 1;
+                return _ec_pubkey_tweak_mul(_ctx, pubPtr, tweakPtr) == 1;
             }
         }
 
@@ -752,7 +715,7 @@ namespace Secp256k1Net
                    algoPtr = &MemoryMarshal.GetReference(algo),
                    dataPtr = &MemoryMarshal.GetReference(data))
             {
-                return secp256k1_nonce_function_rfc6979.Value(nonceOutPtr, hashPtr, secPtr, algoPtr, dataPtr, attempt) == 1;
+                return _nonce_function_rfc6979(nonceOutPtr, hashPtr, secPtr, algoPtr, dataPtr, attempt) == 1;
             }
         }
 
@@ -765,7 +728,7 @@ namespace Secp256k1Net
             }
             if (_ctx != IntPtr.Zero)
             {
-                secp256k1_context_destroy.Value(_ctx);
+                _context_destroy(_ctx);
                 _ctx = IntPtr.Zero;
             }
         }

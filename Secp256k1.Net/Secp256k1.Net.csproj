@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>netstandard2.0</TargetFramework>
+        <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
         <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
         <LangVersion>latest</LangVersion>
         <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
@@ -12,14 +12,14 @@
         <PackageProjectUrl>https://github.com/zone117x/Secp256k1.Net</PackageProjectUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <NoWarn>1591,1573</NoWarn>
+        <NoWarn>1591;NU5100</NoWarn>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <RootNamespace>Secp256k1Net</RootNamespace>
         <Version Condition="'$(VersionSuffix)' != ''">$(VersionSuffix)</Version>
-        <Version Condition="'$(VersionSuffix)' == ''">0.1.0</Version>
+        <Version Condition="'$(VersionSuffix)' == ''">0.0.1-local.1</Version>
     </PropertyGroup>
     <ItemGroup>
         <None Include="../README.md" Pack="true" PackagePath="/" />
@@ -28,17 +28,40 @@
         <InternalsVisibleTo Include="Secp256k1.Net.Test" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Secp256k1.Native" Version="0.2.0-alpha.1" PrivateAssets="all" />
-        <PackageReference Include="System.Memory" Version="4.6.3" />
+        <PackageReference Include="Secp256k1.Native" Version="0.7.0-beta.1" PrivateAssets="all" GeneratePathProperty="true" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.102" PrivateAssets="All" />
     </ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+        <PackageReference Include="System.Memory" Version="4.6.3" />
+    </ItemGroup>
+    <!--
+      Include native libraries from Secp256k1.Native package.
+      $(PkgSecp256k1_Native) is set by GeneratePathProperty="true" on the PackageReference.
+      This makes natives available for projects referencing via ProjectReference.
+    -->
+    <ItemGroup>
+        <Content Include="$(PkgSecp256k1_Native)/runtimes/*/native/*.*"
+                 Link="runtimes/%(RecursiveDir)%(Filename)%(Extension)"
+                 CopyToOutputDirectory="PreserveNewest"
+                 Pack="false"
+                 Visible="false" />
+    </ItemGroup>
+    <!--
+      Pack native libraries into content/native/{rid}/ so this package is self-contained
+      and doesn't require a transitive dependency on Secp256k1.Native.
+      The Secp256k1.Net.targets file copies these to runtimes/{rid}/native/ at build time.
+
+      We can't use %(RecursiveDir) because it includes "linux-x64/native/" but we only
+      want the RID. The nested calls extract just the RID:
+        .../runtimes/linux-x64/native/libsecp256k1.so
+                     ^^^^^^^^^ GetFileName(GetDirectoryName(GetDirectoryName(path)))
+    -->
     <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">
+        <!-- Use netstandard2.0 output since natives are identical across TFMs -->
         <ItemGroup>
-            <_PackageFiles Include="$(OutputPath)/native/**/*">
-                <BuildAction>Content</BuildAction>
-                <PackagePath>content/native/</PackagePath>
-                <!--<CopyToOutput>true</CopyToOutput>-->
-                <!--<PackageCopyToOutput>true</PackageCopyToOutput>-->
+            <_NativeFilesToPack Include="$(OutputPath)netstandard2.0/runtimes/*/native/*.*" />
+            <_PackageFiles Include="@(_NativeFilesToPack)">
+                <PackagePath>content/native/$([System.IO.Path]::GetFileName($([System.IO.Path]::GetDirectoryName($([System.IO.Path]::GetDirectoryName('%(Identity)'))))))/%(Filename)%(Extension)</PackagePath>
             </_PackageFiles>
         </ItemGroup>
     </Target>
@@ -46,6 +69,10 @@
         <_PackageFiles Include="Secp256k1.Net.targets">
             <BuildAction>None</BuildAction>
             <PackagePath>build/</PackagePath>
+        </_PackageFiles>
+        <_PackageFiles Include="Secp256k1.Net.targets">
+            <BuildAction>None</BuildAction>
+            <PackagePath>buildTransitive/</PackagePath>
         </_PackageFiles>
     </ItemGroup>
 </Project>

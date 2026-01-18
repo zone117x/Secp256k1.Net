@@ -5,22 +5,53 @@ namespace Secp256k1Net.DynamicLinking
 {
     static class DynamicLinkingLinux
     {
-        // Linux distros often do not link 'libdl.so' to 'libdl.so.2' by default.
-        // This results in "System.DllNotFoundException: Unable to load shared library 'libdl'.."
-        // when not using the shared lib version naming convention.
-        // Run "ldconfig -p | grep libdl" on a fresh Ubuntu Server to see only "libdl.so.2"
-        const string LIBDL = "libdl.so.2";
+        public const int RTLD_NOW = 2;
 
-        [DllImport(LIBDL)]
-        public static extern IntPtr dlopen(string path, int flags);
+        // Try libdl first (glibc systems), fall back to libc (musl/Alpine)
+        [DllImport("libdl", EntryPoint = "dlopen")]
+        private static extern IntPtr dlopen_libdl(string path, int flags);
+        [DllImport("libdl", EntryPoint = "dlclose")]
+        private static extern int dlclose_libdl(IntPtr handle);
+        [DllImport("libdl", EntryPoint = "dlerror")]
+        private static extern IntPtr dlerror_libdl();
+        [DllImport("libdl", EntryPoint = "dlsym")]
+        private static extern IntPtr dlsym_libdl(IntPtr handle, string name);
 
-        [DllImport(LIBDL)]
-        public static extern int dlclose(IntPtr handle);
+        // On musl-based systems (Alpine), dlopen is in libc
+        [DllImport("libc", EntryPoint = "dlopen")]
+        private static extern IntPtr dlopen_libc(string path, int flags);
+        [DllImport("libc", EntryPoint = "dlclose")]
+        private static extern int dlclose_libc(IntPtr handle);
+        [DllImport("libc", EntryPoint = "dlerror")]
+        private static extern IntPtr dlerror_libc();
+        [DllImport("libc", EntryPoint = "dlsym")]
+        private static extern IntPtr dlsym_libc(IntPtr handle, string name);
 
-        [DllImport(LIBDL)]
-        public static extern IntPtr dlerror();
+        private static readonly bool UseLibdl = ProbeLibdl();
 
-        [DllImport(LIBDL)]
-        public static extern IntPtr dlsym(IntPtr handle, string name);
+        private static bool ProbeLibdl()
+        {
+            try
+            {
+                dlopen_libdl(null, RTLD_NOW);
+                return true;
+            }
+            catch (DllNotFoundException)
+            {
+                return false;
+            }
+        }
+
+        public static IntPtr dlopen(string path, int flags) =>
+            UseLibdl ? dlopen_libdl(path, flags) : dlopen_libc(path, flags);
+
+        public static int dlclose(IntPtr handle) =>
+            UseLibdl ? dlclose_libdl(handle) : dlclose_libc(handle);
+
+        public static IntPtr dlerror() =>
+            UseLibdl ? dlerror_libdl() : dlerror_libc();
+
+        public static IntPtr dlsym(IntPtr handle, string name) =>
+            UseLibdl ? dlsym_libdl(handle, name) : dlsym_libc(handle, name);
     }
 }

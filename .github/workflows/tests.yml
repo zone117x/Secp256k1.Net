@@ -90,3 +90,152 @@ jobs:
         with:
           name: benchmarks-${{ matrix.os }}-${{ matrix.dotnet.framework }}-report
           path: BenchmarkDotNet.Artifacts/results/*
+
+  # NativeLibTest - Tests native library loading in various deployment scenarios
+  nativelib-linux-x64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Run portable tests
+        run: ./test/NativeLibTest/test-linux-portable.sh linux-x64
+      - name: Run RID-specific tests
+        run: ./test/NativeLibTest/test-linux-rid.sh linux-x64
+      - name: Run AOT tests
+        run: ./test/NativeLibTest/test-linux-aot.sh linux-x64
+
+  nativelib-linux-musl-x64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Run portable tests
+        run: ./test/NativeLibTest/test-linux-portable.sh linux-musl-x64
+      - name: Run RID-specific tests
+        run: ./test/NativeLibTest/test-linux-rid.sh linux-musl-x64
+      - name: Run AOT tests
+        run: ./test/NativeLibTest/test-linux-aot.sh linux-musl-x64
+
+  nativelib-linux-arm64:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Run portable tests
+        run: ./test/NativeLibTest/test-linux-portable.sh linux-arm64
+      - name: Run RID-specific tests
+        run: ./test/NativeLibTest/test-linux-rid.sh linux-arm64
+      - name: Run AOT tests
+        run: ./test/NativeLibTest/test-linux-aot.sh linux-arm64
+
+  nativelib-linux-musl-arm64:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Run portable tests
+        run: ./test/NativeLibTest/test-linux-portable.sh linux-musl-arm64
+      - name: Run RID-specific tests
+        run: ./test/NativeLibTest/test-linux-rid.sh linux-musl-arm64
+      - name: Run AOT tests
+        run: ./test/NativeLibTest/test-linux-aot.sh linux-musl-arm64
+
+  nativelib-macos-x64:
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Run macOS tests
+        run: ./test/NativeLibTest/test-macos.sh all
+
+  nativelib-macos-arm64:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Run macOS tests
+        run: ./test/NativeLibTest/test-macos.sh all
+
+  nativelib-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Run Windows tests
+        run: ./test/NativeLibTest/test-windows.ps1 -BuildMode all
+
+  # NativeLibTestLegacy - Tests .NET Framework 4.6.2 compatibility
+  nativelib-legacy-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Run legacy .NET Framework tests
+        run: ./test/NativeLibTestLegacy/test-windows.ps1
+
+  nativelib-legacy-mono-linux-x64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Install Mono
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mono-complete
+      - name: Run Mono tests
+        run: ./test/NativeLibTestLegacy/test-mono.sh
+
+  nativelib-legacy-mono-linux-arm64:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Install Mono
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mono-complete
+      - name: Run Mono tests
+        run: ./test/NativeLibTestLegacy/test-mono.sh
+
+  nativelib-legacy-mono-macos-x64:
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Install Mono
+        run: brew install mono
+      - name: Run Mono tests
+        run: ./test/NativeLibTestLegacy/test-mono.sh

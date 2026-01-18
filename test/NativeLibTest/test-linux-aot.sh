@@ -39,16 +39,16 @@ is_native_arch() {
 # Get Docker SDK image for AOT compilation (compatible with bash 3.x)
 get_sdk_image() {
     case "$1" in
-        linux-x64|linux-arm64) echo "mcr.microsoft.com/dotnet/sdk:8.0" ;;
-        linux-musl-x64|linux-musl-arm64) echo "mcr.microsoft.com/dotnet/sdk:8.0-alpine" ;;
+        linux-x64|linux-arm64) echo "mcr.microsoft.com/dotnet/sdk:10.0" ;;
+        linux-musl-x64|linux-musl-arm64) echo "mcr.microsoft.com/dotnet/sdk:10.0-alpine" ;;
     esac
 }
 
 # Get Docker runtime image for running the AOT binary (compatible with bash 3.x)
 get_runtime_image() {
     case "$1" in
-        linux-x64|linux-arm64) echo "mcr.microsoft.com/dotnet/runtime-deps:8.0" ;;
-        linux-musl-x64|linux-musl-arm64) echo "mcr.microsoft.com/dotnet/runtime-deps:8.0-alpine" ;;
+        linux-x64|linux-arm64) echo "mcr.microsoft.com/dotnet/runtime-deps:10.0" ;;
+        linux-musl-x64|linux-musl-arm64) echo "mcr.microsoft.com/dotnet/runtime-deps:10.0-alpine" ;;
     esac
 }
 

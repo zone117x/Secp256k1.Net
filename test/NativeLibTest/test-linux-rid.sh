@@ -14,8 +14,8 @@ RID="${1:-all}"
 # Get Docker image for a RID (compatible with bash 3.x)
 get_docker_image() {
     case "$1" in
-        linux-x64|linux-arm64) echo "mcr.microsoft.com/dotnet/runtime:8.0" ;;
-        linux-musl-x64|linux-musl-arm64) echo "mcr.microsoft.com/dotnet/runtime:8.0-alpine" ;;
+        linux-x64|linux-arm64) echo "mcr.microsoft.com/dotnet/runtime:10.0" ;;
+        linux-musl-x64|linux-musl-arm64) echo "mcr.microsoft.com/dotnet/runtime:10.0-alpine" ;;
     esac
 }
 

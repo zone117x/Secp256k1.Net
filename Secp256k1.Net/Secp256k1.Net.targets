@@ -3,9 +3,10 @@
   <!--
     Native library directory within this package.
     $(MSBuildThisFileDirectory) points to build/ or buildTransitive/ in package context.
+    We use 'native/' instead of 'content/' to avoid NuGet's special handling of content items.
   -->
   <PropertyGroup>
-    <_Secp256k1NativeDir>$(MSBuildThisFileDirectory)../content/native</_Secp256k1NativeDir>
+    <_Secp256k1NativeDir>$(MSBuildThisFileDirectory)../native</_Secp256k1NativeDir>
   </PropertyGroup>
 
   <!--

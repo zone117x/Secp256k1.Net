@@ -47,9 +47,12 @@
                  Visible="false" />
     </ItemGroup>
     <!--
-      Pack native libraries into content/native/{rid}/ so this package is self-contained
+      Pack native libraries into native/{rid}/ so this package is self-contained
       and doesn't require a transitive dependency on Secp256k1.Native.
       The Secp256k1.Net.targets file copies these to runtimes/{rid}/native/ at build time.
+
+      We use 'native/' instead of 'content/' to avoid NuGet's special handling of content items
+      which can cause files to be copied to unexpected locations in .NET Framework projects.
 
       We can't use %(RecursiveDir) because it includes "linux-x64/native/" but we only
       want the RID. The nested calls extract just the RID:
@@ -61,7 +64,7 @@
         <ItemGroup>
             <_NativeFilesToPack Include="$(OutputPath)netstandard2.0/runtimes/*/native/*.*" />
             <_PackageFiles Include="@(_NativeFilesToPack)">
-                <PackagePath>content/native/$([System.IO.Path]::GetFileName($([System.IO.Path]::GetDirectoryName($([System.IO.Path]::GetDirectoryName('%(Identity)'))))))/%(Filename)%(Extension)</PackagePath>
+                <PackagePath>native/$([System.IO.Path]::GetFileName($([System.IO.Path]::GetDirectoryName($([System.IO.Path]::GetDirectoryName('%(Identity)'))))))/%(Filename)%(Extension)</PackagePath>
             </_PackageFiles>
         </ItemGroup>
     </Target>

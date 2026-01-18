@@ -98,7 +98,7 @@ jobs:
           path: BenchmarkDotNet.Artifacts/results/*
 
   # NativeLibTest - Tests native library loading in various deployment scenarios
-  nativelib-linux-x64:
+  platform-test-linux-x64:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -113,7 +113,7 @@ jobs:
       - name: Run AOT tests
         run: ./test/NativeLibTest/test-linux-aot.sh linux-x64
 
-  nativelib-linux-musl-x64:
+  platform-test-linux-musl-x64:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -128,7 +128,7 @@ jobs:
       - name: Run AOT tests
         run: ./test/NativeLibTest/test-linux-aot.sh linux-musl-x64
 
-  nativelib-linux-arm64:
+  platform-test-linux-arm64:
     runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
@@ -143,7 +143,7 @@ jobs:
       - name: Run AOT tests
         run: ./test/NativeLibTest/test-linux-aot.sh linux-arm64
 
-  nativelib-linux-musl-arm64:
+  platform-test-linux-musl-arm64:
     runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
@@ -158,7 +158,7 @@ jobs:
       - name: Run AOT tests
         run: ./test/NativeLibTest/test-linux-aot.sh linux-musl-arm64
 
-  nativelib-macos-x64:
+  platform-test-macos-x64:
     runs-on: macos-15-intel
     steps:
       - uses: actions/checkout@v4
@@ -169,7 +169,7 @@ jobs:
       - name: Run macOS tests
         run: ./test/NativeLibTest/test-macos.sh all
 
-  nativelib-macos-arm64:
+  platform-test-macos-arm64:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -180,7 +180,7 @@ jobs:
       - name: Run macOS tests
         run: ./test/NativeLibTest/test-macos.sh all
 
-  nativelib-windows:
+  platform-test-windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -192,7 +192,7 @@ jobs:
         run: ./test/NativeLibTest/test-windows.ps1 -BuildMode all
 
   # NativeLibTestLegacy - Tests .NET Framework 4.6.2 compatibility
-  nativelib-legacy-windows:
+  platform-test-legacy-windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -203,7 +203,7 @@ jobs:
       - name: Run legacy .NET Framework tests
         run: ./test/NativeLibTestLegacy/test-windows.ps1
 
-  nativelib-legacy-mono-linux-x64:
+  platform-test-legacy-mono-linux-x64:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -218,7 +218,7 @@ jobs:
       - name: Run Mono tests
         run: ./test/NativeLibTestLegacy/test-mono.sh
 
-  nativelib-legacy-mono-linux-arm64:
+  platform-test-legacy-mono-linux-arm64:
     runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
@@ -233,7 +233,7 @@ jobs:
       - name: Run Mono tests
         run: ./test/NativeLibTestLegacy/test-mono.sh
 
-  nativelib-legacy-mono-macos-x64:
+  platform-test-legacy-mono-macos-x64:
     runs-on: macos-15-intel
     steps:
       - uses: actions/checkout@v4

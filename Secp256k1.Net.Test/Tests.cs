@@ -367,12 +367,17 @@ namespace Secp256k1Net.Test
         }
 
         [TestMethod]
-        public void LibPathProperty_ReturnsValidPath()
+        public void LibPathProperty_ReturnsValidValue()
         {
             // Access the static LibPath property to ensure it's covered
             var libPath = Secp256k1.LibPath;
             Assert.IsNotNull(libPath);
-            Assert.IsTrue(File.Exists(libPath), $"LibPath should point to an existing file: {libPath}");
+            // LibPath is either a library name (standard resolution via NativeLibrary.TryLoad)
+            // or a full file path (fallback via LibPathResolver)
+            var isLibraryName = libPath == "secp256k1" || libPath == "libsecp256k1";
+            var isFilePath = File.Exists(libPath);
+            Assert.IsTrue(isLibraryName || isFilePath,
+                $"LibPath should be either a library name or an existing file path: {libPath}");
         }
 
         [TestMethod]

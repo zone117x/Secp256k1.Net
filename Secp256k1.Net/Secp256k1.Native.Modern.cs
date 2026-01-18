@@ -58,7 +58,7 @@ namespace Secp256k1Net
                 DllImportSearchPath.AssemblyDirectory | DllImportSearchPath.ApplicationDirectory,
                 out var handle))
             {
-                _libPath = "secp256k1 (standard resolution)";
+                _libPath = "secp256k1";
                 return handle;
             }
 
@@ -67,7 +67,7 @@ namespace Secp256k1Net
                 DllImportSearchPath.AssemblyDirectory | DllImportSearchPath.ApplicationDirectory,
                 out handle))
             {
-                _libPath = "libsecp256k1 (standard resolution)";
+                _libPath = "libsecp256k1";
                 return handle;
             }
 

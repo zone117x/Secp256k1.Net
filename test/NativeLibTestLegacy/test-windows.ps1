@@ -35,6 +35,13 @@ function Run-Test {
     Write-Host "==> Running test..."
     Write-Host ""
 
+    # Debug: show output directory contents related to secp256k1
+    Write-Host "Debug: Checking for secp256k1 files..."
+    Get-ChildItem -Path $OutputDir -Recurse -Filter "*secp256k1*" | ForEach-Object {
+        Write-Host "  Found: $($_.FullName) (Size: $($_.Length))"
+    }
+    Write-Host ""
+
     # Run the executable - the library probes for the correct native library at runtime
     $exe = "$OutputDir/NativeLibTestLegacy.exe"
     & $exe

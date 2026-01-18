@@ -122,11 +122,11 @@ function Test-RidSpecific {
     Write-Host "Running test..."
     dotnet "$OutputDir/NativeLibTest.dll"
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "--- RID-specific $RID: PASSED ---"
+        Write-Host "--- RID-specific ${RID}: PASSED ---"
         Write-Host ""
         return $true
     } else {
-        Write-Host "--- RID-specific $RID: FAILED ---"
+        Write-Host "--- RID-specific ${RID}: FAILED ---"
         Write-Host ""
         return $false
     }

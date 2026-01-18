@@ -40,7 +40,7 @@
       This makes natives available for projects referencing via ProjectReference.
     -->
     <ItemGroup>
-        <Content Include="$(PkgSecp256k1_Native)/runtimes/*/native/*.*"
+        <Content Include="$(PkgSecp256k1_Native)/runtimes/**/*.*"
                  Link="runtimes/%(RecursiveDir)%(Filename)%(Extension)"
                  CopyToOutputDirectory="PreserveNewest"
                  Pack="false"

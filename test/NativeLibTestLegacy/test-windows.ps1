@@ -70,15 +70,18 @@ function Build-Legacy {
     }
     Write-Host ""
 
-    # Restore NuGet packages first (using dotnet restore for simplicity)
-    Write-Host "==> Restoring NuGet packages..."
-    dotnet restore
+    # Map architecture to RuntimeIdentifier
+    $RID = if ($Arch -eq "x64") { "win-x64" } else { "win-x86" }
+
+    # Restore NuGet packages with the target RID
+    Write-Host "==> Restoring NuGet packages (RID=$RID)..."
+    dotnet restore -r $RID
     if ($LASTEXITCODE -ne 0) { throw "NuGet restore failed" }
 
     # Build using Visual Studio's MSBuild for authentic .NET Framework build
     # Use PlatformTarget (not Platform) for SDK-style projects to set CPU architecture
     Write-Host "==> Building with MSBuild (PlatformTarget=$Arch)..."
-    & $MSBuild NativeLibTestLegacy.csproj /p:Configuration=Release /p:PlatformTarget=$Arch /v:normal
+    & $MSBuild NativeLibTestLegacy.csproj /p:Configuration=Release /p:PlatformTarget=$Arch /p:RuntimeIdentifier=$RID /v:normal
     if ($LASTEXITCODE -ne 0) { throw "Build failed" }
 
     # Debug: Show directory structure after build

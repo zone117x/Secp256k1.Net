@@ -27,7 +27,13 @@ jobs:
       - name: Build
         run: dotnet build Secp256k1.Net.Test --configuration Release --framework ${{ matrix.dotnet.framework }} --no-restore
       - name: Test
-        run: dotnet test Secp256k1.Net.Test --configuration Release --framework ${{ matrix.dotnet.framework }} --no-build --verbosity normal --blame-crash -p:CollectCoverage=true -p:CoverletOutputFormat=cobertura -p:CoverletOutput=./TestResults/
+        run: dotnet test Secp256k1.Net.Test --configuration Release --framework ${{ matrix.dotnet.framework }} --no-build --verbosity normal --blame-crash --logger "console;verbosity=detailed" -p:CollectCoverage=true -p:CoverletOutputFormat=cobertura -p:CoverletOutput=./TestResults/
+      - name: Print test logs
+        if: failure()
+        shell: bash
+        run: |
+          echo "=== Test log files ==="
+          find . -name "*.log" -path "*/TestResults/*" -exec echo "--- {} ---" \; -exec cat {} \;
       - name: List coverage files
         if: always()
         run: |

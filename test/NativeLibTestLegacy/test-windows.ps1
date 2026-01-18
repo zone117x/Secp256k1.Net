@@ -3,7 +3,8 @@
 #
 # Prerequisites:
 #   - .NET Framework 4.6.2 or later (included in Windows 10+)
-#   - .NET SDK for building
+#   - Visual Studio 2022 Build Tools or Visual Studio 2022
+#   - .NET SDK for building the NuGet package
 param(
     [ValidateSet("x64", "x86")]
     [string]$Arch = "x64"
@@ -18,6 +19,30 @@ Set-Location $ScriptDir
 Write-Host "========================================"
 Write-Host "Testing legacy .NET Framework on Windows ($Arch)"
 Write-Host "========================================"
+Write-Host ""
+
+# Find MSBuild from Visual Studio installation
+function Find-MSBuild {
+    # Try vswhere first (Visual Studio 2017+)
+    $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+    if (Test-Path $vswhere) {
+        $vsPath = & $vswhere -latest -requires Microsoft.Component.MSBuild -find "MSBuild\**\Bin\MSBuild.exe" | Select-Object -First 1
+        if ($vsPath) {
+            return $vsPath
+        }
+    }
+
+    # Fallback to .NET Framework MSBuild
+    $frameworkMSBuild = "$env:SystemRoot\Microsoft.NET\Framework64\v4.0.30319\MSBuild.exe"
+    if (Test-Path $frameworkMSBuild) {
+        return $frameworkMSBuild
+    }
+
+    throw "MSBuild not found. Please install Visual Studio 2022 or Build Tools."
+}
+
+$MSBuild = Find-MSBuild
+Write-Host "Using MSBuild: $MSBuild"
 Write-Host ""
 
 function Build-Package {
@@ -45,7 +70,15 @@ function Build-Legacy {
     }
     Write-Host ""
 
-    dotnet build -c Release -p:PlatformTarget=$Arch
+    # Restore NuGet packages first (using dotnet restore for simplicity)
+    Write-Host "==> Restoring NuGet packages..."
+    dotnet restore
+    if ($LASTEXITCODE -ne 0) { throw "NuGet restore failed" }
+
+    # Build using Visual Studio's MSBuild for authentic .NET Framework build
+    # Use PlatformTarget (not Platform) for SDK-style projects to set CPU architecture
+    Write-Host "==> Building with MSBuild (PlatformTarget=$Arch)..."
+    & $MSBuild NativeLibTestLegacy.csproj /p:Configuration=Release /p:PlatformTarget=$Arch /v:normal
     if ($LASTEXITCODE -ne 0) { throw "Build failed" }
 
     # Debug: Show directory structure after build

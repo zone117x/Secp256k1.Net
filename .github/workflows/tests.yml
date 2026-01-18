@@ -192,7 +192,7 @@ jobs:
         run: ./test/NativeLibTest/test-windows.ps1 -BuildMode all
 
   # NativeLibTestLegacy - Tests .NET Framework 4.6.2 compatibility
-  platform-test-legacy-windows:
+  platform-test-legacy-windows-x64:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -200,8 +200,19 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-      - name: Run legacy .NET Framework tests
-        run: ./test/NativeLibTestLegacy/test-windows.ps1
+      - name: Run legacy .NET Framework tests (64-bit)
+        run: ./test/NativeLibTestLegacy/test-windows.ps1 -Arch x64
+
+  platform-test-legacy-windows-x86:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Run legacy .NET Framework tests (32-bit)
+        run: ./test/NativeLibTestLegacy/test-windows.ps1 -Arch x86
 
   platform-test-legacy-mono-linux-x64:
     runs-on: ubuntu-latest

@@ -160,7 +160,7 @@ namespace Secp256k1Net.Bench
             if (!secp256k1.EcdsaSignatureParseCompact(parsedSig, signature))
                 throw new Exception();
             var parsedPubKey = new byte[Secp256k1.PUBKEY_LENGTH];
-            if (!secp256k1.EcPubkeyParse(parsedPubKey, keyPair.PublicKeyCompressed, (nuint)keyPair.PublicKeyCompressed.Length))
+            if (!secp256k1.EcPubkeyParse(parsedPubKey, keyPair.PublicKeyCompressed))
                 throw new Exception();
             if (!secp256k1.EcdsaVerify(parsedSig, msg.MsgHash, parsedPubKey))
                 throw new Exception();

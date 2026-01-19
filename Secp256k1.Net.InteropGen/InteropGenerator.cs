@@ -796,6 +796,25 @@ public class InteropGenerator
         ["secp256k1_ellswift_xdh_hash_function"] = "EllswiftXdhHashFunction",
     };
 
+    /// <summary>
+    /// Generates validation code for functions where buffer size depends on an enum parameter value.
+    /// </summary>
+    private void GenerateEnumBasedValidation(StringBuilder sb, string functionName, List<WrapperParameter> wrapperParams)
+    {
+        // secp256k1_ec_pubkey_serialize: output size depends on flags (compressed=33, uncompressed=65)
+        if (functionName == "secp256k1_ec_pubkey_serialize")
+        {
+            var outputParam = wrapperParams.FirstOrDefault(p => p.WrapperName == "output");
+            var flagsParam = wrapperParams.FirstOrDefault(p => p.WrapperName == "flags");
+            if (outputParam != null && flagsParam != null)
+            {
+                sb.AppendLine($"            var requiredOutputSize = {flagsParam.WrapperName} == Secp256k1EcFlags.Compressed ? 33 : 65;");
+                sb.AppendLine($"            if ({outputParam.WrapperName}.Length < requiredOutputSize)");
+                sb.AppendLine($"                throw new ArgumentException($\"{{nameof({outputParam.WrapperName})}} must be at least {{requiredOutputSize}} bytes for the specified flags\");");
+            }
+        }
+    }
+
     // User-friendly delegates that are already defined in hand-written code (skip generation)
     private static readonly HashSet<string> SkipDelegateGeneration = new()
     {
@@ -991,6 +1010,9 @@ public class InteropGenerator
             sb.AppendLine($"            if ({param.WrapperName}.Length < {param.RequiredSize})");
             sb.AppendLine($"                throw new ArgumentException($\"{{nameof({param.WrapperName})}} must be at least {param.RequiredSize} bytes\");");
         }
+
+        // Generate enum-based size validation for specific functions
+        GenerateEnumBasedValidation(sb, func.Name, wrapperParams);
 
         // Collect span parameters for fixed statement
         var spanParams = wrapperParams.Where(p => p.IsSpan).ToList();

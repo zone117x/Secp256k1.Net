@@ -97,6 +97,9 @@ namespace Secp256k1Net
         {
             if (pubkey.Length < 64)
                 throw new ArgumentException($"{nameof(pubkey)} must be at least 64 bytes");
+            var requiredOutputSize = flags == Secp256k1EcFlags.Compressed ? 33 : 65;
+            if (output.Length < requiredOutputSize)
+                throw new ArgumentException($"{nameof(output)} must be at least {requiredOutputSize} bytes for the specified flags");
 
             fixed (byte* outputPtr = &MemoryMarshal.GetReference(output),
                 pubkeyPtr = &MemoryMarshal.GetReference(pubkey))

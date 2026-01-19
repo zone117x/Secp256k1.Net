@@ -1663,17 +1663,16 @@ namespace Secp256k1Net.Test
         }
 
         [TestMethod]
-        public void EcPubkeySerialize_TooSmallOutput_ReturnsFalse()
+        [ExpectedException(typeof(ArgumentException))]
+        public void EcPubkeySerialize_TooSmallOutput_ThrowsArgumentException()
         {
-            // Variable-length output buffers are not validated by the wrapper.
-            // The native library handles size checking and returns failure.
+            // The wrapper validates output buffer size based on the flags parameter.
             using var secp256k1 = new Secp256k1();
             var pubkey = new byte[64];
             secp256k1.EcPubkeyCreate(pubkey, TestPrivateKey);
             var output = new byte[31]; // Too small for compressed (33 bytes)
             nuint outputLen = (nuint)output.Length;
-            var result = secp256k1.EcPubkeySerialize(output, ref outputLen, pubkey, Secp256k1EcFlags.Compressed);
-            Assert.IsFalse(result, "Native library should reject too-small buffer");
+            secp256k1.EcPubkeySerialize(output, ref outputLen, pubkey, Secp256k1EcFlags.Compressed);
         }
 
         [TestMethod]

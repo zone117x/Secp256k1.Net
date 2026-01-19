@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -103,6 +104,10 @@ namespace Secp256k1Net
 
         }
 
+#if NET8_0_OR_GREATER
+        [UnconditionalSuppressMessage("SingleFile", "IL3000:Assembly.Location returns empty in single-file apps",
+            Justification = "AppContext.BaseDirectory is checked first; Assembly.Location is a fallback for non-single-file scenarios")]
+#endif
         static IEnumerable<string> GetSearchLocations()
         {
             // AppContext.BaseDirectory is the recommended way to get the app directory,

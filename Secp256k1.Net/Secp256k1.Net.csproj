@@ -12,7 +12,8 @@
         <PackageProjectUrl>https://github.com/zone117x/Secp256k1.Net</PackageProjectUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <NoWarn>1591;NU5100</NoWarn>
+        <!-- IL3000: Assembly.Location returns empty in single-file apps - we check AppContext.BaseDirectory first -->
+        <NoWarn>1591;NU5100;IL3000</NoWarn>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <IncludeSymbols>true</IncludeSymbols>

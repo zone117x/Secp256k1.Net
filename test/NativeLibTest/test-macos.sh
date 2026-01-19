@@ -1,6 +1,6 @@
 #!/bin/bash
 # Test builds on macOS (run natively on macOS CI runner or local machine)
-# Usage: ./test-macos.sh [portable|rid|aot|all]
+# Usage: ./test-macos.sh [portable|rid|singlefile|aot|all]
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -23,6 +23,8 @@ echo "Detected macOS architecture: $ARCH (RID: $RID)"
 
 build_package() {
     echo "==> Building Secp256k1.Net NuGet package..."
+    # Clear any cached version of the local test package from global cache
+    rm -rf ~/.nuget/packages/secp256k1.net/0.0.1-localtest.1
     dotnet pack "$REPO_ROOT/Secp256k1.Net" -c Release -o "$REPO_ROOT/pkg" -p:Version=0.0.1-localtest.1
 }
 
@@ -110,6 +112,65 @@ test_rid_specific() {
     fi
 }
 
+test_singlefile() {
+    local output_dir="$SCRIPT_DIR/publish/singlefile-$RID"
+
+    echo "--- Testing single-file build for $RID ---"
+    rm -rf "$output_dir"
+
+    dotnet nuget locals http-cache --clear > /dev/null 2>&1 || true
+    rm -rf obj bin
+    dotnet publish -c Release -r "$RID" --self-contained -p:PublishSingleFile=true -o "$output_dir"
+
+    # Verify only single native library is present (alongside the single-file executable)
+    echo "Verifying single native library..."
+
+    if [ -d "$output_dir/runtimes" ]; then
+        echo "FAILED: Found 'runtimes' directory in single-file publish"
+        ls -la "$output_dir/runtimes/" 2>/dev/null || true
+        return 1
+    fi
+
+    local native_count
+    native_count=$(find "$output_dir" -maxdepth 1 -type f -name "*.dylib" | wc -l | tr -d ' ')
+
+    if [ "$native_count" -ne 1 ]; then
+        echo "FAILED: Expected 1 native library (.dylib), found $native_count"
+        echo "Files in publish directory:"
+        ls -la "$output_dir"
+        return 1
+    fi
+
+    if [ ! -f "$output_dir/$NATIVE_LIB" ]; then
+        echo "FAILED: Expected $NATIVE_LIB not found"
+        echo "Files in publish directory:"
+        ls -la "$output_dir"
+        return 1
+    fi
+
+    # Verify single-file executable exists
+    if [ ! -f "$output_dir/NativeLibTest" ]; then
+        echo "FAILED: Single-file executable not found"
+        echo "Files in publish directory:"
+        ls -la "$output_dir"
+        return 1
+    fi
+
+    echo "OK: Found $NATIVE_LIB and NativeLibTest executable"
+
+    # Run the single-file executable directly (not via dotnet)
+    echo "Running single-file test..."
+    if "$output_dir/NativeLibTest"; then
+        echo "--- Single-file $RID: PASSED ---"
+        echo
+        return 0
+    else
+        echo "--- Single-file $RID: FAILED ---"
+        echo
+        return 1
+    fi
+}
+
 test_aot() {
     local output_dir="$SCRIPT_DIR/publish/aot-$RID"
 
@@ -186,17 +247,21 @@ case "$BUILD_MODE" in
     rid)
         test_rid_specific || failed=1
         ;;
+    singlefile)
+        test_singlefile || failed=1
+        ;;
     aot)
         test_aot || failed=1
         ;;
     all)
         test_portable || failed=1
         test_rid_specific || failed=1
+        test_singlefile || failed=1
         test_aot || failed=1
         ;;
     *)
         echo "Unknown build mode: $BUILD_MODE"
-        echo "Usage: $0 [portable|rid|aot|all]"
+        echo "Usage: $0 [portable|rid|singlefile|aot|all]"
         exit 1
         ;;
 esac

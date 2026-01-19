@@ -1,11 +1,12 @@
+using System;
 using System.Collections.Generic;
 
 namespace Secp256k1Net.InteropGen;
 
 public class Secp256k1Api
 {
-    public string Version { get; set; } = "";
-    public string GeneratedAt { get; set; } = "";
+    public string Version { get; set; } = "0.7.0";
+    public string GeneratedAt { get; set; } = DateTime.UtcNow.ToString("O");
     public List<string> Headers { get; set; } = new();
     public List<StructDef> Structs { get; set; } = new();
     public List<FunctionPointerType> FunctionPointerTypes { get; set; } = new();

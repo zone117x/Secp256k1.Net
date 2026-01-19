@@ -105,39 +105,39 @@ namespace Secp256k1Net
 
         static IEnumerable<string> GetSearchLocations()
         {
-            string execPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            if (execPath is not null)
-            {
-                yield return execPath;
-            }
-
-            string callingPath = Path.GetDirectoryName(Assembly.GetCallingAssembly().Location);
-            if (callingPath is not null)
-            {
-                yield return callingPath;
-            }
-
-            var entryAssembly = Assembly.GetEntryAssembly();
-            if (entryAssembly is not null)
-            {
-                string entryPath = Path.GetDirectoryName(entryAssembly.Location);
-                if (entryPath is not null)
-                {
-                    yield return entryPath;
-                }
-            }
-
-            if (AppContext.BaseDirectory is not null)
+            // AppContext.BaseDirectory is the recommended way to get the app directory,
+            // especially for single-file apps where Assembly.Location returns empty.
+            if (!string.IsNullOrEmpty(AppContext.BaseDirectory))
             {
                 yield return AppContext.BaseDirectory;
             }
+
+#pragma warning disable IL3000 // Assembly.Location returns empty in single-file apps (handled by AppContext.BaseDirectory above)
+            string execPath = Assembly.GetExecutingAssembly()?.Location;
+            if (!string.IsNullOrEmpty(execPath))
+            {
+                yield return Path.GetDirectoryName(execPath);
+            }
+
+            string callingPath = Assembly.GetCallingAssembly()?.Location;
+            if (!string.IsNullOrEmpty(callingPath))
+            {
+                yield return Path.GetDirectoryName(callingPath);
+            }
+
+            var entryAssemblyPath = Assembly.GetEntryAssembly()?.Location;
+            if (!string.IsNullOrEmpty(entryAssemblyPath))
+            {
+                yield return Path.GetDirectoryName(entryAssemblyPath);
+            }
+#pragma warning restore IL3000
 
             foreach (string extraPath in ExtraNativeLibSearchPaths)
             {
                 yield return extraPath;
             }
 
-            if (execPath is not null)
+            if (!string.IsNullOrEmpty(execPath))
             {
                 // If the this lib is being executed from its nuget package directory then the native
                 // files should be found up a couple directories.

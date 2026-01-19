@@ -80,8 +80,6 @@ namespace Secp256k1Net
         /// <returns>1 always.</returns>
         public bool EcPubkeySerialize(Span<byte> output, ref nuint outputlen, ReadOnlySpan<byte> pubkey, uint flags)
         {
-            if (output.Length < 32)
-                throw new ArgumentException($"{nameof(output)} must be at least 32 bytes");
             if (pubkey.Length < 64)
                 throw new ArgumentException($"{nameof(pubkey)} must be at least 64 bytes");
 
@@ -153,8 +151,6 @@ namespace Secp256k1Net
         /// <returns>1 if enough space was available to serialize, 0 otherwise</returns>
         public bool EcdsaSignatureSerializeDer(Span<byte> output, ref nuint outputlen, ReadOnlySpan<byte> sig)
         {
-            if (output.Length < 32)
-                throw new ArgumentException($"{nameof(output)} must be at least 32 bytes");
             if (sig.Length < 64)
                 throw new ArgumentException($"{nameof(sig)} must be at least 64 bytes");
 
@@ -262,13 +258,13 @@ namespace Secp256k1Net
             if (seckey.Length < 32)
                 throw new ArgumentException($"{nameof(seckey)} must be at least 32 bytes");
 
-            secp256k1_nonce_function nativeCallback = (void* nonce32, void* msg32, void* key32, void* algo16, void* d, uint attempt) =>
+            secp256k1_nonce_function nativeCallback = (void* nonce32, void* msg32, void* key32, void* algo16, void* data, uint attempt) =>
             {
                 var nonce32Span = new Span<byte>(nonce32, 32);
-                var msg32Span = new ReadOnlySpan<byte>(msg32, 32);
-                var key32Span = new ReadOnlySpan<byte>(key32, 32);
+                var msg32Span = msg32 != null ? new ReadOnlySpan<byte>(msg32, 32) : ReadOnlySpan<byte>.Empty;
+                var key32Span = key32 != null ? new ReadOnlySpan<byte>(key32, 32) : ReadOnlySpan<byte>.Empty;
                 var algo16Span = algo16 != null ? new ReadOnlySpan<byte>(algo16, 16) : ReadOnlySpan<byte>.Empty;
-                return noncefp(nonce32Span, msg32Span, key32Span, algo16Span, (IntPtr)d, attempt);
+                return noncefp(nonce32Span, msg32Span, key32Span, algo16Span, (IntPtr)data, attempt);
             };
 
             var callbackPtr = Marshal.GetFunctionPointerForDelegate(nativeCallback);
@@ -578,13 +574,13 @@ namespace Secp256k1Net
             if (seckey.Length < 32)
                 throw new ArgumentException($"{nameof(seckey)} must be at least 32 bytes");
 
-            secp256k1_nonce_function nativeCallback = (void* nonce32, void* msg32, void* key32, void* algo16, void* d, uint attempt) =>
+            secp256k1_nonce_function nativeCallback = (void* nonce32, void* msg32, void* key32, void* algo16, void* data, uint attempt) =>
             {
                 var nonce32Span = new Span<byte>(nonce32, 32);
-                var msg32Span = new ReadOnlySpan<byte>(msg32, 32);
-                var key32Span = new ReadOnlySpan<byte>(key32, 32);
+                var msg32Span = msg32 != null ? new ReadOnlySpan<byte>(msg32, 32) : ReadOnlySpan<byte>.Empty;
+                var key32Span = key32 != null ? new ReadOnlySpan<byte>(key32, 32) : ReadOnlySpan<byte>.Empty;
                 var algo16Span = algo16 != null ? new ReadOnlySpan<byte>(algo16, 16) : ReadOnlySpan<byte>.Empty;
-                return noncefp(nonce32Span, msg32Span, key32Span, algo16Span, (IntPtr)d, attempt);
+                return noncefp(nonce32Span, msg32Span, key32Span, algo16Span, (IntPtr)data, attempt);
             };
 
             var callbackPtr = Marshal.GetFunctionPointerForDelegate(nativeCallback);
@@ -657,12 +653,12 @@ namespace Secp256k1Net
             if (seckey.Length < 32)
                 throw new ArgumentException($"{nameof(seckey)} must be at least 32 bytes");
 
-            secp256k1_ecdh_hash_function nativeCallback = (void* output, void* x32, void* y32, void* d) =>
+            secp256k1_ecdh_hash_function nativeCallback = (void* output, void* x32, void* y32, void* data) =>
             {
                 var outputSpan = new Span<byte>(output, 32);
-                var x32Span = new ReadOnlySpan<byte>(x32, 32);
-                var y32Span = new ReadOnlySpan<byte>(y32, 32);
-                return hashfp(outputSpan, x32Span, y32Span, (IntPtr)d);
+                var x32Span = x32 != null ? new ReadOnlySpan<byte>(x32, 32) : ReadOnlySpan<byte>.Empty;
+                var y32Span = y32 != null ? new ReadOnlySpan<byte>(y32, 32) : ReadOnlySpan<byte>.Empty;
+                return hashfp(outputSpan, x32Span, y32Span, (IntPtr)data);
             };
 
             var callbackPtr = Marshal.GetFunctionPointerForDelegate(nativeCallback);
@@ -1034,13 +1030,13 @@ namespace Secp256k1Net
             if (seckey32.Length < 32)
                 throw new ArgumentException($"{nameof(seckey32)} must be at least 32 bytes");
 
-            secp256k1_ellswift_xdh_hash_function nativeCallback = (void* output, void* x32, void* ell_a64, void* ell_b64, void* d) =>
+            secp256k1_ellswift_xdh_hash_function nativeCallback = (void* output, void* x32, void* ell_a64, void* ell_b64, void* data) =>
             {
                 var outputSpan = new Span<byte>(output, 32);
-                var x32Span = new ReadOnlySpan<byte>(x32, 32);
-                var ell_a64Span = new ReadOnlySpan<byte>(ell_a64, 64);
-                var ell_b64Span = new ReadOnlySpan<byte>(ell_b64, 64);
-                return hashfp(outputSpan, x32Span, ell_a64Span, ell_b64Span, (IntPtr)d);
+                var x32Span = x32 != null ? new ReadOnlySpan<byte>(x32, 32) : ReadOnlySpan<byte>.Empty;
+                var ell_a64Span = ell_a64 != null ? new ReadOnlySpan<byte>(ell_a64, 64) : ReadOnlySpan<byte>.Empty;
+                var ell_b64Span = ell_b64 != null ? new ReadOnlySpan<byte>(ell_b64, 64) : ReadOnlySpan<byte>.Empty;
+                return hashfp(outputSpan, x32Span, ell_a64Span, ell_b64Span, (IntPtr)data);
             };
 
             var callbackPtr = Marshal.GetFunctionPointerForDelegate(nativeCallback);
@@ -1062,6 +1058,8 @@ namespace Secp256k1Net
         {
             if (nonce.Length < 132)
                 throw new ArgumentException($"{nameof(nonce)} must be at least 132 bytes");
+            if (in66.Length < 66)
+                throw new ArgumentException($"{nameof(in66)} must be at least 66 bytes");
 
             fixed (byte* noncePtr = &MemoryMarshal.GetReference(nonce),
                 in66Ptr = &MemoryMarshal.GetReference(in66))
@@ -1076,6 +1074,8 @@ namespace Secp256k1Net
         /// <returns>1 always</returns>
         public bool MusigPubnonceSerialize(Span<byte> out66, ReadOnlySpan<byte> nonce)
         {
+            if (out66.Length < 66)
+                throw new ArgumentException($"{nameof(out66)} must be at least 66 bytes");
             if (nonce.Length < 132)
                 throw new ArgumentException($"{nameof(nonce)} must be at least 132 bytes");
 
@@ -1094,6 +1094,8 @@ namespace Secp256k1Net
         {
             if (nonce.Length < 132)
                 throw new ArgumentException($"{nameof(nonce)} must be at least 132 bytes");
+            if (in66.Length < 66)
+                throw new ArgumentException($"{nameof(in66)} must be at least 66 bytes");
 
             fixed (byte* noncePtr = &MemoryMarshal.GetReference(nonce),
                 in66Ptr = &MemoryMarshal.GetReference(in66))
@@ -1108,6 +1110,8 @@ namespace Secp256k1Net
         /// <returns>1 always</returns>
         public bool MusigAggnonceSerialize(Span<byte> out66, ReadOnlySpan<byte> nonce)
         {
+            if (out66.Length < 66)
+                throw new ArgumentException($"{nameof(out66)} must be at least 66 bytes");
             if (nonce.Length < 132)
                 throw new ArgumentException($"{nameof(nonce)} must be at least 132 bytes");
 

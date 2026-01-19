@@ -654,7 +654,7 @@ public class InteropGenerator
 
         foreach (var func in api.Functions.Where(f => !SkipWrapperFunctions.Contains(f.Name) && !f.Deprecated))
         {
-            GenerateWrapperMethod(sb, func, structSizes);
+            GenerateWrapperMethod(sb, func, structSizes, api);
         }
 
         // Generate wrappers for global function pointers (like secp256k1_nonce_function_rfc6979)
@@ -744,7 +744,7 @@ public class InteropGenerator
         return MapCTypeToCSharp(cType);
     }
 
-    private void GenerateWrapperMethod(StringBuilder sb, FunctionDef func, Dictionary<string, int> structSizes)
+    private void GenerateWrapperMethod(StringBuilder sb, FunctionDef func, Dictionary<string, int> structSizes, Secp256k1Api api)
     {
         // Check if has function pointer parameter (callback)
         var callbackParams = func.Parameters.Where(p => p.Type.Contains("function") || p.Type.Contains("(*)")).ToList();
@@ -752,7 +752,7 @@ public class InteropGenerator
         // If any callback is REQUIRED, generate a callback wrapper version
         if (callbackParams.Any(p => p.Nonnull))
         {
-            GenerateCallbackWrapperMethod(sb, func, structSizes, callbackParams);
+            GenerateCallbackWrapperMethod(sb, func, structSizes, callbackParams, api);
             return;
         }
 
@@ -885,7 +885,7 @@ public class InteropGenerator
         var optionalCallbackParams = callbackParams.Where(p => !p.Nonnull).ToList();
         if (optionalCallbackParams.Count > 0)
         {
-            GenerateOptionalCallbackOverload(sb, func, structSizes, optionalCallbackParams);
+            GenerateOptionalCallbackOverload(sb, func, structSizes, optionalCallbackParams, api);
         }
     }
 
@@ -893,7 +893,7 @@ public class InteropGenerator
     /// Generates an overload that accepts optional callback parameters.
     /// This allows users to provide custom callbacks when needed, while the default overload uses null/default.
     /// </summary>
-    private void GenerateOptionalCallbackOverload(StringBuilder sb, FunctionDef func, Dictionary<string, int> structSizes, List<ParameterDef> optionalCallbackParams)
+    private void GenerateOptionalCallbackOverload(StringBuilder sb, FunctionDef func, Dictionary<string, int> structSizes, List<ParameterDef> optionalCallbackParams, Secp256k1Api api)
     {
         var methodName = GetWrapperMethodName(func.Name);
         var hasContextParam = func.Parameters.FirstOrDefault()?.Type.Contains("secp256k1_context") == true;
@@ -988,7 +988,7 @@ public class InteropGenerator
         {
             if (!type.Contains("Span")) continue;
 
-            var size = GetRequiredSize(original.Type, original.Name, structSizes);
+            var size = GetRequiredSize(original, structSizes);
             if (size > 0)
             {
                 sb.AppendLine($"            if ({name}.Length < {size})");
@@ -1003,7 +1003,7 @@ public class InteropGenerator
         sb.AppendLine();
 
         // Generate the native callback wrapper
-        sb.AppendLine($"            {nativeCallbackType} nativeCallback = {GenerateNativeCallbackWrapper(nativeCallbackType, callbackParamName, structSizes)};");
+        sb.AppendLine($"            {nativeCallbackType} nativeCallback = {GenerateNativeCallbackWrapper(nativeCallbackType, callbackParamName, structSizes, api)};");
         sb.AppendLine();
         sb.AppendLine("            var callbackPtr = Marshal.GetFunctionPointerForDelegate(nativeCallback);");
         sb.AppendLine();
@@ -1213,44 +1213,29 @@ public class InteropGenerator
         wrapper.WrapperType = isInput ? "ReadOnlySpan<byte>" : "Span<byte>";
         wrapper.WrapperName = GetWrapperParamName(name);
 
-        // Determine required size
-        wrapper.RequiredSize = GetRequiredSize(cType, name, structSizes);
+        // Determine required size - prefer pre-computed value from JSON
+        wrapper.RequiredSize = GetRequiredSize(param, structSizes);
     }
 
-    private int GetRequiredSize(string cType, string paramName, Dictionary<string, int> structSizes)
+    /// <summary>
+    /// Gets the required size for a parameter, using pre-computed Size from the JSON if available,
+    /// or falling back to struct size lookup.
+    /// </summary>
+    private int GetRequiredSize(ParameterDef param, Dictionary<string, int> structSizes)
     {
-        // Check if it's a known struct type
+        // Use pre-computed size from JSON if available (set by header parser)
+        if (param.Size.HasValue)
+        {
+            return param.Size.Value;
+        }
+
+        // Fallback: check if it's a known struct type
         foreach (var kvp in structSizes)
         {
-            if (cType.Contains(kvp.Key))
+            if (param.Type.Contains(kvp.Key))
             {
                 return kvp.Value;
             }
-        }
-
-        // Check parameter name patterns
-        // Note: "output" is included because ECDH and similar functions expect at least 32 bytes
-        if (paramName.EndsWith("32") || paramName.Contains("msg32") || paramName.Contains("seckey") ||
-            paramName.Contains("tweak") || paramName.Contains("seed32") || paramName.Contains("hash32") ||
-            paramName.Contains("nonce32") || paramName.Contains("key32") || paramName.Contains("aux_rand32") ||
-            paramName.Contains("auxrnd32") || paramName.Contains("xonly_pk32") || paramName == "output")
-        {
-            return 32;
-        }
-
-        if (paramName.EndsWith("33") || paramName.Contains("pubkey33"))
-        {
-            return 33;
-        }
-
-        if (paramName.EndsWith("64") || paramName.Contains("sig64") || paramName.Contains("ell64"))
-        {
-            return 64;
-        }
-
-        if (paramName.EndsWith("65") || paramName.Contains("pubkey65"))
-        {
-            return 65;
         }
 
         // Default - no size validation
@@ -1462,7 +1447,7 @@ public class InteropGenerator
             if (original == arrayParam) continue;
             if (!type.Contains("Span")) continue;
 
-            var size = GetRequiredSize(original.Type, original.Name, structSizes);
+            var size = GetRequiredSize(original, structSizes);
             if (size > 0)
             {
                 sb.AppendLine($"            if ({name}.Length < {size})");
@@ -1589,7 +1574,7 @@ public class InteropGenerator
     /// Generates wrapper methods for functions with required callback parameters.
     /// These methods accept user-friendly delegates and marshal them to native function pointers.
     /// </summary>
-    private void GenerateCallbackWrapperMethod(StringBuilder sb, FunctionDef func, Dictionary<string, int> structSizes, List<ParameterDef> callbackParams)
+    private void GenerateCallbackWrapperMethod(StringBuilder sb, FunctionDef func, Dictionary<string, int> structSizes, List<ParameterDef> callbackParams, Secp256k1Api api)
     {
         var methodName = GetWrapperMethodName(func.Name);
         var hasContextParam = func.Parameters.FirstOrDefault()?.Type.Contains("secp256k1_context") == true;
@@ -1670,7 +1655,7 @@ public class InteropGenerator
         {
             if (!type.Contains("Span")) continue;
 
-            var size = GetRequiredSize(original.Type, original.Name, structSizes);
+            var size = GetRequiredSize(original, structSizes);
             if (size > 0)
             {
                 sb.AppendLine($"            if ({name}.Length < {size})");
@@ -1686,7 +1671,7 @@ public class InteropGenerator
 
         // Generate the native callback wrapper
         // We need to look up the function pointer type definition to generate the wrapper
-        sb.AppendLine($"            {nativeCallbackType} nativeCallback = {GenerateNativeCallbackWrapper(nativeCallbackType, callbackParamName, structSizes)};");
+        sb.AppendLine($"            {nativeCallbackType} nativeCallback = {GenerateNativeCallbackWrapper(nativeCallbackType, callbackParamName, structSizes, api)};");
         sb.AppendLine();
         sb.AppendLine("            var callbackPtr = Marshal.GetFunctionPointerForDelegate(nativeCallback);");
         sb.AppendLine();
@@ -1746,49 +1731,124 @@ public class InteropGenerator
     /// <summary>
     /// Generates the native callback wrapper lambda that converts pointers to Spans and calls the user delegate.
     /// </summary>
-    private string GenerateNativeCallbackWrapper(string nativeCallbackType, string userCallbackParamName, Dictionary<string, int> structSizes)
+    private string GenerateNativeCallbackWrapper(string nativeCallbackType, string userCallbackParamName, Dictionary<string, int> structSizes, Secp256k1Api api)
     {
-        // Generate different wrappers based on the callback type
-        return nativeCallbackType switch
+        // Look up the function pointer type definition
+        var fpType = api.FunctionPointerTypes.FirstOrDefault(f => f.Name == nativeCallbackType);
+        if (fpType == null)
         {
-            "secp256k1_nonce_function" => $@"(void* nonce32, void* msg32, void* key32, void* algo16, void* d, uint attempt) =>
-            {{
-                var nonce32Span = new Span<byte>(nonce32, 32);
-                var msg32Span = new ReadOnlySpan<byte>(msg32, 32);
-                var key32Span = new ReadOnlySpan<byte>(key32, 32);
-                var algo16Span = algo16 != null ? new ReadOnlySpan<byte>(algo16, 16) : ReadOnlySpan<byte>.Empty;
-                return {userCallbackParamName}(nonce32Span, msg32Span, key32Span, algo16Span, (IntPtr)d, attempt);
-            }}",
+            throw new NotSupportedException($"Unknown callback type: {nativeCallbackType}");
+        }
 
-            "secp256k1_ecdh_hash_function" => $@"(void* output, void* x32, void* y32, void* d) =>
-            {{
-                var outputSpan = new Span<byte>(output, 32);
-                var x32Span = new ReadOnlySpan<byte>(x32, 32);
-                var y32Span = new ReadOnlySpan<byte>(y32, 32);
-                return {userCallbackParamName}(outputSpan, x32Span, y32Span, (IntPtr)d);
-            }}",
+        // Build the lambda parameter list (native types)
+        var lambdaParams = new List<string>();
+        foreach (var param in fpType.Parameters)
+        {
+            var nativeType = MapCTypeToCSharpForFunctionPointer(param.Type, param.Name);
+            lambdaParams.Add($"{nativeType} {param.Name}");
+        }
 
-            "secp256k1_nonce_function_hardened" => $@"(void* nonce32, void* msg, nuint msglen, void* key32, void* xonly_pk32, void* algo, nuint algolen, void* d) =>
-            {{
-                var nonce32Span = new Span<byte>(nonce32, 32);
-                var msgSpan = msg != null ? new ReadOnlySpan<byte>(msg, (int)msglen) : ReadOnlySpan<byte>.Empty;
-                var key32Span = new ReadOnlySpan<byte>(key32, 32);
-                var xonly_pk32Span = new ReadOnlySpan<byte>(xonly_pk32, 32);
-                var algoSpan = new ReadOnlySpan<byte>(algo, (int)algolen);
-                return {userCallbackParamName}(nonce32Span, msgSpan, msglen, key32Span, xonly_pk32Span, algoSpan, algolen, (IntPtr)d);
-            }}",
+        // Build the span conversion statements and delegate call arguments
+        var spanConversions = new List<string>();
+        var delegateArgs = new List<string>();
 
-            "secp256k1_ellswift_xdh_hash_function" => $@"(void* output, void* x32, void* ell_a64, void* ell_b64, void* d) =>
-            {{
-                var outputSpan = new Span<byte>(output, 32);
-                var x32Span = new ReadOnlySpan<byte>(x32, 32);
-                var ell_a64Span = new ReadOnlySpan<byte>(ell_a64, 64);
-                var ell_b64Span = new ReadOnlySpan<byte>(ell_b64, 64);
-                return {userCallbackParamName}(outputSpan, x32Span, ell_a64Span, ell_b64Span, (IntPtr)d);
-            }}",
+        // Build a map of length parameters for variable-length buffers
+        var lengthParams = new Dictionary<string, string>(); // buffer name -> length param name
+        for (int i = 0; i < fpType.Parameters.Count; i++)
+        {
+            var param = fpType.Parameters[i];
+            if (param.Type.Contains("size_t") && !param.Type.Contains("*"))
+            {
+                // This is a length parameter - find the preceding buffer it belongs to
+                // Convention: length param follows buffer param (e.g., msg, msglen)
+                if (i > 0)
+                {
+                    var prevParam = fpType.Parameters[i - 1];
+                    if (prevParam.Type.Contains("*") && param.Name.StartsWith(prevParam.Name.TrimEnd('*')))
+                    {
+                        lengthParams[prevParam.Name] = param.Name;
+                    }
+                }
+            }
+        }
 
-            _ => throw new NotSupportedException($"Unknown callback type: {nativeCallbackType}")
-        };
+        foreach (var param in fpType.Parameters)
+        {
+            if (param.Type == "void*" && (param.Name == "data" || param.Name == "d"))
+            {
+                // Data pointer - convert to IntPtr
+                delegateArgs.Add($"(IntPtr){param.Name}");
+            }
+            else if (param.Type.Contains("*") && (param.Type.Contains("char") || param.Type.Contains("void")))
+            {
+                // Pointer parameter - convert to Span
+                var isOutput = param.Direction == "out" || !param.Type.StartsWith("const ");
+                var spanType = isOutput ? "Span<byte>" : "ReadOnlySpan<byte>";
+                var spanVarName = $"{param.Name}Span";
+
+                // Determine the size
+                // Check for variable-length buffer with associated length param (from JSON LengthParam)
+                if (!string.IsNullOrEmpty(param.LengthParam))
+                {
+                    // Variable-length buffer - check for null and use length param
+                    var nullCheck = param.Nonnull ? "" : $"{param.Name} != null ? ";
+                    var nullFallback = param.Nonnull ? "" : $" : {spanType}.Empty";
+                    spanConversions.Add($"var {spanVarName} = {nullCheck}new {spanType}({param.Name}, (int){param.LengthParam}){nullFallback};");
+                    delegateArgs.Add(spanVarName);
+                }
+                else if (lengthParams.TryGetValue(param.Name, out var lenParam))
+                {
+                    // Fallback: Variable-length buffer detected by naming convention
+                    var nullCheck = param.Nonnull ? "" : $"{param.Name} != null ? ";
+                    var nullFallback = param.Nonnull ? "" : $" : {spanType}.Empty";
+                    spanConversions.Add($"var {spanVarName} = {nullCheck}new {spanType}({param.Name}, (int){lenParam}){nullFallback};");
+                    delegateArgs.Add(spanVarName);
+                }
+                else
+                {
+                    // Fixed-size buffer - use pre-computed Size from JSON, or fallback to struct lookup
+                    var size = GetRequiredSize(param, structSizes);
+                    if (size == 0)
+                    {
+                        // Default to 32 for unknown sizes (common case)
+                        size = 32;
+                    }
+
+                    if (!param.Nonnull && param.Direction != "out")
+                    {
+                        // Nullable input - check for null
+                        spanConversions.Add($"var {spanVarName} = {param.Name} != null ? new {spanType}({param.Name}, {size}) : {spanType}.Empty;");
+                    }
+                    else
+                    {
+                        spanConversions.Add($"var {spanVarName} = new {spanType}({param.Name}, {size});");
+                    }
+                    delegateArgs.Add(spanVarName);
+                }
+            }
+            else if (param.Type.Contains("size_t") && !param.Type.Contains("*"))
+            {
+                // Length parameter - pass through to delegate (some delegates want the length too)
+                delegateArgs.Add(param.Name);
+            }
+            else
+            {
+                // Other parameters - pass through directly
+                delegateArgs.Add(param.Name);
+            }
+        }
+
+        // Build the lambda body
+        var sb = new StringBuilder();
+        sb.Append($"({string.Join(", ", lambdaParams)}) =>\n            {{\n");
+        foreach (var conversion in spanConversions)
+        {
+            sb.Append($"                {conversion}\n");
+        }
+        sb.Append($"                return {userCallbackParamName}({string.Join(", ", delegateArgs)});\n");
+        sb.Append("            }");
+
+        return sb.ToString();
     }
 
     /// <summary>
@@ -1897,13 +1957,19 @@ public class InteropGenerator
         sb.AppendLine("        {");
 
         // Generate validation for span parameters
+        // Only validate parameters that are required (nonnull) or likely required based on their name
+        // Skip validation for params like "algo16" which are documented as nullable
         foreach (var (type, name, _, original) in wrapperParams)
         {
             if (!type.Contains("Span")) continue;
 
-            var size = GetRequiredSize(original.Type, original.Name, structSizes);
+            var size = GetRequiredSize(original, structSizes);
             if (size > 0)
             {
+                // Skip validation for parameters marked as optional in the JSON
+                // (e.g., algo16 is documented as "will be NULL for ECDSA for compatibility")
+                if (original.IsOptional) continue;
+
                 sb.AppendLine($"            if ({name}.Length < {size})");
                 sb.AppendLine($"                throw new ArgumentException($\"{{nameof({name})}} must be at least {size} bytes\");");
             }

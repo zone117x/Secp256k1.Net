@@ -1663,15 +1663,17 @@ namespace Secp256k1Net.Test
         }
 
         [TestMethod]
-        [ExpectedException(typeof(ArgumentException))]
-        public void EcPubkeySerialize_TooSmallOutput_ThrowsArgumentException()
+        public void EcPubkeySerialize_TooSmallOutput_ReturnsFalse()
         {
+            // Variable-length output buffers are not validated by the wrapper.
+            // The native library handles size checking and returns failure.
             using var secp256k1 = new Secp256k1();
             var pubkey = new byte[64];
             secp256k1.EcPubkeyCreate(pubkey, TestPrivateKey);
-            var output = new byte[31]; // Should be at least 32
-            nuint outputLen = 32;
-            secp256k1.EcPubkeySerialize(output, ref outputLen, pubkey, (uint)Flags.SECP256K1_EC_COMPRESSED);
+            var output = new byte[31]; // Too small for compressed (33 bytes)
+            nuint outputLen = (nuint)output.Length;
+            var result = secp256k1.EcPubkeySerialize(output, ref outputLen, pubkey, (uint)Flags.SECP256K1_EC_COMPRESSED);
+            Assert.IsFalse(result, "Native library should reject too-small buffer");
         }
 
         [TestMethod]
@@ -2757,14 +2759,23 @@ namespace Secp256k1Net.Test
 
         // EcdsaSignatureSerializeDer tests
         [TestMethod]
-        [ExpectedException(typeof(ArgumentException))]
-        public void EcdsaSignatureSerializeDer_TooSmallOutput_ThrowsArgumentException()
+        public void EcdsaSignatureSerializeDer_TooSmallOutput_ReturnsFalse()
         {
+            // Variable-length output buffers are not validated by the wrapper.
+            // The native library handles size checking and returns failure.
             using var secp256k1 = new Secp256k1();
-            var output = new byte[31]; // Should be at least 32
-            nuint outputLen = 72;
+
+            // First create a valid signature
             var sig = new byte[64];
-            secp256k1.EcdsaSignatureSerializeDer(output, ref outputLen, sig);
+            var msg = new byte[32];
+            for (int i = 0; i < msg.Length; i++) msg[i] = (byte)(i + 1);
+            Assert.IsTrue(secp256k1.EcdsaSign(sig, msg, TestPrivateKey), "Sign should succeed");
+
+            // Try to serialize with too small output - native library returns 0 (false)
+            var output = new byte[31]; // Too small for DER signature (typically 71-72 bytes)
+            nuint outputLen = (nuint)output.Length;
+            var result = secp256k1.EcdsaSignatureSerializeDer(output, ref outputLen, sig);
+            Assert.IsFalse(result, "Native library should reject too-small buffer");
         }
 
         [TestMethod]

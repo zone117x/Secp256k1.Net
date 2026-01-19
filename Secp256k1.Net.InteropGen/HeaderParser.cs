@@ -424,12 +424,183 @@ public partial class Secp256k1HeaderParser
                 // Try to get parameter description from doc comment
                 param.Description = ExtractParameterDescription(docComment, param.Name);
                 param.Direction = InferDirection(param.Type, param.Description);
+                // Compute fixed size for this parameter (from name suffix, type, or description)
+                param.Size = ComputeParameterSize(param.Name, param.Type, param.Description);
+                // Mark known optional parameters (can be null/empty even with size validation)
+                param.IsOptional = IsKnownOptionalParam(param.Name, param.Nonnull, param.Description);
                 parameters.Add(param);
+            }
+        }
+
+        // Second pass: identify length parameters and associate them with their buffers
+        AssociateLengthParameters(parameters);
+
+        // Third pass: clear Size for parameters that have a LengthParam (they're variable-length, not fixed)
+        foreach (var param in parameters)
+        {
+            if (!string.IsNullOrEmpty(param.LengthParam))
+            {
+                param.Size = null;
             }
         }
 
         return parameters;
     }
+
+    /// <summary>
+    /// Returns true if the parameter is known to be optional/nullable based on its name and attributes.
+    /// This is used to skip validation for parameters like algo16 which are documented
+    /// as being NULL for certain use cases.
+    /// </summary>
+    private static bool IsKnownOptionalParam(string paramName, bool nonnull, string? description)
+    {
+        // If marked as nonnull, it's not optional
+        if (nonnull) return false;
+
+        // algo16 is documented as "will be NULL for ECDSA for compatibility"
+        if (paramName == "algo16") return true;
+
+        // algo parameters are often optional
+        if (paramName == "algo") return true;
+
+        // data/d/ndata parameters are typically optional user data pointers
+        if (paramName == "data" || paramName == "d" || paramName == "ndata") return true;
+
+        // Note: We don't check description text because the parsed descriptions often contain
+        // text from other parameters (e.g., msg32's description contains "will be NULL" but
+        // that refers to algo16, not msg32). Relying on explicit parameter names is safer.
+
+        return false;
+    }
+
+    /// <summary>
+    /// Computes the fixed size in bytes for a parameter based on name suffix, type, or description.
+    /// Returns null if the size cannot be determined or is variable-length.
+    /// </summary>
+    private int? ComputeParameterSize(string paramName, string paramType, string? description)
+    {
+        // Skip non-pointer types (they don't need size computation)
+        if (!paramType.Contains("*"))
+            return null;
+
+        // FIRST: Check for known struct types in the type string
+        // This takes priority over numeric suffix detection (e.g., pubkey1 should use secp256k1_pubkey size, not "1")
+        if (paramType.Contains("secp256k1_pubkey")) return 64;
+        if (paramType.Contains("secp256k1_ecdsa_signature")) return 64;
+        if (paramType.Contains("secp256k1_ecdsa_recoverable_signature")) return 65;
+        if (paramType.Contains("secp256k1_xonly_pubkey")) return 64;
+        if (paramType.Contains("secp256k1_keypair")) return 96;
+        if (paramType.Contains("secp256k1_musig_keyagg_cache")) return 197;
+        if (paramType.Contains("secp256k1_musig_secnonce")) return 132;
+        if (paramType.Contains("secp256k1_musig_pubnonce")) return 132;
+        if (paramType.Contains("secp256k1_musig_aggnonce")) return 132;
+        if (paramType.Contains("secp256k1_musig_session")) return 133;
+        if (paramType.Contains("secp256k1_musig_partial_sig")) return 36;
+
+        // SECOND: Try to extract size from numeric suffix in parameter name (e.g., nonce32 -> 32, algo16 -> 16, ell_a64 -> 64)
+        var match = NumericSuffixRegex().Match(paramName);
+        if (match.Success && int.TryParse(match.Groups[1].Value, out var sizeFromName))
+        {
+            return sizeFromName;
+        }
+
+        // Check parameter name patterns for common fixed-size buffers without numeric suffixes
+        if (paramName.Contains("seckey") || paramName.Contains("tweak"))
+            return 32;
+
+        // "output" in ECDH and similar functions expects at least 32 bytes
+        if (paramName == "output" && description?.Contains("filled") == true)
+            return 32;
+
+        // Try to extract size from description (e.g., "32-byte array", "a 64 byte buffer")
+        // But skip if description indicates conditional/variable size (e.g., "65-byte (if compressed==0) or 33-byte")
+        if (!string.IsNullOrEmpty(description))
+        {
+            // Skip if description mentions "or X-byte" or "(if" which indicates variable size
+            if (!description.Contains(" or ") && !description.Contains("(if"))
+            {
+                var descMatch = DescriptionSizeRegex().Match(description);
+                if (descMatch.Success && int.TryParse(descMatch.Groups[1].Value, out var sizeFromDesc))
+                {
+                    return sizeFromDesc;
+                }
+            }
+        }
+
+        // Default - no fixed size (variable length or unknown)
+        return null;
+    }
+
+    /// <summary>
+    /// Associates length parameters with their corresponding buffer parameters.
+    /// For example, if there's a "msg" buffer followed by "msglen", this will set
+    /// msg.LengthParam = "msglen" and msglen.IsLengthFor = "msg".
+    /// </summary>
+    private void AssociateLengthParameters(List<ParameterDef> parameters)
+    {
+        for (int i = 0; i < parameters.Count; i++)
+        {
+            var param = parameters[i];
+
+            // Check if this is a length/size parameter
+            if (!param.Type.Contains("size_t") || param.Type.Contains("*"))
+                continue;
+
+            // Common patterns for length parameters:
+            // - "msglen" for "msg"
+            // - "inputlen" for "input"
+            // - "n_pubkeys" for "pubkeys"
+            // - "n_sigs" for "sigs"
+
+            string? bufferName = null;
+
+            // Pattern 1: paramlen (e.g., msglen -> msg)
+            if (param.Name.EndsWith("len"))
+            {
+                bufferName = param.Name[..^3]; // Remove "len"
+            }
+            // Pattern 2: param_len (e.g., input_len -> input)
+            else if (param.Name.EndsWith("_len"))
+            {
+                bufferName = param.Name[..^4]; // Remove "_len"
+            }
+            // Pattern 3: n_params (e.g., n_pubkeys -> pubkeys)
+            else if (param.Name.StartsWith("n_"))
+            {
+                bufferName = param.Name[2..]; // Remove "n_"
+            }
+            // Pattern 4: Simple "n" typically refers to the immediately preceding array
+            else if (param.Name == "n" && i > 0)
+            {
+                // Look for preceding parameter that looks like an array
+                for (int j = i - 1; j >= 0; j--)
+                {
+                    if (parameters[j].Type.Contains("**") || parameters[j].Type.Contains("* const*"))
+                    {
+                        bufferName = parameters[j].Name;
+                        break;
+                    }
+                }
+            }
+
+            if (bufferName == null)
+                continue;
+
+            // Find the matching buffer parameter
+            var bufferParam = parameters.FirstOrDefault(p => p.Name == bufferName);
+            if (bufferParam != null)
+            {
+                bufferParam.LengthParam = param.Name;
+                param.IsLengthFor = bufferName;
+            }
+        }
+    }
+
+    [GeneratedRegex(@"(\d+)$")]
+    private static partial Regex NumericSuffixRegex();
+
+    [GeneratedRegex(@"(\d+)[- ]?byte", RegexOptions.IgnoreCase)]
+    private static partial Regex DescriptionSizeRegex();
 
     private List<string> SplitParameters(string paramsStr)
     {

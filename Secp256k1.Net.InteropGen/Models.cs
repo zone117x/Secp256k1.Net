@@ -50,6 +50,30 @@ public class ParameterDef
     public string? Direction { get; set; }
     public bool Nonnull { get; set; }
     public string? Description { get; set; }
+
+    /// <summary>
+    /// Fixed size in bytes for this parameter (e.g., extracted from name like "algo16" → 16,
+    /// or from description like "32-byte array").
+    /// </summary>
+    public int? Size { get; set; }
+
+    /// <summary>
+    /// Name of another parameter that specifies the length of this parameter.
+    /// Used for variable-length arrays where another param indicates the size.
+    /// </summary>
+    public string? LengthParam { get; set; }
+
+    /// <summary>
+    /// If this parameter is a length/size indicator for another parameter,
+    /// this is the name of the parameter it describes.
+    /// </summary>
+    public string? IsLengthFor { get; set; }
+
+    /// <summary>
+    /// True if this parameter is known to be optional (can be null/empty even when validation
+    /// would otherwise be applied). Examples: algo16, data parameters.
+    /// </summary>
+    public bool IsOptional { get; set; }
 }
 
 public class ConstantDef

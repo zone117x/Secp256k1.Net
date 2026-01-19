@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -20,24 +20,25 @@ namespace Secp256k1Net.Test
             var privateKey = new byte[Secp256k1.PRIVKEY_LENGTH];
             var rnd = System.Security.Cryptography.RandomNumberGenerator.Create();
             do { rnd.GetBytes(privateKey); }
-            while (!secp256k1.SecretKeyVerify(privateKey));
+            while (!secp256k1.EcSeckeyVerify(privateKey));
 
             // Create public key from private key
             var publicKey = new byte[Secp256k1.PUBKEY_LENGTH];
-            Assert.IsTrue(secp256k1.PublicKeyCreate(publicKey, privateKey));
+            Assert.IsTrue(secp256k1.EcPubkeyCreate(publicKey, privateKey));
 
             // Serialize the public key to compressed format
             var serializedKey = new byte[Secp256k1.SERIALIZED_COMPRESSED_PUBKEY_LENGTH];
-            Assert.IsTrue(secp256k1.PublicKeySerialize(serializedKey, publicKey, Flags.SECP256K1_EC_COMPRESSED));
+            nuint outputLen = (nuint)serializedKey.Length;
+            Assert.IsTrue(secp256k1.EcPubkeySerialize(serializedKey, ref outputLen, publicKey, (uint)Flags.SECP256K1_EC_COMPRESSED));
 
             // Sign a message hash
             var messageBytes = System.Text.Encoding.UTF8.GetBytes("Hello world.");
             var messageHash = System.Security.Cryptography.SHA256.Create().ComputeHash(messageBytes);
             var signature = new byte[Secp256k1.SIGNATURE_LENGTH];
-            Assert.IsTrue(secp256k1.Sign(signature, messageHash, privateKey));
+            Assert.IsTrue(secp256k1.EcdsaSign(signature, messageHash, privateKey));
 
             // Verify message hash
-            Assert.IsTrue(secp256k1.Verify(signature, messageHash, publicKey));
+            Assert.IsTrue(secp256k1.EcdsaVerify(signature, messageHash, publicKey));
         }
 
         [TestMethod]
@@ -122,28 +123,30 @@ namespace Secp256k1Net.Test
             var privateKey = new byte[Secp256k1.PRIVKEY_LENGTH];
             var rnd = System.Security.Cryptography.RandomNumberGenerator.Create();
             do { rnd.GetBytes(privateKey); }
-            while (!secp256k1.SecretKeyVerify(privateKey));
+            while (!secp256k1.EcSeckeyVerify(privateKey));
 
             // Derive public key bytes
             var publicKey = new byte[Secp256k1.PUBKEY_LENGTH];
-            Assert.IsTrue(secp256k1.PublicKeyCreate(publicKey, privateKey), "Public key creation failed");
+            Assert.IsTrue(secp256k1.EcPubkeyCreate(publicKey, privateKey), "Public key creation failed");
 
             // Serialize the public key to compressed format
             var serializedCompressedPublicKey = new byte[Secp256k1.SERIALIZED_COMPRESSED_PUBKEY_LENGTH];
-            Assert.IsTrue(secp256k1.PublicKeySerialize(serializedCompressedPublicKey, publicKey, Flags.SECP256K1_EC_COMPRESSED));
+            nuint compressedLen = (nuint)serializedCompressedPublicKey.Length;
+            Assert.IsTrue(secp256k1.EcPubkeySerialize(serializedCompressedPublicKey, ref compressedLen, publicKey, (uint)Flags.SECP256K1_EC_COMPRESSED));
 
             // Serialize the public key to uncompressed format
             var serializedUncompressedPublicKey = new byte[Secp256k1.SERIALIZED_UNCOMPRESSED_PUBKEY_LENGTH];
-            Assert.IsTrue(secp256k1.PublicKeySerialize(serializedUncompressedPublicKey, publicKey, Flags.SECP256K1_EC_UNCOMPRESSED));
+            nuint uncompressedLen = (nuint)serializedUncompressedPublicKey.Length;
+            Assert.IsTrue(secp256k1.EcPubkeySerialize(serializedUncompressedPublicKey, ref uncompressedLen, publicKey, (uint)Flags.SECP256K1_EC_UNCOMPRESSED));
 
             // Parse public key from serialized compressed public key
             var parsedPublicKey1 = new byte[Secp256k1.PUBKEY_LENGTH];
-            Assert.IsTrue(secp256k1.PublicKeyParse(parsedPublicKey1, serializedCompressedPublicKey));
+            Assert.IsTrue(secp256k1.EcPubkeyParse(parsedPublicKey1, serializedCompressedPublicKey, (nuint)serializedCompressedPublicKey.Length));
             Assert.AreEqual(Convert.ToHexString(publicKey), Convert.ToHexString(parsedPublicKey1));
 
             // Parse public key from serialied uncompressed public key
             var parsedPublicKey2 = new byte[Secp256k1.PUBKEY_LENGTH];
-            Assert.IsTrue(secp256k1.PublicKeyParse(parsedPublicKey2, serializedUncompressedPublicKey));
+            Assert.IsTrue(secp256k1.EcPubkeyParse(parsedPublicKey2, serializedUncompressedPublicKey, (nuint)serializedUncompressedPublicKey.Length));
             Assert.AreEqual(Convert.ToHexString(publicKey), Convert.ToHexString(parsedPublicKey2));
         }
 
@@ -162,8 +165,8 @@ namespace Secp256k1Net.Test
             Assert.AreEqual(Secp256k1.HASH_LENGTH, msgHash.Length);
 
             var signature = new byte[Secp256k1.SIGNATURE_LENGTH];
-            Assert.IsTrue(secp256k1.Sign(signature, msgHash, keypair.PrivateKey));
-            Assert.IsTrue(secp256k1.Verify(signature, msgHash, keypair.PublicKey));
+            Assert.IsTrue(secp256k1.EcdsaSign(signature, msgHash, keypair.PrivateKey));
+            Assert.IsTrue(secp256k1.EcdsaVerify(signature, msgHash, keypair.PublicKey));
         }
 
         [TestMethod]
@@ -181,16 +184,16 @@ namespace Secp256k1Net.Test
             Assert.AreEqual(Secp256k1.HASH_LENGTH, msgHash.Length);
 
             var signature = new byte[Secp256k1.SIGNATURE_LENGTH];
-            Assert.IsTrue(secp256k1.Sign(signature, msgHash, keypair.PrivateKey));
+            Assert.IsTrue(secp256k1.EcdsaSign(signature, msgHash, keypair.PrivateKey));
 
             var serialiedSignature = new byte[Secp256k1.SERIALIZED_SIGNATURE_SIZE];
-            Assert.IsTrue(secp256k1.SignatureSerializeCompact(serialiedSignature, signature));
+            Assert.IsTrue(secp256k1.EcdsaSignatureSerializeCompact(serialiedSignature, signature));
 
             var expectedSerializedSig = "A480EA494EB5648A3D034444A5D79E9DB53CFF6F8E55E9231B80D3C09EC6B6C4551D740AB96DE6B74A9BCDCD6C40CB6E5312A9CFD896C12D46BB1C945EA6A5C7";
             Assert.AreEqual(expectedSerializedSig, Convert.ToHexString(serialiedSignature));
 
             var parsedSig = new byte[Secp256k1.SIGNATURE_LENGTH];
-            Assert.IsTrue(secp256k1.SignatureParseCompact(parsedSig, serialiedSignature));
+            Assert.IsTrue(secp256k1.EcdsaSignatureParseCompact(parsedSig, serialiedSignature));
             Assert.AreEqual(Convert.ToHexString(signature), Convert.ToHexString(parsedSig));
         }
 
@@ -202,20 +205,21 @@ namespace Secp256k1Net.Test
             // Parse DER signature
             var signatureOutput = new byte[Secp256k1.SIGNATURE_LENGTH];
             var derSignature = Convert.FromHexString("30440220484ECE2B365D2B2C2EAD34B518328BBFEF0F4409349EEEC9CB19837B5795A5F5022040C4F6901FE489F923C49D4104554FD08595EAF864137F87DADDD0E3619B0605");
-            Assert.IsTrue(secp256k1.SignatureParseDer(signatureOutput, derSignature));
+            Assert.IsTrue(secp256k1.EcdsaSignatureParseDer(signatureOutput, derSignature, (nuint)derSignature.Length));
 
             // Serialize DER signature
-            Span<byte> derSignatureOutput = new byte[Secp256k1.SERIALIZED_DER_SIGNATURE_MAX_SIZE];
-            Assert.IsTrue(secp256k1.SignatureSerializeDer(derSignatureOutput, signatureOutput, out int signatureOutputLength));
-            derSignatureOutput = derSignatureOutput.Slice(0, signatureOutputLength);
+            var derSignatureOutput = new byte[Secp256k1.SERIALIZED_DER_SIGNATURE_MAX_SIZE];
+            nuint derOutputLen = (nuint)derSignatureOutput.Length;
+            Assert.IsTrue(secp256k1.EcdsaSignatureSerializeDer(derSignatureOutput, ref derOutputLen, signatureOutput));
+            var derSignatureOutputSlice = derSignatureOutput.AsSpan(0, (int)derOutputLen);
 
             // Validate signature is the same after round trip parse and serialize
-            Assert.AreEqual(Convert.ToHexString(derSignature), Convert.ToHexString(derSignatureOutput));
+            Assert.AreEqual(Convert.ToHexString(derSignature), Convert.ToHexString(derSignatureOutputSlice));
 
             // Ensure invalid signature does not parse
             var invalidSignatureOutput = new byte[Secp256k1.SIGNATURE_LENGTH];
             var invalidDerSignature = Convert.FromHexString("00");
-            Assert.IsFalse(secp256k1.SignatureParseDer(invalidSignatureOutput, invalidDerSignature));
+            Assert.IsFalse(secp256k1.EcdsaSignatureParseDer(invalidSignatureOutput, invalidDerSignature, (nuint)invalidDerSignature.Length));
         }
 
         [TestMethod]
@@ -224,7 +228,7 @@ namespace Secp256k1Net.Test
             using var secp256k1 = new Secp256k1();
             var sigInput = Convert.FromHexString("6d23167e4ef7df78cc9798de17a2b7aeeff8d312cc06ac655077a8383c646698933defe2dd8ca3d9849f471336a28a4d03245a071423ce6b0d220a8d3ed4d468");
             var sigOutput = new byte[Secp256k1.SIGNATURE_LENGTH];
-            var normalized = secp256k1.SignatureNormalize(sigOutput, sigInput);
+            var normalized = secp256k1.EcdsaSignatureNormalize(sigOutput, sigInput);
             Assert.IsFalse(normalized);
             Assert.AreEqual(Convert.ToHexString(sigInput), Convert.ToHexString(sigOutput));
         }
@@ -235,7 +239,7 @@ namespace Secp256k1Net.Test
             using var secp256k1 = new Secp256k1();
             var sigInput = Convert.FromHexString("376254344f1a2cfea28440d4d9af56331c1b9e7f5d0f9540a667b48a962605c83536193faed4fa6c58aafd19fe18b4d67d07303cb4c909bc5aa93788a8a0fdf9");
             var sigOutput = new byte[Secp256k1.SIGNATURE_LENGTH];
-            var normalized = secp256k1.SignatureNormalize(sigOutput, sigInput);
+            var normalized = secp256k1.EcdsaSignatureNormalize(sigOutput, sigInput);
             Assert.IsTrue(normalized);
             Assert.AreNotEqual(Convert.ToHexString(sigInput), Convert.ToHexString(sigOutput));
         }
@@ -249,20 +253,21 @@ namespace Secp256k1Net.Test
             var messageHash = Convert.FromHexString("c9f1c76685845ea81cac9925a7565887b7771b34b35e641cca85db9fefd0e71f");
             var secretKey = Convert.FromHexString("e815acba8fcf085a0b4141060c13b8017a08da37f2eb1d6a5416adbb621560ef");
 
-            Assert.IsTrue(secp256k1.SignRecoverable(signature, messageHash, secretKey));
+            Assert.IsTrue(secp256k1.EcdsaSignRecoverable(signature, messageHash, secretKey));
 
             // Recover the public key
             var publicKeyOutput = new byte[Secp256k1.PUBKEY_LENGTH];
-            Assert.IsTrue(secp256k1.Recover(publicKeyOutput, signature, messageHash));
+            Assert.IsTrue(secp256k1.EcdsaRecover(publicKeyOutput, signature, messageHash));
 
             // Serialize the public key
-            Span<byte> serializedKey = new byte[Secp256k1.SERIALIZED_UNCOMPRESSED_PUBKEY_LENGTH];
-            Assert.IsTrue(secp256k1.PublicKeySerialize(serializedKey, publicKeyOutput));
+            var serializedKey = new byte[Secp256k1.SERIALIZED_UNCOMPRESSED_PUBKEY_LENGTH];
+            nuint outputLen = (nuint)serializedKey.Length;
+            Assert.IsTrue(secp256k1.EcPubkeySerialize(serializedKey, ref outputLen, publicKeyOutput, (uint)Flags.SECP256K1_EC_UNCOMPRESSED));
 
             // Slice off any prefix.
-            serializedKey = serializedKey.Slice(serializedKey.Length - Secp256k1.PUBKEY_LENGTH);
+            var serializedKeySlice = serializedKey.AsSpan().Slice(serializedKey.Length - Secp256k1.PUBKEY_LENGTH);
 
-            Assert.AreEqual("3a2361270fb1bdd220a2fa0f187cc6f85079043a56fb6a968dfad7d7032b07b01213e80ecd4fb41f1500f94698b1117bc9f3335bde5efbb1330271afc6e85e92", Convert.ToHexString(serializedKey), true);
+            Assert.AreEqual("3a2361270fb1bdd220a2fa0f187cc6f85079043a56fb6a968dfad7d7032b07b01213e80ecd4fb41f1500f94698b1117bc9f3335bde5efbb1330271afc6e85e92", Convert.ToHexString(serializedKeySlice), true);
 
             // Verify it works with variables generated from our managed code.
             byte[] ecdsa_r = Convert.FromHexString("9866643c38a8775065ac06cc12d3f8efaeb7a217de9897cc78dff74e7e16236d");
@@ -272,27 +277,28 @@ namespace Secp256k1Net.Test
             // Allocate memory for the signature and create a serialized-format signature to deserialize into our native format (platform dependent, hence why we do this).
             var serializedSignature = ecdsa_r.Concat(ecdsa_s).ToArray();
             signature = new byte[Secp256k1.UNSERIALIZED_SIGNATURE_SIZE];
-            Assert.IsTrue(secp256k1.RecoverableSignatureParseCompact(signature, serializedSignature, recoveryId));
+            Assert.IsTrue(secp256k1.EcdsaRecoverableSignatureParseCompact(signature, serializedSignature, recoveryId));
 
             // Create a serialized signature in compact format (64 bytes + recovery ID)
             var serializedSignatureOutput = new byte[Secp256k1.SERIALIZED_SIGNATURE_SIZE];
-            Assert.IsTrue(secp256k1.RecoverableSignatureSerializeCompact(serializedSignatureOutput, out var recoveryIdOutput, signature));
+            Assert.IsTrue(secp256k1.EcdsaRecoverableSignatureSerializeCompact(serializedSignatureOutput, out var recoveryIdOutput, signature));
             Assert.AreEqual(recoveryId, (byte)recoveryIdOutput);
             Assert.AreEqual(Convert.ToHexString(serializedSignature), Convert.ToHexString(serializedSignatureOutput));
 
             // Recover the public key
             publicKeyOutput = new byte[Secp256k1.PUBKEY_LENGTH];
-            Assert.IsTrue(secp256k1.Recover(publicKeyOutput, signature, messageHash));
+            Assert.IsTrue(secp256k1.EcdsaRecover(publicKeyOutput, signature, messageHash));
 
             // Serialize the public key
             serializedKey = new byte[Secp256k1.SERIALIZED_UNCOMPRESSED_PUBKEY_LENGTH];
-            Assert.IsTrue(secp256k1.PublicKeySerialize(serializedKey, publicKeyOutput));
+            outputLen = (nuint)serializedKey.Length;
+            Assert.IsTrue(secp256k1.EcPubkeySerialize(serializedKey, ref outputLen, publicKeyOutput, (uint)Flags.SECP256K1_EC_UNCOMPRESSED));
 
             // Slice off any prefix.
-            serializedKey = serializedKey.Slice(serializedKey.Length - Secp256k1.PUBKEY_LENGTH);
+            serializedKeySlice = serializedKey.AsSpan().Slice(serializedKey.Length - Secp256k1.PUBKEY_LENGTH);
 
             // Assert our key
-            Assert.AreEqual("3a2361270fb1bdd220a2fa0f187cc6f85079043a56fb6a968dfad7d7032b07b01213e80ecd4fb41f1500f94698b1117bc9f3335bde5efbb1330271afc6e85e92", Convert.ToHexString(serializedKey), true);
+            Assert.AreEqual("3a2361270fb1bdd220a2fa0f187cc6f85079043a56fb6a968dfad7d7032b07b01213e80ecd4fb41f1500f94698b1117bc9f3335bde5efbb1330271afc6e85e92", Convert.ToHexString(serializedKeySlice), true);
         }
 
         [TestMethod]
@@ -309,8 +315,8 @@ namespace Secp256k1Net.Test
             var serializedSignature = ecdsa_r.Concat(ecdsa_s).ToArray();
             signature = new byte[Secp256k1.UNSERIALIZED_SIGNATURE_SIZE];
             byte recoveryId = 9; // incorrect recoveryId,  it should be >=0 and <=3
-            // We get SIGABORT here with default error callback  
-            var result = secp256k1.RecoverableSignatureParseCompact(signature, serializedSignature, recoveryId);
+            // We get SIGABORT here with default error callback
+            var result = secp256k1.EcdsaRecoverableSignatureParseCompact(signature, serializedSignature, recoveryId);
             Assert.IsFalse(result);
         }
 
@@ -333,8 +339,8 @@ namespace Secp256k1Net.Test
             var serializedSignature = ecdsa_r.Concat(ecdsa_s).ToArray();
             signature = new byte[Secp256k1.UNSERIALIZED_SIGNATURE_SIZE];
             byte recoveryId = 9; // incorrect recoveryId,  it should be >=0 and <=3
-            // We get SIGABORT here with default error callback  
-            var result = secp256k1.RecoverableSignatureParseCompact(signature, serializedSignature, recoveryId);
+            // We get SIGABORT here with default error callback
+            var result = secp256k1.EcdsaRecoverableSignatureParseCompact(signature, serializedSignature, recoveryId);
             Assert.IsFalse(result);
 
             Assert.AreEqual("Error message test: recid >= 0 && recid <= 3", errorMsg);
@@ -360,8 +366,8 @@ namespace Secp256k1Net.Test
             var serializedSignature = ecdsa_r.Concat(ecdsa_s).ToArray();
             signature = new byte[Secp256k1.UNSERIALIZED_SIGNATURE_SIZE];
             byte recoveryId = 9; // incorrect recoveryId,  it should be >=0 and <=3
-            // We get SIGABORT here with default error callback  
-            var result = secp256k1.RecoverableSignatureParseCompact(signature, serializedSignature, recoveryId);
+            // We get SIGABORT here with default error callback
+            var result = secp256k1.EcdsaRecoverableSignatureParseCompact(signature, serializedSignature, recoveryId);
             Assert.IsFalse(result);
             Assert.AreEqual("Error message test: recid >= 0 && recid <= 3", errorMsg);
         }
@@ -497,10 +503,10 @@ namespace Secp256k1Net.Test
 
             var publicKey = new byte[publicKeyOriginal.Length];
             Buffer.BlockCopy(publicKeyOriginal, 0, publicKey, 0, publicKeyOriginal.Length);
-            Assert.IsTrue(secp256k1.PublicKeyNegate(publicKey));
+            Assert.IsTrue(secp256k1.EcPubkeyNegate(publicKey));
             Assert.IsTrue(publicKeyOutput.SequenceEqual(publicKey));
         }
-        
+
         [TestMethod]
         public void PublicKeysCombineTest()
         {
@@ -514,12 +520,12 @@ namespace Secp256k1Net.Test
             var expectedPublicKeyOutput =
                 Convert.FromHexString(
                     "75B39FA41258C450F987CB50CC151AA8FADC7BBFFA2B059C50A74A8434DE00726B635A12A12EEDB61E7736AB39740A5B78D2259EC9DF0692A321043D88156DB5");
-                
+
             var publicKeyOutput = new byte[Secp256k1.PUBKEY_LENGTH];
-            Assert.IsTrue(secp256k1.PublicKeysCombine(publicKeyOutput, publicKey1, publicKey2));
+            Assert.IsTrue(secp256k1.EcPubkeyCombine(publicKeyOutput, new[] { publicKey1, publicKey2 }));
             Assert.IsTrue(publicKeyOutput.SequenceEqual(expectedPublicKeyOutput));
         }
-        
+
         [TestMethod]
         public void PublicKeyMultiplyTest()
         {
@@ -531,7 +537,7 @@ namespace Secp256k1Net.Test
                 Convert.FromHexString(
                     "F626FF3EF22B127F75374BCD3202229E5AE12B3FB405E6687AFA6527ED300EA31269CC0E59E0D1E37B8FA56B0EA1435FF7F66EA3391EB94BA31E70C99FD70C38");
             var tweak = Convert.FromHexString("d8bdb07407bb011137ef7ba6a7f07c6a55c1e3600a6aa138e34ab5c16439ceda");
-            Assert.IsTrue(secp256k1.PublicKeyMultiply(publicKey, tweak));
+            Assert.IsTrue(secp256k1.EcPubkeyTweakMul(publicKey, tweak));
             Assert.IsTrue(publicKeyOutput.SequenceEqual(publicKey));
 
         }
@@ -576,7 +582,7 @@ namespace Secp256k1Net.Test
                             var privateKey = new byte[Secp256k1.PRIVKEY_LENGTH];
                             var publicKey = new byte[Secp256k1.PUBKEY_LENGTH];
                             new Random().NextBytes(privateKey);
-                            secp256k1.PublicKeyCreate(publicKey, privateKey);
+                            secp256k1.EcPubkeyCreate(publicKey, privateKey);
                         }
                     }
                     catch (Exception ex)
@@ -588,7 +594,7 @@ namespace Secp256k1Net.Test
 
             Task.WaitAll(tasks);
 
-            Assert.AreEqual(0, exceptions.Count, 
+            Assert.AreEqual(0, exceptions.Count,
                 $"Concurrent instance creation failed with {exceptions.Count} exception(s): " +
                 $"{string.Join("; ", exceptions.Select(e => e.Message))}");
         }
@@ -599,7 +605,7 @@ namespace Secp256k1Net.Test
     {
 
         [TestMethod]
-        public void Recover_InvalidPublicKeyOutput_ThrowsArgumentException()
+        public void EcdsaRecover_InvalidPublicKeyOutput_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var signature = new byte[Secp256k1.UNSERIALIZED_SIGNATURE_SIZE];
@@ -607,11 +613,11 @@ namespace Secp256k1Net.Test
             var publicKeyOutput = new byte[Secp256k1.PUBKEY_LENGTH - 1]; // Too small
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.Recover(publicKeyOutput, signature, message));
+                secp256k1.EcdsaRecover(publicKeyOutput, signature, message));
         }
 
         [TestMethod]
-        public void Recover_InvalidSignature_ThrowsArgumentException()
+        public void EcdsaRecover_InvalidSignature_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var signature = new byte[Secp256k1.UNSERIALIZED_SIGNATURE_SIZE - 1]; // Too small
@@ -619,11 +625,11 @@ namespace Secp256k1Net.Test
             var publicKeyOutput = new byte[Secp256k1.PUBKEY_LENGTH];
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.Recover(publicKeyOutput, signature, message));
+                secp256k1.EcdsaRecover(publicKeyOutput, signature, message));
         }
 
         [TestMethod]
-        public void Recover_InvalidMessage_ThrowsArgumentException()
+        public void EcdsaRecover_InvalidMessage_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var signature = new byte[Secp256k1.UNSERIALIZED_SIGNATURE_SIZE];
@@ -631,65 +637,54 @@ namespace Secp256k1Net.Test
             var publicKeyOutput = new byte[Secp256k1.PUBKEY_LENGTH];
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.Recover(publicKeyOutput, signature, message));
+                secp256k1.EcdsaRecover(publicKeyOutput, signature, message));
         }
 
         [TestMethod]
-        public void SecretKeyVerify_InvalidSecretKey_ThrowsArgumentException()
+        public void EcSeckeyVerify_InvalidSecretKey_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var secretKey = new byte[Secp256k1.PRIVKEY_LENGTH - 1]; // Too small
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.SecretKeyVerify(secretKey));
+                secp256k1.EcSeckeyVerify(secretKey));
         }
 
         [TestMethod]
-        public void PublicKeyCreate_InvalidPublicKeyOutput_ThrowsArgumentException()
+        public void EcPubkeyCreate_InvalidPublicKeyOutput_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var publicKeyOutput = new byte[Secp256k1.PUBKEY_LENGTH - 1]; // Too small
             var privateKeyInput = new byte[Secp256k1.PRIVKEY_LENGTH];
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.PublicKeyCreate(publicKeyOutput, privateKeyInput));
+                secp256k1.EcPubkeyCreate(publicKeyOutput, privateKeyInput));
         }
 
         [TestMethod]
-        public void PublicKeyCreate_InvalidPrivateKeyInput_ThrowsArgumentException()
+        public void EcPubkeyCreate_InvalidPrivateKeyInput_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var publicKeyOutput = new byte[Secp256k1.PUBKEY_LENGTH];
             var privateKeyInput = new byte[Secp256k1.PRIVKEY_LENGTH - 1]; // Too small
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.PublicKeyCreate(publicKeyOutput, privateKeyInput));
+                secp256k1.EcPubkeyCreate(publicKeyOutput, privateKeyInput));
         }
 
         [TestMethod]
-        public void RecoverableSignatureParseCompact_InvalidSignatureOutput_ThrowsArgumentException()
+        public void EcdsaRecoverableSignatureParseCompact_InvalidSignatureOutput_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var signatureOutput = new byte[Secp256k1.UNSERIALIZED_SIGNATURE_SIZE - 1]; // Too small
             var compactSignature = new byte[Secp256k1.SERIALIZED_SIGNATURE_SIZE];
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.RecoverableSignatureParseCompact(signatureOutput, compactSignature, 0));
+                secp256k1.EcdsaRecoverableSignatureParseCompact(signatureOutput, compactSignature, 0));
         }
 
         [TestMethod]
-        public void RecoverableSignatureParseCompact_InvalidCompactSignature_ThrowsArgumentException()
-        {
-            using var secp256k1 = new Secp256k1();
-            var signatureOutput = new byte[Secp256k1.UNSERIALIZED_SIGNATURE_SIZE];
-            var compactSignature = new byte[Secp256k1.SERIALIZED_SIGNATURE_SIZE - 1]; // Too small
-
-            Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.RecoverableSignatureParseCompact(signatureOutput, compactSignature, 0));
-        }
-
-        [TestMethod]
-        public void SignRecoverable_InvalidSignatureOutput_ThrowsArgumentException()
+        public void EcdsaSignRecoverable_InvalidSignatureOutput_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var signatureOutput = new byte[Secp256k1.UNSERIALIZED_SIGNATURE_SIZE - 1]; // Too small
@@ -697,11 +692,11 @@ namespace Secp256k1Net.Test
             var secretKey = new byte[Secp256k1.PRIVKEY_LENGTH];
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.SignRecoverable(signatureOutput, messageHash, secretKey));
+                secp256k1.EcdsaSignRecoverable(signatureOutput, messageHash, secretKey));
         }
 
         [TestMethod]
-        public void SignRecoverable_InvalidMessageHash_ThrowsArgumentException()
+        public void EcdsaSignRecoverable_InvalidMessageHash_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var signatureOutput = new byte[Secp256k1.UNSERIALIZED_SIGNATURE_SIZE];
@@ -709,11 +704,11 @@ namespace Secp256k1Net.Test
             var secretKey = new byte[Secp256k1.PRIVKEY_LENGTH];
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.SignRecoverable(signatureOutput, messageHash, secretKey));
+                secp256k1.EcdsaSignRecoverable(signatureOutput, messageHash, secretKey));
         }
 
         [TestMethod]
-        public void SignRecoverable_InvalidSecretKey_ThrowsArgumentException()
+        public void EcdsaSignRecoverable_InvalidSecretKey_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var signatureOutput = new byte[Secp256k1.UNSERIALIZED_SIGNATURE_SIZE];
@@ -721,176 +716,66 @@ namespace Secp256k1Net.Test
             var secretKey = new byte[Secp256k1.PRIVKEY_LENGTH - 1]; // Too small
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.SignRecoverable(signatureOutput, messageHash, secretKey));
+                secp256k1.EcdsaSignRecoverable(signatureOutput, messageHash, secretKey));
         }
 
         [TestMethod]
-        public void RecoverableSignatureSerializeCompact_InvalidCompactSignatureOutput_ThrowsArgumentException()
-        {
-            using var secp256k1 = new Secp256k1();
-            var compactSignatureOutput = new byte[Secp256k1.SERIALIZED_SIGNATURE_SIZE - 1]; // Too small
-            var signature = new byte[Secp256k1.UNSERIALIZED_SIGNATURE_SIZE];
-
-            Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.RecoverableSignatureSerializeCompact(compactSignatureOutput, out _, signature));
-        }
-
-        [TestMethod]
-        public void RecoverableSignatureSerializeCompact_InvalidSignature_ThrowsArgumentException()
+        public void EcdsaRecoverableSignatureSerializeCompact_InvalidSignature_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var compactSignatureOutput = new byte[Secp256k1.SERIALIZED_SIGNATURE_SIZE];
             var signature = new byte[Secp256k1.UNSERIALIZED_SIGNATURE_SIZE - 1]; // Too small
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.RecoverableSignatureSerializeCompact(compactSignatureOutput, out _, signature));
+                secp256k1.EcdsaRecoverableSignatureSerializeCompact(compactSignatureOutput, out _, signature));
         }
 
         [TestMethod]
-        public void PublicKeySerialize_InvalidSerializedPublicKeyOutput_ThrowsArgumentException()
-        {
-            using var secp256k1 = new Secp256k1();
-            var serializedPublicKeyOutput = new byte[Secp256k1.SERIALIZED_UNCOMPRESSED_PUBKEY_LENGTH - 1]; // Too small
-            var publicKey = new byte[Secp256k1.PUBKEY_LENGTH];
-
-            Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.PublicKeySerialize(serializedPublicKeyOutput, publicKey));
-        }
-
-        [TestMethod]
-        public void PublicKeySerialize_InvalidSerializedPublicKeyOutputCompressed_ThrowsArgumentException()
-        {
-            using var secp256k1 = new Secp256k1();
-            var serializedPublicKeyOutput = new byte[Secp256k1.SERIALIZED_COMPRESSED_PUBKEY_LENGTH - 1]; // Too small
-            var publicKey = new byte[Secp256k1.PUBKEY_LENGTH];
-
-            Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.PublicKeySerialize(serializedPublicKeyOutput, publicKey, Flags.SECP256K1_EC_COMPRESSED));
-        }
-
-        [TestMethod]
-        public void PublicKeySerialize_InvalidPublicKey_ThrowsArgumentException()
-        {
-            using var secp256k1 = new Secp256k1();
-            var serializedPublicKeyOutput = new byte[Secp256k1.SERIALIZED_UNCOMPRESSED_PUBKEY_LENGTH];
-            var publicKey = new byte[Secp256k1.PUBKEY_LENGTH - 1]; // Too small
-
-            Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.PublicKeySerialize(serializedPublicKeyOutput, publicKey));
-        }
-
-        [TestMethod]
-        public void PublicKeyParse_InvalidSerializedPublicKey_ThrowsArgumentException()
-        {
-            using var secp256k1 = new Secp256k1();
-            var publicKeyOutput = new byte[Secp256k1.PUBKEY_LENGTH];
-            var serializedPublicKey = new byte[32]; // Wrong size (not 33 or 65)
-
-            Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.PublicKeyParse(publicKeyOutput, serializedPublicKey));
-        }
-
-        [TestMethod]
-        public void PublicKeyParse_InvalidPublicKeyOutput_ThrowsArgumentException()
-        {
-            using var secp256k1 = new Secp256k1();
-            var publicKeyOutput = new byte[Secp256k1.PUBKEY_LENGTH - 1]; // Too small
-            var serializedPublicKey = new byte[33]; // Valid size
-
-            Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.PublicKeyParse(publicKeyOutput, serializedPublicKey));
-        }
-
-        [TestMethod]
-        public void SignatureNormalize_InvalidNormalizedSignatureOutput_ThrowsArgumentException()
-        {
-            using var secp256k1 = new Secp256k1();
-            var normalizedSignatureOutput = new byte[Secp256k1.SIGNATURE_LENGTH - 1]; // Too small
-            var signatureInput = new byte[Secp256k1.SIGNATURE_LENGTH];
-
-            Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.SignatureNormalize(normalizedSignatureOutput, signatureInput));
-        }
-
-        [TestMethod]
-        public void SignatureNormalize_InvalidSignatureInput_ThrowsArgumentException()
+        public void EcdsaSignatureNormalize_InvalidSignatureInput_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var normalizedSignatureOutput = new byte[Secp256k1.SIGNATURE_LENGTH];
             var signatureInput = new byte[Secp256k1.SIGNATURE_LENGTH - 1]; // Too small
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.SignatureNormalize(normalizedSignatureOutput, signatureInput));
+                secp256k1.EcdsaSignatureNormalize(normalizedSignatureOutput, signatureInput));
         }
 
         [TestMethod]
-        public void SignatureParseDer_InvalidSignatureOutput_ThrowsArgumentException()
+        public void EcdsaSignatureParseDer_InvalidSignatureOutput_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var signatureOutput = new byte[Secp256k1.SIGNATURE_LENGTH - 1]; // Too small
             var derSignature = new byte[72];
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.SignatureParseDer(signatureOutput, derSignature));
+                secp256k1.EcdsaSignatureParseDer(signatureOutput, derSignature, (nuint)derSignature.Length));
         }
 
         [TestMethod]
-        public void SignatureSerializeDer_InvalidSignatureOutput_ThrowsArgumentException()
-        {
-            using var secp256k1 = new Secp256k1();
-            var signatureOutput = new byte[Secp256k1.SERIALIZED_DER_SIGNATURE_MAX_SIZE - 1]; // Too small
-            var signatureInput = new byte[Secp256k1.SIGNATURE_LENGTH];
-
-            Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.SignatureSerializeDer(signatureOutput, signatureInput, out _));
-        }
-
-        [TestMethod]
-        public void SignatureSerializeCompact_InvalidSignatureOutput_ThrowsArgumentException()
-        {
-            using var secp256k1 = new Secp256k1();
-            var signatureOutput = new byte[Secp256k1.SERIALIZED_SIGNATURE_SIZE - 1]; // Too small
-            var signatureInput = new byte[Secp256k1.SIGNATURE_LENGTH];
-
-            Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.SignatureSerializeCompact(signatureOutput, signatureInput));
-        }
-
-        [TestMethod]
-        public void SignatureSerializeCompact_InvalidSignatureInput_ThrowsArgumentException()
+        public void EcdsaSignatureSerializeCompact_InvalidSignatureInput_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var signatureOutput = new byte[Secp256k1.SERIALIZED_SIGNATURE_SIZE];
             var signatureInput = new byte[Secp256k1.SIGNATURE_LENGTH - 1]; // Too small
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.SignatureSerializeCompact(signatureOutput, signatureInput));
+                secp256k1.EcdsaSignatureSerializeCompact(signatureOutput, signatureInput));
         }
 
         [TestMethod]
-        public void SignatureParseCompact_InvalidSignatureOutput_ThrowsArgumentException()
+        public void EcdsaSignatureParseCompact_InvalidSignatureOutput_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var signatureOutput = new byte[Secp256k1.SIGNATURE_LENGTH - 1]; // Too small
             var signatureInput = new byte[Secp256k1.SERIALIZED_SIGNATURE_SIZE];
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.SignatureParseCompact(signatureOutput, signatureInput));
+                secp256k1.EcdsaSignatureParseCompact(signatureOutput, signatureInput));
         }
 
         [TestMethod]
-        public void SignatureParseCompact_InvalidSignatureInput_ThrowsArgumentException()
-        {
-            using var secp256k1 = new Secp256k1();
-            var signatureOutput = new byte[Secp256k1.SIGNATURE_LENGTH];
-            var signatureInput = new byte[Secp256k1.SERIALIZED_SIGNATURE_SIZE - 1]; // Too small
-
-            Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.SignatureParseCompact(signatureOutput, signatureInput));
-        }
-
-        [TestMethod]
-        public void Verify_InvalidSignature_ThrowsArgumentException()
+        public void EcdsaVerify_InvalidSignature_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var signature = new byte[Secp256k1.SIGNATURE_LENGTH - 1]; // Too small
@@ -898,11 +783,11 @@ namespace Secp256k1Net.Test
             var publicKey = new byte[Secp256k1.PUBKEY_LENGTH];
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.Verify(signature, messageHash, publicKey));
+                secp256k1.EcdsaVerify(signature, messageHash, publicKey));
         }
 
         [TestMethod]
-        public void Verify_InvalidMessageHash_ThrowsArgumentException()
+        public void EcdsaVerify_InvalidMessageHash_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var signature = new byte[Secp256k1.SIGNATURE_LENGTH];
@@ -910,11 +795,11 @@ namespace Secp256k1Net.Test
             var publicKey = new byte[Secp256k1.PUBKEY_LENGTH];
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.Verify(signature, messageHash, publicKey));
+                secp256k1.EcdsaVerify(signature, messageHash, publicKey));
         }
 
         [TestMethod]
-        public void Verify_InvalidPublicKey_ThrowsArgumentException()
+        public void EcdsaVerify_InvalidPublicKey_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var signature = new byte[Secp256k1.SIGNATURE_LENGTH];
@@ -922,11 +807,11 @@ namespace Secp256k1Net.Test
             var publicKey = new byte[Secp256k1.PUBKEY_LENGTH - 1]; // Too small
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.Verify(signature, messageHash, publicKey));
+                secp256k1.EcdsaVerify(signature, messageHash, publicKey));
         }
 
         [TestMethod]
-        public void Sign_InvalidSignatureOutput_ThrowsArgumentException()
+        public void EcdsaSign_InvalidSignatureOutput_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var signatureOutput = new byte[Secp256k1.SIGNATURE_LENGTH - 1]; // Too small
@@ -934,11 +819,11 @@ namespace Secp256k1Net.Test
             var secretKey = new byte[Secp256k1.PRIVKEY_LENGTH];
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.Sign(signatureOutput, messageHash, secretKey));
+                secp256k1.EcdsaSign(signatureOutput, messageHash, secretKey));
         }
 
         [TestMethod]
-        public void Sign_InvalidMessageHash_ThrowsArgumentException()
+        public void EcdsaSign_InvalidMessageHash_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var signatureOutput = new byte[Secp256k1.SIGNATURE_LENGTH];
@@ -946,11 +831,11 @@ namespace Secp256k1Net.Test
             var secretKey = new byte[Secp256k1.PRIVKEY_LENGTH];
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.Sign(signatureOutput, messageHash, secretKey));
+                secp256k1.EcdsaSign(signatureOutput, messageHash, secretKey));
         }
 
         [TestMethod]
-        public void Sign_InvalidSecretKey_ThrowsArgumentException()
+        public void EcdsaSign_InvalidSecretKey_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var signatureOutput = new byte[Secp256k1.SIGNATURE_LENGTH];
@@ -958,19 +843,7 @@ namespace Secp256k1Net.Test
             var secretKey = new byte[Secp256k1.PRIVKEY_LENGTH - 1]; // Too small
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.Sign(signatureOutput, messageHash, secretKey));
-        }
-
-        [TestMethod]
-        public void Ecdh_InvalidResultOutput_ThrowsArgumentException()
-        {
-            using var secp256k1 = new Secp256k1();
-            var resultOutput = new byte[Secp256k1.SECRET_LENGTH - 1]; // Too small
-            var publicKey = new byte[Secp256k1.PUBKEY_LENGTH];
-            var privateKey = new byte[Secp256k1.PRIVKEY_LENGTH];
-
-            Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.Ecdh(resultOutput, publicKey, privateKey));
+                secp256k1.EcdsaSign(signatureOutput, messageHash, secretKey));
         }
 
         [TestMethod]
@@ -1037,71 +910,66 @@ namespace Secp256k1Net.Test
         }
 
         [TestMethod]
-        public void PublicKeysCombine_InvalidOutputPublicKey_ThrowsArgumentException()
-        {
-            using var secp256k1 = new Secp256k1();
-            var outputPublicKey = new byte[Secp256k1.PUBKEY_LENGTH - 1]; // Too small
-            var publicKey1 = new byte[Secp256k1.PUBKEY_LENGTH];
-            var publicKey2 = new byte[Secp256k1.PUBKEY_LENGTH];
-
-            Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.PublicKeysCombine(outputPublicKey, publicKey1, publicKey2));
-        }
-
-        [TestMethod]
-        public void PublicKeysCombine_InvalidPublicKey1_ThrowsArgumentException()
+        public void EcPubkeyCombine_NullArray_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var outputPublicKey = new byte[Secp256k1.PUBKEY_LENGTH];
-            var publicKey1 = new byte[Secp256k1.PUBKEY_LENGTH - 1]; // Too small
-            var publicKey2 = new byte[Secp256k1.PUBKEY_LENGTH];
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.PublicKeysCombine(outputPublicKey, publicKey1, publicKey2));
+                secp256k1.EcPubkeyCombine(outputPublicKey, null));
         }
 
         [TestMethod]
-        public void PublicKeysCombine_InvalidPublicKey2_ThrowsArgumentException()
+        public void EcPubkeyCombine_EmptyArray_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var outputPublicKey = new byte[Secp256k1.PUBKEY_LENGTH];
-            var publicKey1 = new byte[Secp256k1.PUBKEY_LENGTH];
-            var publicKey2 = new byte[Secp256k1.PUBKEY_LENGTH - 1]; // Too small
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.PublicKeysCombine(outputPublicKey, publicKey1, publicKey2));
+                secp256k1.EcPubkeyCombine(outputPublicKey, new byte[0][]));
         }
 
         [TestMethod]
-        public void PublicKeyNegate_InvalidPublicKey_ThrowsArgumentException()
+        public void EcPubkeyCombine_TooSmallElement_ThrowsArgumentException()
+        {
+            using var secp256k1 = new Secp256k1();
+            var outputPublicKey = new byte[Secp256k1.PUBKEY_LENGTH];
+            var smallPubkey = new byte[Secp256k1.PUBKEY_LENGTH - 1]; // Too small
+
+            Assert.ThrowsException<ArgumentException>(() =>
+                secp256k1.EcPubkeyCombine(outputPublicKey, new[] { smallPubkey }));
+        }
+
+        [TestMethod]
+        public void EcPubkeyNegate_InvalidPublicKey_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var publicKey = new byte[Secp256k1.PUBKEY_LENGTH - 1]; // Too small
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.PublicKeyNegate(publicKey));
+                secp256k1.EcPubkeyNegate(publicKey));
         }
 
         [TestMethod]
-        public void PublicKeyMultiply_InvalidPublicKey_ThrowsArgumentException()
+        public void EcPubkeyTweakMul_InvalidPublicKey_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var publicKey = new byte[Secp256k1.PUBKEY_LENGTH - 1]; // Too small
             var tweak = new byte[Secp256k1.SECRET_LENGTH];
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.PublicKeyMultiply(publicKey, tweak));
+                secp256k1.EcPubkeyTweakMul(publicKey, tweak));
         }
 
         [TestMethod]
-        public void PublicKeyMultiply_InvalidTweak_ThrowsArgumentException()
+        public void EcPubkeyTweakMul_InvalidTweak_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var publicKey = new byte[Secp256k1.PUBKEY_LENGTH];
             var tweak = new byte[Secp256k1.SECRET_LENGTH - 1]; // Too small
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.PublicKeyMultiply(publicKey, tweak));
+                secp256k1.EcPubkeyTweakMul(publicKey, tweak));
         }
 
         [TestMethod]

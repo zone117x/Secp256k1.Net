@@ -34,13 +34,13 @@ namespace NativeLibTestLegacy
                     for (int i = 0; i < 32; i++)
                         privateKey[i] = (byte)(i + 1);
 
-                    if (!secp256k1.SecretKeyVerify(privateKey))
+                    if (!secp256k1.EcSeckeyVerify(privateKey))
                     {
                         Console.WriteLine("FAILED (invalid secret key)");
                         return 1;
                     }
 
-                    if (!secp256k1.PublicKeyCreate(publicKey, privateKey))
+                    if (!secp256k1.EcPubkeyCreate(publicKey, privateKey))
                     {
                         Console.WriteLine("FAILED (could not create public key)");
                         return 1;
@@ -50,7 +50,8 @@ namespace NativeLibTestLegacy
                     // Test 3: Public key serialization
                     Console.Write("Test 3: Serializing public key... ");
                     var serializedPubKey = new byte[33];
-                    if (!secp256k1.PublicKeySerialize(serializedPubKey, publicKey, Flags.SECP256K1_EC_COMPRESSED))
+                    UIntPtr pubKeyLen = (UIntPtr)33;
+                    if (!secp256k1.EcPubkeySerialize(serializedPubKey, ref pubKeyLen, publicKey, (uint)Flags.SECP256K1_EC_COMPRESSED))
                     {
                         Console.WriteLine("FAILED");
                         return 1;
@@ -64,7 +65,7 @@ namespace NativeLibTestLegacy
                         messageHash[i] = (byte)(255 - i);
 
                     var signature = new byte[64];
-                    if (!secp256k1.Sign(signature, messageHash, privateKey))
+                    if (!secp256k1.EcdsaSign(signature, messageHash, privateKey))
                     {
                         Console.WriteLine("FAILED");
                         return 1;
@@ -73,7 +74,7 @@ namespace NativeLibTestLegacy
 
                     // Test 5: Verification
                     Console.Write("Test 5: Verifying signature... ");
-                    if (!secp256k1.Verify(signature, messageHash, publicKey))
+                    if (!secp256k1.EcdsaVerify(signature, messageHash, publicKey))
                     {
                         Console.WriteLine("FAILED");
                         return 1;
@@ -87,7 +88,7 @@ namespace NativeLibTestLegacy
                     for (int i = 0; i < 32; i++)
                         privateKey2[i] = (byte)(32 - i);
 
-                    if (!secp256k1.PublicKeyCreate(publicKey2, privateKey2))
+                    if (!secp256k1.EcPubkeyCreate(publicKey2, privateKey2))
                     {
                         Console.WriteLine("FAILED (could not create second public key)");
                         return 1;
@@ -128,8 +129,8 @@ namespace NativeLibTestLegacy
                     // Test 7: DER signature serialization
                     Console.Write("Test 7: DER signature serialization... ");
                     var derSig = new byte[72];
-                    int derLen;
-                    if (!secp256k1.SignatureSerializeDer(derSig, signature, out derLen))
+                    UIntPtr derLen = (UIntPtr)72;
+                    if (!secp256k1.EcdsaSignatureSerializeDer(derSig, ref derLen, signature))
                     {
                         Console.WriteLine("FAILED");
                         return 1;

@@ -145,10 +145,10 @@ namespace Secp256k1Net.Bench
         {
             using var secp256k1 = new Secp256k1();
             var sig = new byte[Secp256k1.SIGNATURE_LENGTH];
-            if (!secp256k1.Sign(sig, msg.MsgHash, keyPair.PrivateKey))
+            if (!secp256k1.EcdsaSign(sig, msg.MsgHash, keyPair.PrivateKey))
                 throw new Exception();
             var serializedSig = new byte[Secp256k1.SERIALIZED_SIGNATURE_SIZE];
-            if (!secp256k1.SignatureSerializeCompact(serializedSig, sig))
+            if (!secp256k1.EcdsaSignatureSerializeCompact(serializedSig, sig))
                 throw new Exception();
             return serializedSig;
         }
@@ -157,12 +157,12 @@ namespace Secp256k1Net.Bench
         {
             using var secp256k1 = new Secp256k1();
             var parsedSig = new byte[Secp256k1.SIGNATURE_LENGTH];
-            if (!secp256k1.SignatureParseCompact(parsedSig, signature))
+            if (!secp256k1.EcdsaSignatureParseCompact(parsedSig, signature))
                 throw new Exception();
             var parsedPubKey = new byte[Secp256k1.PUBKEY_LENGTH];
-            if (!secp256k1.PublicKeyParse(parsedPubKey, keyPair.PublicKeyCompressed))
+            if (!secp256k1.EcPubkeyParse(parsedPubKey, keyPair.PublicKeyCompressed, (nuint)keyPair.PublicKeyCompressed.Length))
                 throw new Exception();
-            if (!secp256k1.Verify(parsedSig, msg.MsgHash, parsedPubKey))
+            if (!secp256k1.EcdsaVerify(parsedSig, msg.MsgHash, parsedPubKey))
                 throw new Exception();
         }
     }

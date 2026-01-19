@@ -146,7 +146,14 @@ public class InteropGenerator : IIncrementalGenerator
         sb.AppendLine("{");
 
         // Generate function pointer type delegates that are used in public/internal APIs (available for all targets)
-        var publicDelegateTypes = new HashSet<string> { "secp256k1_ecdh_hash_function" };
+        // These are needed for callback marshaling - must be available for both legacy and modern targets
+        var publicDelegateTypes = new HashSet<string>
+        {
+            "secp256k1_ecdh_hash_function",
+            "secp256k1_nonce_function",
+            "secp256k1_nonce_function_hardened",
+            "secp256k1_ellswift_xdh_hash_function",
+        };
         foreach (var fpType in api.FunctionPointerTypes.Where(f => publicDelegateTypes.Contains(f.Name)))
         {
             GenerateFunctionPointerTypeDelegate(sb, fpType);
@@ -693,11 +700,7 @@ public class InteropGenerator : IIncrementalGenerator
         "secp256k1_context_preallocated_clone_size",
         "secp256k1_context_preallocated_clone",
         "secp256k1_context_preallocated_destroy",
-        // Functions with array-of-pointers that need manual handling
-        "secp256k1_ec_pubkey_combine",
-        "secp256k1_musig_pubkey_agg",
-        "secp256k1_musig_nonce_agg",
-        "secp256k1_musig_partial_sig_agg",
+        "secp256k1_ec_pubkey_sort",  // Needs special handling to reorder the C# array based on sorted pointers
     };
 
     // Struct sizes from JSON (secp256k1 opaque types)
@@ -714,6 +717,21 @@ public class InteropGenerator : IIncrementalGenerator
         ["secp256k1_musig_aggnonce"] = 132,
         ["secp256k1_musig_session"] = 133,
         ["secp256k1_musig_partial_sig"] = 36,
+    };
+
+    // Map native callback type names to user-friendly C# delegate names
+    private static readonly Dictionary<string, string> CallbackDelegateNames = new()
+    {
+        ["secp256k1_nonce_function"] = "NonceFunction",
+        ["secp256k1_ecdh_hash_function"] = "EcdhHashFunction",
+        ["secp256k1_nonce_function_hardened"] = "NonceFunctionHardened",
+        ["secp256k1_ellswift_xdh_hash_function"] = "EllswiftXdhHashFunction",
+    };
+
+    // User-friendly delegates that are already defined in hand-written code (skip generation)
+    private static readonly HashSet<string> SkipDelegateGeneration = new()
+    {
+        "EcdhHashFunction", // Already defined in Secp256k1.cs with Span<byte> for backwards compatibility
     };
 
     private string GenerateWrappers(Secp256k1Api api)
@@ -734,6 +752,10 @@ public class InteropGenerator : IIncrementalGenerator
         sb.AppendLine();
         sb.AppendLine("namespace Secp256k1Net");
         sb.AppendLine("{");
+
+        // Generate user-friendly delegate types for callback functions
+        GenerateUserFriendlyCallbackDelegates(sb, api);
+
         sb.AppendLine("    public unsafe partial class Secp256k1");
         sb.AppendLine("    {");
 
@@ -748,26 +770,111 @@ public class InteropGenerator : IIncrementalGenerator
         return sb.ToString();
     }
 
+    /// <summary>
+    /// Generates user-friendly delegate types with Span parameters for callback function types.
+    /// </summary>
+    private void GenerateUserFriendlyCallbackDelegates(StringBuilder sb, Secp256k1Api api)
+    {
+        foreach (var fpType in api.FunctionPointerTypes)
+        {
+            if (!CallbackDelegateNames.TryGetValue(fpType.Name, out var delegateName))
+                continue;
+
+            // Skip delegates that are already defined in hand-written code
+            if (SkipDelegateGeneration.Contains(delegateName))
+                continue;
+
+            sb.AppendLine();
+            if (!string.IsNullOrEmpty(fpType.Description))
+            {
+                sb.AppendLine($"    /// <summary>{FormatXmlDescription(fpType.Description)}</summary>");
+            }
+
+            // Generate parameter documentation
+            foreach (var param in fpType.Parameters)
+            {
+                var paramDesc = FormatXmlDescription(param.Description);
+                sb.AppendLine($"    /// <param name=\"{SanitizeParamName(param.Name)}\">{paramDesc}</param>");
+            }
+
+            if (fpType.ReturnType == "int")
+            {
+                sb.AppendLine("    /// <returns>1 on success, 0 on failure.</returns>");
+            }
+
+            // Generate the delegate with user-friendly Span types
+            var returnType = fpType.ReturnType == "int" ? "int" : MapCTypeToCSharp(fpType.ReturnType);
+            sb.Append($"    public delegate {returnType} {delegateName}(");
+
+            var paramStrings = new List<string>();
+            foreach (var param in fpType.Parameters)
+            {
+                var paramType = GetUserFriendlyCallbackParamType(param);
+                paramStrings.Add($"{paramType} {SanitizeParamName(param.Name)}");
+            }
+
+            sb.Append(string.Join(", ", paramStrings));
+            sb.AppendLine(");");
+        }
+
+        sb.AppendLine();
+    }
+
+    /// <summary>
+    /// Maps a callback parameter type to a user-friendly C# type (Span-based where possible).
+    /// </summary>
+    private string GetUserFriendlyCallbackParamType(ParameterDef param)
+    {
+        var cType = param.Type.Trim();
+        var name = param.Name;
+        var direction = param.Direction ?? "in";
+
+        // void* data - keep as IntPtr for user data
+        if (cType == "void*" || cType == "const void*")
+        {
+            return "IntPtr";
+        }
+
+        // Pointer types - convert to Span
+        if (cType.Contains("*"))
+        {
+            bool isInput = direction == "in" || cType.StartsWith("const ");
+            return isInput ? "ReadOnlySpan<byte>" : "Span<byte>";
+        }
+
+        // Primitive types
+        return MapCTypeToCSharp(cType);
+    }
+
     private void GenerateWrapperMethod(StringBuilder sb, FunctionDef func, Dictionary<string, int> structSizes)
     {
-        // Skip if any parameter has a double-pointer or array-of-pointers type
-        if (func.Parameters.Any(p => p.Type.Contains("**") || p.Type.Contains("* const*")))
+        // Check if has function pointer parameter (callback)
+        var callbackParams = func.Parameters.Where(p => p.Type.Contains("function") || p.Type.Contains("(*)")).ToList();
+
+        // If any callback is REQUIRED, generate a callback wrapper version
+        if (callbackParams.Any(p => p.Nonnull))
         {
+            GenerateCallbackWrapperMethod(sb, func, structSizes, callbackParams);
             return;
         }
 
-        // Skip if has function pointer parameter (callback) - these need manual implementation
-        if (func.Parameters.Any(p => p.Type.Contains("function") || p.Type.Contains("(*)")))
+        // Check if this function has array-of-pointers parameters (both "**" and "* const*" patterns)
+        var hasArrayOfPointers = func.Parameters.Any(p => p.Type.Contains("**") || p.Type.Contains("* const*"));
+
+        if (hasArrayOfPointers)
         {
+            GenerateArrayOfPointersWrapperMethod(sb, func, structSizes);
             return;
         }
 
         var methodName = GetWrapperMethodName(func.Name);
-        var parameters = GetWrapperParameters(func, structSizes);
+        var allParameters = GetWrapperParameters(func, structSizes);
         var hasContextParam = func.Parameters.FirstOrDefault()?.Type.Contains("secp256k1_context") == true;
 
-        // Skip context parameter in wrapper signature
-        var wrapperParams = hasContextParam ? parameters.Skip(1).ToList() : parameters.ToList();
+        // Skip context parameter and optional callbacks in wrapper signature
+        var wrapperParams = (hasContextParam ? allParameters.Skip(1) : allParameters)
+            .Where(p => !p.IsOptionalCallback)
+            .ToList();
 
         // Generate XML documentation
         sb.AppendLine();
@@ -834,8 +941,8 @@ public class InteropGenerator : IIncrementalGenerator
 
             sb.AppendLine("            {");
 
-            // Build native call
-            var nativeArgs = BuildNativeCallArgs(func, wrapperParams, hasContextParam);
+            // Build native call (use allParameters to include optional callbacks as IntPtr.Zero)
+            var nativeArgs = BuildNativeCallArgs(func, allParameters, hasContextParam);
             var fieldName = GetFieldName(func.Name);
 
             if (returnsBool)
@@ -855,8 +962,8 @@ public class InteropGenerator : IIncrementalGenerator
         }
         else
         {
-            // No span or ref parameters - direct call
-            var nativeArgs = BuildNativeCallArgs(func, wrapperParams, hasContextParam);
+            // No span or ref parameters - direct call (use allParameters to include optional callbacks)
+            var nativeArgs = BuildNativeCallArgs(func, allParameters, hasContextParam);
             var fieldName = GetFieldName(func.Name);
 
             if (returnsBool)
@@ -914,11 +1021,24 @@ public class InteropGenerator : IIncrementalGenerator
             return;
         }
 
-        // Function pointer types
+        // Function pointer types (callbacks)
         if (cType.Contains("function") || cType.Contains("(*)"))
         {
             wrapper.WrapperType = "IntPtr";
             wrapper.WrapperName = SanitizeParamName(name);
+            // If nonnull is false, this is an optional callback - will pass IntPtr.Zero
+            wrapper.IsOptionalCallback = !param.Nonnull;
+            return;
+        }
+
+        // void* data parameter that typically accompanies callback - mark as optional too
+        // These are usually named "data" or "ndata" and follow a callback parameter
+        if (cType == "void*" || cType == "const void*")
+        {
+            wrapper.WrapperType = "IntPtr";
+            wrapper.WrapperName = SanitizeParamName(name);
+            // Mark as optional if nonnull is false
+            wrapper.IsOptionalCallback = !param.Nonnull;
             return;
         }
 
@@ -1039,7 +1159,7 @@ public class InteropGenerator : IIncrementalGenerator
         return SanitizeParamName(name);
     }
 
-    private static string BuildNativeCallArgs(FunctionDef func, List<WrapperParameter> wrapperParams, bool hasContextParam)
+    private static string BuildNativeCallArgs(FunctionDef func, List<WrapperParameter> allParams, bool hasContextParam)
     {
         var args = new List<string>();
 
@@ -1048,9 +1168,22 @@ public class InteropGenerator : IIncrementalGenerator
             args.Add("_ctx");
         }
 
-        foreach (var param in wrapperParams)
+        foreach (var param in allParams.Where(p => !p.IsContextParam))
         {
-            if (param.IsSpan)
+            if (param.IsOptionalCallback)
+            {
+                // Optional callback and data parameters - pass IntPtr.Zero
+                // For void* data parameters, need to use IntPtr.Zero.ToPointer()
+                if (param.OriginalType == "void*" || param.OriginalType == "const void*")
+                {
+                    args.Add("IntPtr.Zero.ToPointer()");
+                }
+                else
+                {
+                    args.Add("IntPtr.Zero");
+                }
+            }
+            else if (param.IsSpan)
             {
                 args.Add($"{param.WrapperName}Ptr");
             }
@@ -1082,6 +1215,480 @@ public class InteropGenerator : IIncrementalGenerator
         public bool IsContextParam { get; set; }
         public bool IsRefParam { get; set; }
         public string RefParamType { get; set; } = "";
+        public bool IsArrayOfPointers { get; set; }
+        public int ElementSize { get; set; }
+        public string? CountParamName { get; set; }
+        public bool IsOptionalCallback { get; set; }  // Optional callback/data parameter - pass IntPtr.Zero
+    }
+
+    /// <summary>
+    /// Generates wrapper methods for functions with array-of-pointers parameters.
+    /// These functions take a pointer to an array of pointers (e.g., secp256k1_pubkey * const*).
+    /// The generated wrapper accepts a ReadOnlySpan of ReadOnlySpan elements.
+    /// </summary>
+    private void GenerateArrayOfPointersWrapperMethod(StringBuilder sb, FunctionDef func, Dictionary<string, int> structSizes)
+    {
+        var methodName = GetWrapperMethodName(func.Name);
+        var hasContextParam = func.Parameters.FirstOrDefault()?.Type.Contains("secp256k1_context") == true;
+
+        // Find the array-of-pointers parameter and its count parameter
+        var arrayParam = func.Parameters.FirstOrDefault(p => p.Type.Contains("**") || p.Type.Contains("* const*"));
+        if (arrayParam == null) return;
+
+        // Find the count parameter (usually named n, n_pubkeys, n_pubnonces, n_sigs)
+        var countParam = func.Parameters.FirstOrDefault(p =>
+            p.Name == "n" ||
+            p.Name.StartsWith("n_") ||
+            p.Name.EndsWith("_count"));
+
+        // Determine element size from type
+        var elementSize = GetElementSizeFromType(arrayParam.Type, structSizes);
+
+        // Build wrapper parameters
+        var wrapperParams = new List<(string type, string name, string? desc, ParameterDef original)>();
+
+        foreach (var param in func.Parameters)
+        {
+            if (param.Type.Contains("secp256k1_context"))
+                continue; // Skip context param
+
+            if (param == countParam)
+                continue; // Skip count param - we'll infer it from the array length
+
+            if (param == arrayParam)
+            {
+                // Array of byte arrays parameter (can't use Span[] since Span is a ref struct)
+                wrapperParams.Add(("byte[][]", SanitizeParamName(param.Name), param.Description, param));
+            }
+            else if (param.Type.Contains('*'))
+            {
+                // Other pointer params become spans
+                var isOutput = param.Direction == "out" || !param.Type.StartsWith("const ");
+                var spanType = isOutput ? "Span<byte>" : "ReadOnlySpan<byte>";
+                wrapperParams.Add((spanType, SanitizeParamName(param.Name), param.Description, param));
+            }
+            else
+            {
+                // Non-pointer params pass through
+                wrapperParams.Add((MapCTypeToCSharp(param.Type), SanitizeParamName(param.Name), param.Description, param));
+            }
+        }
+
+        // Generate XML documentation
+        sb.AppendLine();
+        if (!string.IsNullOrEmpty(func.Description))
+        {
+            sb.AppendLine($"        /// <summary>{FormatXmlDescription(func.Description)}</summary>");
+        }
+
+        foreach (var (type, name, desc, _) in wrapperParams)
+        {
+            if (!string.IsNullOrEmpty(desc))
+            {
+                // XML param names don't use @ prefix for escaped keywords
+                var xmlParamName = name.TrimStart('@');
+                sb.AppendLine($"        /// <param name=\"{xmlParamName}\">{FormatXmlDescription(desc)}</param>");
+            }
+        }
+
+        if (!string.IsNullOrEmpty(func.ReturnDescription))
+        {
+            sb.AppendLine($"        /// <returns>{FormatXmlDescription(func.ReturnDescription)}</returns>");
+        }
+
+        // Method signature
+        var returnsBool = func.ReturnType == "int";
+        var returnType = returnsBool ? "bool" : MapCTypeToCSharp(func.ReturnType);
+        var paramSignature = string.Join(", ", wrapperParams.Select(p => $"{p.type} {p.name}"));
+        sb.AppendLine($"        public {returnType} {methodName}({paramSignature})");
+        sb.AppendLine("        {");
+
+        // Get the array parameter name
+        var arrayParamName = SanitizeParamName(arrayParam.Name);
+
+        // Generate validation for array
+        sb.AppendLine($"            if ({arrayParamName} == null || {arrayParamName}.Length == 0)");
+        sb.AppendLine($"                throw new ArgumentException($\"{{nameof({arrayParamName})}} must not be null or empty\");");
+
+        // Generate validation for element sizes
+        if (elementSize > 0)
+        {
+            sb.AppendLine($"            for (int i = 0; i < {arrayParamName}.Length; i++)");
+            sb.AppendLine("            {");
+            sb.AppendLine($"                if ({arrayParamName}[i] == null || {arrayParamName}[i].Length < {elementSize})");
+            sb.AppendLine($"                    throw new ArgumentException($\"{{nameof({arrayParamName})}}[{{i}}] must be at least {elementSize} bytes\");");
+            sb.AppendLine("            }");
+        }
+
+        // Generate validation for other span parameters
+        foreach (var (type, name, _, original) in wrapperParams)
+        {
+            if (original == arrayParam) continue;
+            if (!type.Contains("Span")) continue;
+
+            var size = GetRequiredSize(original.Type, original.Name, structSizes);
+            if (size > 0)
+            {
+                sb.AppendLine($"            if ({name}.Length < {size})");
+                sb.AppendLine($"                throw new ArgumentException($\"{{nameof({name})}} must be at least {size} bytes\");");
+            }
+        }
+
+        sb.AppendLine();
+
+        // Allocate native pointer array
+        sb.AppendLine($"            var count = {arrayParamName}.Length;");
+        sb.AppendLine("            var ptrSize = IntPtr.Size;");
+        sb.AppendLine("            var nativePtrArray = Marshal.AllocHGlobal(ptrSize * count);");
+        sb.AppendLine("            try");
+        sb.AppendLine("            {");
+
+        // Collect all span parameters (excluding the array-of-pointers)
+        var otherSpanParams = wrapperParams
+            .Where(p => p.original != arrayParam && p.type.Contains("Span"))
+            .ToList();
+
+        // Build fixed statements
+        var indent = "                ";
+        if (otherSpanParams.Count > 0)
+        {
+            var fixedDeclarations = otherSpanParams.Select(p =>
+                $"{p.name}Ptr = &MemoryMarshal.GetReference({p.name})");
+            sb.AppendLine($"{indent}fixed (byte* {string.Join(",\n                    ", fixedDeclarations)})");
+            indent = "                    ";
+        }
+
+        // Generate pinning code using Span's Pin() method or stackalloc for GCHandles
+        sb.AppendLine($"{indent}{{");
+
+        // Use GCHandle to pin the array elements
+        sb.AppendLine($"{indent}    var handles = new GCHandle[count];");
+        sb.AppendLine($"{indent}    try");
+        sb.AppendLine($"{indent}    {{");
+        sb.AppendLine($"{indent}        for (int i = 0; i < count; i++)");
+        sb.AppendLine($"{indent}        {{");
+        sb.AppendLine($"{indent}            handles[i] = GCHandle.Alloc({arrayParamName}[i], GCHandleType.Pinned);");
+        sb.AppendLine($"{indent}            Marshal.WriteIntPtr(nativePtrArray, i * ptrSize, handles[i].AddrOfPinnedObject());");
+        sb.AppendLine($"{indent}        }}");
+        sb.AppendLine();
+
+        // Build native call arguments
+        var nativeArgs = new List<string>();
+        if (hasContextParam)
+            nativeArgs.Add("_ctx");
+
+        foreach (var param in func.Parameters)
+        {
+            if (param.Type.Contains("secp256k1_context"))
+                continue;
+
+            if (param == arrayParam)
+            {
+                nativeArgs.Add("nativePtrArray");
+            }
+            else if (param == countParam)
+            {
+                nativeArgs.Add("(nuint)count");
+            }
+            else if (param.Type.Contains('*'))
+            {
+                nativeArgs.Add($"{SanitizeParamName(param.Name)}Ptr");
+            }
+            else
+            {
+                nativeArgs.Add(SanitizeParamName(param.Name));
+            }
+        }
+
+        var fieldName = GetFieldName(func.Name);
+        var argsStr = string.Join(", ", nativeArgs);
+
+        if (returnsBool)
+        {
+            sb.AppendLine($"{indent}        return {fieldName}({argsStr}) == 1;");
+        }
+        else if (func.ReturnType == "void")
+        {
+            sb.AppendLine($"{indent}        {fieldName}({argsStr});");
+        }
+        else
+        {
+            sb.AppendLine($"{indent}        return {fieldName}({argsStr});");
+        }
+
+        sb.AppendLine($"{indent}    }}");
+        sb.AppendLine($"{indent}    finally");
+        sb.AppendLine($"{indent}    {{");
+        sb.AppendLine($"{indent}        for (int i = 0; i < count; i++)");
+        sb.AppendLine($"{indent}        {{");
+        sb.AppendLine($"{indent}            if (handles[i].IsAllocated)");
+        sb.AppendLine($"{indent}                handles[i].Free();");
+        sb.AppendLine($"{indent}        }}");
+        sb.AppendLine($"{indent}    }}");
+        sb.AppendLine($"{indent}}}");
+
+        sb.AppendLine("            }");
+        sb.AppendLine("            finally");
+        sb.AppendLine("            {");
+        sb.AppendLine("                Marshal.FreeHGlobal(nativePtrArray);");
+        sb.AppendLine("            }");
+
+        sb.AppendLine("        }");
+    }
+
+    private static int GetElementSizeFromType(string type, Dictionary<string, int> structSizes)
+    {
+        // Extract the struct type from "const secp256k1_pubkey * const*"
+        foreach (var kvp in structSizes)
+        {
+            if (type.Contains(kvp.Key))
+            {
+                return kvp.Value;
+            }
+        }
+        return 0;
+    }
+
+    /// <summary>
+    /// Generates wrapper methods for functions with required callback parameters.
+    /// These methods accept user-friendly delegates and marshal them to native function pointers.
+    /// </summary>
+    private void GenerateCallbackWrapperMethod(StringBuilder sb, FunctionDef func, Dictionary<string, int> structSizes, List<ParameterDef> callbackParams)
+    {
+        var methodName = GetWrapperMethodName(func.Name);
+        var hasContextParam = func.Parameters.FirstOrDefault()?.Type.Contains("secp256k1_context") == true;
+
+        // Get the callback type info
+        var callbackParam = callbackParams.First(p => p.Type.Contains("function"));
+        var nativeCallbackType = callbackParam.Type;
+
+        // Get user-friendly delegate name
+        if (!CallbackDelegateNames.TryGetValue(nativeCallbackType, out var userDelegateType))
+        {
+            // No user-friendly delegate defined, skip
+            return;
+        }
+
+        // Build wrapper parameters list
+        var wrapperParams = new List<(string type, string name, string? desc, ParameterDef original)>();
+
+        foreach (var param in func.Parameters)
+        {
+            if (param.Type.Contains("secp256k1_context"))
+                continue; // Skip context param
+
+            if (param.Type.Contains("function"))
+            {
+                // Replace native callback type with user-friendly delegate
+                wrapperParams.Add((userDelegateType, SanitizeParamName(param.Name), param.Description, param));
+            }
+            else if (param.Type == "void*" || param.Type == "const void*")
+            {
+                // Data pointer accompanying callback
+                wrapperParams.Add(("IntPtr", SanitizeParamName(param.Name), param.Description, param));
+            }
+            else if (param.Type.Contains("*"))
+            {
+                // Other pointer params become spans
+                var isOutput = param.Direction == "out" || !param.Type.StartsWith("const ");
+                var spanType = isOutput ? "Span<byte>" : "ReadOnlySpan<byte>";
+                wrapperParams.Add((spanType, SanitizeParamName(param.Name), param.Description, param));
+            }
+            else
+            {
+                // Non-pointer params pass through
+                wrapperParams.Add((MapCTypeToCSharp(param.Type), SanitizeParamName(param.Name), param.Description, param));
+            }
+        }
+
+        // Generate XML documentation
+        sb.AppendLine();
+        if (!string.IsNullOrEmpty(func.Description))
+        {
+            sb.AppendLine($"        /// <summary>{FormatXmlDescription(func.Description)}</summary>");
+        }
+
+        foreach (var (type, name, desc, _) in wrapperParams)
+        {
+            if (!string.IsNullOrEmpty(desc))
+            {
+                var xmlParamName = name.TrimStart('@');
+                sb.AppendLine($"        /// <param name=\"{xmlParamName}\">{FormatXmlDescription(desc)}</param>");
+            }
+        }
+
+        if (!string.IsNullOrEmpty(func.ReturnDescription))
+        {
+            sb.AppendLine($"        /// <returns>{FormatXmlDescription(func.ReturnDescription)}</returns>");
+        }
+
+        // Method signature
+        var returnsBool = func.ReturnType == "int";
+        var returnType = returnsBool ? "bool" : MapCTypeToCSharp(func.ReturnType);
+        var paramSignature = string.Join(", ", wrapperParams.Select(p => $"{p.type} {p.name}"));
+        sb.AppendLine($"        public {returnType} {methodName}({paramSignature})");
+        sb.AppendLine("        {");
+
+        // Generate validation for span parameters
+        foreach (var (type, name, _, original) in wrapperParams)
+        {
+            if (!type.Contains("Span")) continue;
+
+            var size = GetRequiredSize(original.Type, original.Name, structSizes);
+            if (size > 0)
+            {
+                sb.AppendLine($"            if ({name}.Length < {size})");
+                sb.AppendLine($"                throw new ArgumentException($\"{{nameof({name})}} must be at least {size} bytes\");");
+            }
+        }
+
+        // Find the callback parameter name for marshaling
+        var callbackParamInfo = wrapperParams.First(p => p.type == userDelegateType);
+        var callbackParamName = callbackParamInfo.name;
+
+        sb.AppendLine();
+
+        // Generate the native callback wrapper
+        // We need to look up the function pointer type definition to generate the wrapper
+        sb.AppendLine($"            {nativeCallbackType} nativeCallback = {GenerateNativeCallbackWrapper(nativeCallbackType, callbackParamName, structSizes)};");
+        sb.AppendLine();
+        sb.AppendLine("            var callbackPtr = Marshal.GetFunctionPointerForDelegate(nativeCallback);");
+        sb.AppendLine();
+
+        // Collect span parameters for fixed statement
+        var spanParams = wrapperParams.Where(p => p.type.Contains("Span")).ToList();
+
+        if (spanParams.Count > 0)
+        {
+            var fixedDeclarations = spanParams.Select(p =>
+                $"{p.name}Ptr = &MemoryMarshal.GetReference({p.name})");
+            sb.AppendLine($"            fixed (byte* {string.Join(",\n                ", fixedDeclarations)})");
+            sb.AppendLine("            {");
+
+            // Build native call arguments
+            var nativeArgs = BuildCallbackNativeCallArgs(func, wrapperParams, hasContextParam);
+            var fieldName = GetFieldName(func.Name);
+
+            if (returnsBool)
+            {
+                sb.AppendLine($"                return {fieldName}({nativeArgs}) == 1;");
+            }
+            else if (func.ReturnType == "void")
+            {
+                sb.AppendLine($"                {fieldName}({nativeArgs});");
+            }
+            else
+            {
+                sb.AppendLine($"                return {fieldName}({nativeArgs});");
+            }
+
+            sb.AppendLine("            }");
+        }
+        else
+        {
+            // No span parameters - direct call
+            var nativeArgs = BuildCallbackNativeCallArgs(func, wrapperParams, hasContextParam);
+            var fieldName = GetFieldName(func.Name);
+
+            if (returnsBool)
+            {
+                sb.AppendLine($"            return {fieldName}({nativeArgs}) == 1;");
+            }
+            else if (func.ReturnType == "void")
+            {
+                sb.AppendLine($"            {fieldName}({nativeArgs});");
+            }
+            else
+            {
+                sb.AppendLine($"            return {fieldName}({nativeArgs});");
+            }
+        }
+
+        sb.AppendLine("        }");
+    }
+
+    /// <summary>
+    /// Generates the native callback wrapper lambda that converts pointers to Spans and calls the user delegate.
+    /// </summary>
+    private string GenerateNativeCallbackWrapper(string nativeCallbackType, string userCallbackParamName, Dictionary<string, int> structSizes)
+    {
+        // Generate different wrappers based on the callback type
+        return nativeCallbackType switch
+        {
+            "secp256k1_nonce_function" => $@"(void* nonce32, void* msg32, void* key32, void* algo16, void* d, uint attempt) =>
+            {{
+                var nonce32Span = new Span<byte>(nonce32, 32);
+                var msg32Span = new ReadOnlySpan<byte>(msg32, 32);
+                var key32Span = new ReadOnlySpan<byte>(key32, 32);
+                var algo16Span = algo16 != null ? new ReadOnlySpan<byte>(algo16, 16) : ReadOnlySpan<byte>.Empty;
+                return {userCallbackParamName}(nonce32Span, msg32Span, key32Span, algo16Span, (IntPtr)d, attempt);
+            }}",
+
+            "secp256k1_ecdh_hash_function" => $@"(void* output, void* x32, void* y32, void* d) =>
+            {{
+                var outputSpan = new Span<byte>(output, 32);
+                var x32Span = new ReadOnlySpan<byte>(x32, 32);
+                var y32Span = new ReadOnlySpan<byte>(y32, 32);
+                return {userCallbackParamName}(outputSpan, x32Span, y32Span, (IntPtr)d);
+            }}",
+
+            "secp256k1_nonce_function_hardened" => $@"(void* nonce32, void* msg, nuint msglen, void* key32, void* xonly_pk32, void* algo, nuint algolen, void* d) =>
+            {{
+                var nonce32Span = new Span<byte>(nonce32, 32);
+                var msgSpan = msg != null ? new ReadOnlySpan<byte>(msg, (int)msglen) : ReadOnlySpan<byte>.Empty;
+                var key32Span = new ReadOnlySpan<byte>(key32, 32);
+                var xonly_pk32Span = new ReadOnlySpan<byte>(xonly_pk32, 32);
+                var algoSpan = new ReadOnlySpan<byte>(algo, (int)algolen);
+                return {userCallbackParamName}(nonce32Span, msgSpan, msglen, key32Span, xonly_pk32Span, algoSpan, algolen, (IntPtr)d);
+            }}",
+
+            "secp256k1_ellswift_xdh_hash_function" => $@"(void* output, void* x32, void* ell_a64, void* ell_b64, void* d) =>
+            {{
+                var outputSpan = new Span<byte>(output, 32);
+                var x32Span = new ReadOnlySpan<byte>(x32, 32);
+                var ell_a64Span = new ReadOnlySpan<byte>(ell_a64, 64);
+                var ell_b64Span = new ReadOnlySpan<byte>(ell_b64, 64);
+                return {userCallbackParamName}(outputSpan, x32Span, ell_a64Span, ell_b64Span, (IntPtr)d);
+            }}",
+
+            _ => throw new NotSupportedException($"Unknown callback type: {nativeCallbackType}")
+        };
+    }
+
+    /// <summary>
+    /// Builds native call arguments for callback wrapper methods.
+    /// </summary>
+    private static string BuildCallbackNativeCallArgs(FunctionDef func, List<(string type, string name, string? desc, ParameterDef original)> wrapperParams, bool hasContextParam)
+    {
+        var args = new List<string>();
+
+        if (hasContextParam)
+        {
+            args.Add("_ctx");
+        }
+
+        foreach (var (type, name, _, original) in wrapperParams)
+        {
+            if (type.Contains("Span"))
+            {
+                args.Add($"{name}Ptr");
+            }
+            else if (original.Type.Contains("function"))
+            {
+                args.Add("callbackPtr");
+            }
+            else if (type == "IntPtr" && (original.Type == "void*" || original.Type == "const void*"))
+            {
+                // Data pointer - pass as void*
+                args.Add($"{name}.ToPointer()");
+            }
+            else
+            {
+                args.Add(name);
+            }
+        }
+
+        return string.Join(", ", args);
     }
 
     #endregion

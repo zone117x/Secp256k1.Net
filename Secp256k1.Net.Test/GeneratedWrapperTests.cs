@@ -284,7 +284,7 @@ namespace Secp256k1Net.Test
             // Create a signature
             var msgHash = ComputeSha256(System.Text.Encoding.UTF8.GetBytes("test message"));
             var sig = new byte[64];
-            Assert.IsTrue(secp256k1.Sign(sig, msgHash, TestPrivateKey));
+            Assert.IsTrue(secp256k1.EcdsaSign(sig, msgHash, TestPrivateKey));
 
             // Serialize to compact
             var compact = new byte[64];
@@ -303,7 +303,7 @@ namespace Secp256k1Net.Test
 
             var msgHash = ComputeSha256(System.Text.Encoding.UTF8.GetBytes("test message"));
             var sig = new byte[64];
-            Assert.IsTrue(secp256k1.Sign(sig, msgHash, TestPrivateKey));
+            Assert.IsTrue(secp256k1.EcdsaSign(sig, msgHash, TestPrivateKey));
 
             // Serialize to DER
             var der = new byte[72];
@@ -323,7 +323,7 @@ namespace Secp256k1Net.Test
 
             var msgHash = ComputeSha256(System.Text.Encoding.UTF8.GetBytes("test message"));
             var sig = new byte[64];
-            Assert.IsTrue(secp256k1.Sign(sig, msgHash, TestPrivateKey));
+            Assert.IsTrue(secp256k1.EcdsaSign(sig, msgHash, TestPrivateKey));
 
             Assert.IsTrue(secp256k1.EcdsaVerify(sig, msgHash, TestPublicKey));
         }
@@ -336,7 +336,7 @@ namespace Secp256k1Net.Test
             var msgHash = ComputeSha256(System.Text.Encoding.UTF8.GetBytes("test message"));
             var wrongHash = ComputeSha256(System.Text.Encoding.UTF8.GetBytes("different message"));
             var sig = new byte[64];
-            Assert.IsTrue(secp256k1.Sign(sig, msgHash, TestPrivateKey));
+            Assert.IsTrue(secp256k1.EcdsaSign(sig, msgHash, TestPrivateKey));
 
             Assert.IsFalse(secp256k1.EcdsaVerify(sig, wrongHash, TestPublicKey));
         }
@@ -348,7 +348,7 @@ namespace Secp256k1Net.Test
 
             var msgHash = ComputeSha256(System.Text.Encoding.UTF8.GetBytes("test"));
             var sig = new byte[64];
-            Assert.IsTrue(secp256k1.Sign(sig, msgHash, TestPrivateKey));
+            Assert.IsTrue(secp256k1.EcdsaSign(sig, msgHash, TestPrivateKey));
 
             var normalized = new byte[64];
             // Sign already produces low-S signatures, so normalize should return false
@@ -367,7 +367,7 @@ namespace Secp256k1Net.Test
 
             var msgHash = ComputeSha256(System.Text.Encoding.UTF8.GetBytes("test"));
             var recoverableSig = new byte[65];
-            Assert.IsTrue(secp256k1.SignRecoverable(recoverableSig, msgHash, TestPrivateKey));
+            Assert.IsTrue(secp256k1.EcdsaSignRecoverable(recoverableSig, msgHash, TestPrivateKey));
 
             // Serialize
             var compact = new byte[64];
@@ -385,7 +385,7 @@ namespace Secp256k1Net.Test
 
             var msgHash = ComputeSha256(System.Text.Encoding.UTF8.GetBytes("test"));
             var recoverableSig = new byte[65];
-            Assert.IsTrue(secp256k1.SignRecoverable(recoverableSig, msgHash, TestPrivateKey));
+            Assert.IsTrue(secp256k1.EcdsaSignRecoverable(recoverableSig, msgHash, TestPrivateKey));
 
             var regularSig = new byte[64];
             Assert.IsTrue(secp256k1.EcdsaRecoverableSignatureConvert(regularSig, recoverableSig));
@@ -401,7 +401,7 @@ namespace Secp256k1Net.Test
 
             var msgHash = ComputeSha256(System.Text.Encoding.UTF8.GetBytes("test"));
             var recoverableSig = new byte[65];
-            Assert.IsTrue(secp256k1.SignRecoverable(recoverableSig, msgHash, TestPrivateKey));
+            Assert.IsTrue(secp256k1.EcdsaSignRecoverable(recoverableSig, msgHash, TestPrivateKey));
 
             var recoveredPubkey = new byte[64];
             Assert.IsTrue(secp256k1.EcdsaRecover(recoveredPubkey, recoverableSig, msgHash));
@@ -797,6 +797,227 @@ namespace Secp256k1Net.Test
             // This will fail because keyagg_cache isn't properly initialized
             var result = secp256k1.MusigNonceGenCounter(secnonce, pubnonce, 1, keypair, msg32, keyaggCache, extraInput);
             Assert.IsFalse(result);
+        }
+
+        #endregion
+
+        #region Array-of-Pointers Functions (New Generated Wrappers)
+
+        [TestMethod]
+        public void EcPubkeyCombine_TwoPubkeys_Succeeds()
+        {
+            using var secp256k1 = new Secp256k1();
+
+            // Create two keypairs
+            var privkey1 = new byte[32];
+            var privkey2 = new byte[32];
+            FillRandom(privkey1);
+            FillRandom(privkey2);
+
+            var pubkey1 = new byte[64];
+            var pubkey2 = new byte[64];
+            Assert.IsTrue(secp256k1.EcPubkeyCreate(pubkey1, privkey1));
+            Assert.IsTrue(secp256k1.EcPubkeyCreate(pubkey2, privkey2));
+
+            // Combine them using the generated wrapper
+            var combinedPubkey = new byte[64];
+            var result = secp256k1.EcPubkeyCombine(combinedPubkey, new[] { pubkey1, pubkey2 });
+            Assert.IsTrue(result);
+
+            // Verify the combined pubkey is different from both inputs
+            Assert.AreNotEqual(BytesToHex(pubkey1), BytesToHex(combinedPubkey));
+            Assert.AreNotEqual(BytesToHex(pubkey2), BytesToHex(combinedPubkey));
+        }
+
+        [TestMethod]
+        public void EcPubkeyCombine_ThreePubkeys_Succeeds()
+        {
+            using var secp256k1 = new Secp256k1();
+
+            var privkey1 = new byte[32];
+            var privkey2 = new byte[32];
+            var privkey3 = new byte[32];
+            FillRandom(privkey1);
+            FillRandom(privkey2);
+            FillRandom(privkey3);
+
+            var pubkey1 = new byte[64];
+            var pubkey2 = new byte[64];
+            var pubkey3 = new byte[64];
+            Assert.IsTrue(secp256k1.EcPubkeyCreate(pubkey1, privkey1));
+            Assert.IsTrue(secp256k1.EcPubkeyCreate(pubkey2, privkey2));
+            Assert.IsTrue(secp256k1.EcPubkeyCreate(pubkey3, privkey3));
+
+            // Combine three pubkeys
+            var combinedPubkey = new byte[64];
+            var result = secp256k1.EcPubkeyCombine(combinedPubkey, new[] { pubkey1, pubkey2, pubkey3 });
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void EcPubkeySort_SortsTwoPubkeys()
+        {
+            using var secp256k1 = new Secp256k1();
+
+            // Create two pubkeys from different private keys
+            var pubkey1 = new byte[64];
+            var pubkey2 = new byte[64];
+            Assert.IsTrue(secp256k1.EcPubkeyCreate(pubkey1, TestPrivateKey));
+
+            var privkey2 = HexToBytes("d8bdb07407bb011137ef7ba6a7f07c6a55c1e3600a6aa138e34ab5c16439ceda");
+            Assert.IsTrue(secp256k1.EcPubkeyCreate(pubkey2, privkey2));
+
+            // Serialize pubkeys to compare lexicographic order
+            var serialized1 = new byte[33];
+            var serialized2 = new byte[33];
+            nuint outputLen1 = 33;
+            nuint outputLen2 = 33;
+            Assert.IsTrue(secp256k1.EcPubkeySerialize(serialized1, ref outputLen1, pubkey1, (uint)Flags.SECP256K1_EC_COMPRESSED));
+            Assert.IsTrue(secp256k1.EcPubkeySerialize(serialized2, ref outputLen2, pubkey2, (uint)Flags.SECP256K1_EC_COMPRESSED));
+
+            // Determine which should come first lexicographically
+            var comparison = CompareBytes(serialized1, serialized2);
+            Assert.AreNotEqual(0, comparison, "Pubkeys should be different");
+
+            // Put them in reverse sorted order
+            byte[][] pubkeys;
+            byte[] expectedFirst, expectedSecond;
+            if (comparison < 0)
+            {
+                // pubkey1 < pubkey2, so put pubkey2 first (reverse order)
+                pubkeys = new[] { pubkey2, pubkey1 };
+                expectedFirst = pubkey1;
+                expectedSecond = pubkey2;
+            }
+            else
+            {
+                // pubkey2 < pubkey1, so put pubkey1 first (reverse order)
+                pubkeys = new[] { pubkey1, pubkey2 };
+                expectedFirst = pubkey2;
+                expectedSecond = pubkey1;
+            }
+
+            // Sort
+            var result = secp256k1.EcPubkeySort(pubkeys);
+            Assert.IsTrue(result);
+
+            // Verify the array is now sorted
+            Assert.IsTrue(AreByteArraysEqual(pubkeys[0], expectedFirst), "First pubkey should be the lexicographically smaller one");
+            Assert.IsTrue(AreByteArraysEqual(pubkeys[1], expectedSecond), "Second pubkey should be the lexicographically larger one");
+        }
+
+        private static int CompareBytes(byte[] a, byte[] b)
+        {
+            var minLen = Math.Min(a.Length, b.Length);
+            for (int i = 0; i < minLen; i++)
+            {
+                if (a[i] < b[i]) return -1;
+                if (a[i] > b[i]) return 1;
+            }
+            return a.Length.CompareTo(b.Length);
+        }
+
+        private static bool AreByteArraysEqual(byte[] a, byte[] b)
+        {
+            if (a.Length != b.Length) return false;
+            for (int i = 0; i < a.Length; i++)
+            {
+                if (a[i] != b[i]) return false;
+            }
+            return true;
+        }
+
+        [TestMethod]
+        public void MusigPubkeyAgg_AggregateTwoPubkeys_Succeeds()
+        {
+            using var secp256k1 = new Secp256k1();
+
+            // Create two pubkeys
+            var pubkey1 = new byte[64];
+            var pubkey2 = new byte[64];
+            Assert.IsTrue(secp256k1.EcPubkeyCreate(pubkey1, TestPrivateKey));
+
+            var privkey2 = HexToBytes("d8bdb07407bb011137ef7ba6a7f07c6a55c1e3600a6aa138e34ab5c16439ceda");
+            Assert.IsTrue(secp256k1.EcPubkeyCreate(pubkey2, privkey2));
+
+            // Aggregate them
+            var aggPk = new byte[64];
+            var keyaggCache = new byte[197];
+            var result = secp256k1.MusigPubkeyAgg(aggPk, keyaggCache, new[] { pubkey1, pubkey2 });
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void MusigNonceAgg_AggregatesTwoNonces_Succeeds()
+        {
+            using var secp256k1 = new Secp256k1();
+
+            // First set up two signers with valid keyagg
+            var pubkey1 = new byte[64];
+            var pubkey2 = new byte[64];
+            Assert.IsTrue(secp256k1.EcPubkeyCreate(pubkey1, TestPrivateKey));
+
+            var privkey2 = HexToBytes("d8bdb07407bb011137ef7ba6a7f07c6a55c1e3600a6aa138e34ab5c16439ceda");
+            Assert.IsTrue(secp256k1.EcPubkeyCreate(pubkey2, privkey2));
+
+            // Create keyagg cache
+            var aggPk = new byte[64];
+            var keyaggCache = new byte[197];
+            Assert.IsTrue(secp256k1.MusigPubkeyAgg(aggPk, keyaggCache, new[] { pubkey1, pubkey2 }));
+
+            // Generate nonces for both signers
+            var msg32 = new byte[32];
+            FillRandom(msg32);
+
+            var extraInput = new byte[32]; // Required parameter, can be zero-filled
+
+            var secnonce1 = new byte[132];
+            var pubnonce1 = new byte[132];
+            var sessionRand1 = new byte[32];
+            FillRandom(sessionRand1);
+            Assert.IsTrue(secp256k1.MusigNonceGen(secnonce1, pubnonce1, sessionRand1, TestPrivateKey, pubkey1, msg32, keyaggCache, extraInput));
+
+            var secnonce2 = new byte[132];
+            var pubnonce2 = new byte[132];
+            var sessionRand2 = new byte[32];
+            FillRandom(sessionRand2);
+            Assert.IsTrue(secp256k1.MusigNonceGen(secnonce2, pubnonce2, sessionRand2, privkey2, pubkey2, msg32, keyaggCache, extraInput));
+
+            // Aggregate the nonces
+            var aggnonce = new byte[132];
+            var result = secp256k1.MusigNonceAgg(aggnonce, new[] { pubnonce1, pubnonce2 });
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void EcPubkeyCombine_NullArray_ThrowsArgumentException()
+        {
+            using var secp256k1 = new Secp256k1();
+            var output = new byte[64];
+
+            Assert.ThrowsException<ArgumentException>(() =>
+                secp256k1.EcPubkeyCombine(output, null));
+        }
+
+        [TestMethod]
+        public void EcPubkeyCombine_EmptyArray_ThrowsArgumentException()
+        {
+            using var secp256k1 = new Secp256k1();
+            var output = new byte[64];
+
+            Assert.ThrowsException<ArgumentException>(() =>
+                secp256k1.EcPubkeyCombine(output, new byte[0][]));
+        }
+
+        [TestMethod]
+        public void EcPubkeyCombine_TooSmallElement_ThrowsArgumentException()
+        {
+            using var secp256k1 = new Secp256k1();
+            var output = new byte[64];
+            var smallPubkey = new byte[63]; // Too small
+
+            Assert.ThrowsException<ArgumentException>(() =>
+                secp256k1.EcPubkeyCombine(output, new[] { smallPubkey }));
         }
 
         #endregion

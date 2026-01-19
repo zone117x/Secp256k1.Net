@@ -1,6 +1,6 @@
 {
   "version": "0.7.0",
-  "generatedAt": "2026-01-19T18:58:24.2627970Z",
+  "generatedAt": "2026-01-19T19:31:20.7367860Z",
   "headers": [
     "secp256k1.h",
     "secp256k1_preallocated.h",
@@ -83,7 +83,7 @@
           "type": "unsigned char*",
           "direction": "out",
           "nonnull": false,
-          "description": "pointer to a 32-byte array to be filled by the function.\nIn:      msg32:     the 32-byte message hash being verified (will not be NULL)\nkey32:     pointer to a 32-byte secret key (will not be NULL)\nalgo16:    pointer to a 16-byte array describing the signature\nalgorithm (will be NULL for ECDSA for compatibility).\ndata:      Arbitrary data pointer that is passed through.\nattempt:   how many iterations we have tried to find a nonce.\nThis will almost always be 0, but different attempt values\nare required to result in a different nonce.\n\nExcept for test cases, this function should compute some cryptographic hash of\nthe message, the algorithm, the key and the attempt.",
+          "description": "pointer to a 32-byte array to be filled by the function.",
           "size": 32,
           "isOptional": false
         },
@@ -92,7 +92,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": false,
-          "description": "the 32-byte message hash being verified (will not be NULL)\nkey32:     pointer to a 32-byte secret key (will not be NULL)\nalgo16:    pointer to a 16-byte array describing the signature\nalgorithm (will be NULL for ECDSA for compatibility).\ndata:      Arbitrary data pointer that is passed through.\nattempt:   how many iterations we have tried to find a nonce.\nThis will almost always be 0, but different attempt values\nare required to result in a different nonce.\n\nExcept for test cases, this function should compute some cryptographic hash of\nthe message, the algorithm, the key and the attempt.",
+          "description": "the 32-byte message hash being verified (will not be NULL)",
           "size": 32,
           "isOptional": false
         },
@@ -110,7 +110,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": false,
-          "description": "pointer to a 16-byte array describing the signature",
+          "description": "pointer to a 16-byte array describing the signature\nalgorithm (will be NULL for ECDSA for compatibility).",
           "size": 16,
           "isOptional": true
         },
@@ -126,7 +126,7 @@
           "name": "attempt",
           "type": "unsigned int",
           "nonnull": false,
-          "description": "how many iterations we have tried to find a nonce.",
+          "description": "how many iterations we have tried to find a nonce.\nThis will almost always be 0, but different attempt values\nare required to result in a different nonce.\n\nExcept for test cases, this function should compute some cryptographic hash of\nthe message, the algorithm, the key and the attempt.",
           "isOptional": false
         }
       ],
@@ -141,7 +141,7 @@
           "type": "unsigned char*",
           "direction": "out",
           "nonnull": false,
-          "description": "pointer to an array to be filled by the function\nIn:      x32:        pointer to a 32-byte x coordinate\ny32:        pointer to a 32-byte y coordinate\ndata:       arbitrary data pointer that is passed through",
+          "description": "pointer to an array to be filled by the function",
           "size": 32,
           "isOptional": false
         },
@@ -150,7 +150,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": false,
-          "description": "pointer to a 32-byte x coordinate\ny32:        pointer to a 32-byte y coordinate\ndata:       arbitrary data pointer that is passed through",
+          "description": "pointer to a 32-byte x coordinate",
           "size": 32,
           "isOptional": false
         },
@@ -183,7 +183,7 @@
           "type": "unsigned char*",
           "direction": "out",
           "nonnull": false,
-          "description": "pointer to a 32-byte array to be filled by the function\nIn:       msg: the message being verified. Is NULL if and only if msglen\nis 0.\nmsglen: the length of the message\nkey32: pointer to a 32-byte secret key (will not be NULL)\nxonly_pk32: the 32-byte serialized xonly pubkey corresponding to key32\n(will not be NULL)\nalgo: pointer to an array describing the signature\nalgorithm (will not be NULL)\nalgolen: the length of the algo array\ndata: arbitrary data pointer that is passed through\n\nExcept for test cases, this function should compute some cryptographic hash of\nthe message, the key, the pubkey, the algorithm description, and data.",
+          "description": "pointer to a 32-byte array to be filled by the function",
           "size": 32,
           "isOptional": false
         },
@@ -192,7 +192,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": false,
-          "description": "the message being verified. Is NULL if and only if msglen\nis 0.\nmsglen: the length of the message\nkey32: pointer to a 32-byte secret key (will not be NULL)\nxonly_pk32: the 32-byte serialized xonly pubkey corresponding to key32\n(will not be NULL)\nalgo: pointer to an array describing the signature\nalgorithm (will not be NULL)\nalgolen: the length of the algo array\ndata: arbitrary data pointer that is passed through\n\nExcept for test cases, this function should compute some cryptographic hash of\nthe message, the key, the pubkey, the algorithm description, and data.",
+          "description": "the message being verified. Is NULL if and only if msglen\nis 0.",
           "lengthParam": "msglen",
           "isOptional": false
         },
@@ -218,7 +218,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": false,
-          "description": "the 32-byte serialized xonly pubkey corresponding to key32",
+          "description": "the 32-byte serialized xonly pubkey corresponding to key32\n(will not be NULL)",
           "size": 32,
           "isOptional": false
         },
@@ -227,7 +227,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": false,
-          "description": "pointer to an array describing the signature",
+          "description": "pointer to an array describing the signature\nalgorithm (will not be NULL)",
           "lengthParam": "algolen",
           "isOptional": true
         },
@@ -244,7 +244,7 @@
           "type": "void*",
           "direction": "out",
           "nonnull": false,
-          "description": "arbitrary data pointer that is passed through",
+          "description": "arbitrary data pointer that is passed through\n\nExcept for test cases, this function should compute some cryptographic hash of\nthe message, the key, the pubkey, the algorithm description, and data.",
           "isOptional": true
         }
       ],
@@ -259,7 +259,7 @@
           "type": "unsigned char*",
           "direction": "out",
           "nonnull": false,
-          "description": "pointer to an array to be filled by the function\nIn:      x32:        pointer to the 32-byte serialized X coordinate\nof the resulting shared point (will not be NULL)\nell_a64:    pointer to the 64-byte encoded public key of party A\n(will not be NULL)\nell_b64:    pointer to the 64-byte encoded public key of party B\n(will not be NULL)\ndata:       arbitrary data pointer that is passed through",
+          "description": "pointer to an array to be filled by the function",
           "size": 32,
           "isOptional": false
         },
@@ -268,7 +268,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": false,
-          "description": "pointer to the 32-byte serialized X coordinate\nof the resulting shared point (will not be NULL)\nell_a64:    pointer to the 64-byte encoded public key of party A\n(will not be NULL)\nell_b64:    pointer to the 64-byte encoded public key of party B\n(will not be NULL)\ndata:       arbitrary data pointer that is passed through",
+          "description": "pointer to the 32-byte serialized X coordinate\nof the resulting shared point (will not be NULL)",
           "size": 32,
           "isOptional": false
         },
@@ -277,7 +277,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": false,
-          "description": "pointer to the 64-byte encoded public key of party A",
+          "description": "pointer to the 64-byte encoded public key of party A\n(will not be NULL)",
           "size": 64,
           "isOptional": false
         },
@@ -286,7 +286,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": false,
-          "description": "pointer to the 64-byte encoded public key of party B",
+          "description": "pointer to the 64-byte encoded public key of party B\n(will not be NULL)",
           "size": 64,
           "isOptional": false
         },
@@ -378,7 +378,7 @@
           "type": "secp256k1_context*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a context object.\nIn:   fun:  pointer to a function to call when an illegal argument is\npassed to the API, taking a message and an opaque pointer.\n(NULL restores the default callback.)\ndata: the opaque pointer to pass to fun above, must be NULL for the\ndefault callback.\n\nSee also secp256k1_context_set_error_callback.",
+          "description": "pointer to a context object.",
           "isOptional": false
         },
         {
@@ -386,7 +386,7 @@
           "type": "void (*)(const char *message, void *data)",
           "direction": "in",
           "nonnull": false,
-          "description": "pointer to a function to call when an illegal argument is\npassed to the API, taking a message and an opaque pointer.\n(NULL restores the default callback.)\ndata: the opaque pointer to pass to fun above, must be NULL for the\ndefault callback.\n\nSee also secp256k1_context_set_error_callback.",
+          "description": "pointer to a function to call when an illegal argument is\npassed to the API, taking a message and an opaque pointer.\n(NULL restores the default callback.)",
           "isOptional": false
         },
         {
@@ -394,7 +394,7 @@
           "type": "const void*",
           "direction": "in",
           "nonnull": false,
-          "description": "the opaque pointer to pass to fun above, must be NULL for the",
+          "description": "the opaque pointer to pass to fun above, must be NULL for the\ndefault callback.\n\nSee also secp256k1_context_set_error_callback.",
           "isOptional": true
         }
       ],
@@ -412,7 +412,7 @@
           "type": "secp256k1_context*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a context object.\nIn:   fun:  pointer to a function to call when an internal error occurs,\ntaking a message and an opaque pointer (NULL restores the\ndefault callback, see secp256k1_context_set_illegal_callback\nfor details).\ndata: the opaque pointer to pass to fun above, must be NULL for the\ndefault callback.\n\nSee also secp256k1_context_set_illegal_callback.",
+          "description": "pointer to a context object.",
           "isOptional": false
         },
         {
@@ -420,7 +420,7 @@
           "type": "void (*)(const char *message, void *data)",
           "direction": "in",
           "nonnull": false,
-          "description": "pointer to a function to call when an internal error occurs,\ntaking a message and an opaque pointer (NULL restores the\ndefault callback, see secp256k1_context_set_illegal_callback\nfor details).\ndata: the opaque pointer to pass to fun above, must be NULL for the\ndefault callback.\n\nSee also secp256k1_context_set_illegal_callback.",
+          "description": "pointer to a function to call when an internal error occurs,\ntaking a message and an opaque pointer (NULL restores the\ndefault callback, see secp256k1_context_set_illegal_callback\nfor details).",
           "isOptional": false
         },
         {
@@ -428,7 +428,7 @@
           "type": "const void*",
           "direction": "in",
           "nonnull": false,
-          "description": "the opaque pointer to pass to fun above, must be NULL for the",
+          "description": "the opaque pointer to pass to fun above, must be NULL for the\ndefault callback.\n\nSee also secp256k1_context_set_illegal_callback.",
           "isOptional": true
         }
       ],
@@ -446,7 +446,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object.\nOut:  pubkey:   pointer to a pubkey object. If 1 is returned, it is set to a\nparsed version of input. If not, its value is undefined.\nIn:   input:    pointer to a serialized public key\ninputlen: length of the array pointed to by input\n\nThis function supports parsing compressed (33 bytes, header byte 0x02 or\n0x03), uncompressed (65 bytes, header byte 0x04), or hybrid (65 bytes, header\nbyte 0x06 or 0x07) format public keys.",
+          "description": "pointer to a context object.",
           "isOptional": false
         },
         {
@@ -454,7 +454,7 @@
           "type": "secp256k1_pubkey*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a pubkey object. If 1 is returned, it is set to a\nparsed version of input. If not, its value is undefined.\nIn:   input:    pointer to a serialized public key\ninputlen: length of the array pointed to by input\n\nThis function supports parsing compressed (33 bytes, header byte 0x02 or\n0x03), uncompressed (65 bytes, header byte 0x04), or hybrid (65 bytes, header\nbyte 0x06 or 0x07) format public keys.",
+          "description": "pointer to a pubkey object. If 1 is returned, it is set to a\nparsed version of input. If not, its value is undefined.",
           "size": 64,
           "isOptional": false
         },
@@ -463,7 +463,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a serialized public key\ninputlen: length of the array pointed to by input\n\nThis function supports parsing compressed (33 bytes, header byte 0x02 or\n0x03), uncompressed (65 bytes, header byte 0x04), or hybrid (65 bytes, header\nbyte 0x06 or 0x07) format public keys.",
+          "description": "pointer to a serialized public key",
           "lengthParam": "inputlen",
           "isOptional": false
         },
@@ -471,7 +471,7 @@
           "name": "inputlen",
           "type": "size_t",
           "nonnull": false,
-          "description": "length of the array pointed to by input",
+          "description": "length of the array pointed to by input\n\nThis function supports parsing compressed (33 bytes, header byte 0x02 or\n0x03), uncompressed (65 bytes, header byte 0x04), or hybrid (65 bytes, header\nbyte 0x06 or 0x07) format public keys.",
           "isLengthFor": "input",
           "isOptional": false
         }
@@ -489,17 +489,17 @@
         {
           "name": "ctx",
           "type": "const secp256k1_context*",
-          "direction": "inout",
+          "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object.\nOut:    output:     pointer to a 65-byte (if compressed==0) or 33-byte (if\ncompressed==1) byte array to place the serialized key\nin.\nIn/Out: outputlen:  pointer to an integer which is initially set to the\nsize of output, and is overwritten with the written\nsize.\nIn:     pubkey:     pointer to a secp256k1_pubkey containing an\ninitialized public key.\nflags:      SECP256K1_EC_COMPRESSED if serialization should be in\ncompressed format, otherwise SECP256K1_EC_UNCOMPRESSED.",
+          "description": "pointer to a context object.",
           "isOptional": false
         },
         {
           "name": "output",
           "type": "unsigned char*",
-          "direction": "inout",
+          "direction": "out",
           "nonnull": true,
-          "description": "pointer to a 65-byte (if compressed==0) or 33-byte (if\ncompressed==1) byte array to place the serialized key\nin.\nIn/Out: outputlen:  pointer to an integer which is initially set to the\nsize of output, and is overwritten with the written\nsize.\nIn:     pubkey:     pointer to a secp256k1_pubkey containing an\ninitialized public key.\nflags:      SECP256K1_EC_COMPRESSED if serialization should be in\ncompressed format, otherwise SECP256K1_EC_UNCOMPRESSED.",
+          "description": "pointer to a 65-byte (if compressed==0) or 33-byte (if\ncompressed==1) byte array to place the serialized key\nin.",
           "isOptional": false
         },
         {
@@ -507,7 +507,7 @@
           "type": "size_t*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to an integer which is initially set to the\nsize of output, and is overwritten with the written\nsize.\nIn:     pubkey:     pointer to a secp256k1_pubkey containing an\ninitialized public key.\nflags:      SECP256K1_EC_COMPRESSED if serialization should be in\ncompressed format, otherwise SECP256K1_EC_UNCOMPRESSED.",
+          "description": "pointer to an integer which is initially set to the\nsize of output, and is overwritten with the written\nsize.",
           "isOptional": false
         },
         {
@@ -515,7 +515,7 @@
           "type": "const secp256k1_pubkey*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a secp256k1_pubkey containing an\ninitialized public key.\nflags:      SECP256K1_EC_COMPRESSED if serialization should be in\ncompressed format, otherwise SECP256K1_EC_UNCOMPRESSED.",
+          "description": "pointer to a secp256k1_pubkey containing an\ninitialized public key.",
           "size": 64,
           "isOptional": false
         },
@@ -523,7 +523,7 @@
           "name": "flags",
           "type": "unsigned int",
           "nonnull": false,
-          "description": "SECP256K1_EC_COMPRESSED if serialization should be in",
+          "description": "SECP256K1_EC_COMPRESSED if serialization should be in\ncompressed format, otherwise SECP256K1_EC_UNCOMPRESSED.",
           "isOptional": false
         }
       ],
@@ -542,7 +542,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object\nIn:   pubkey1:  first public key to compare\npubkey2:  second public key to compare",
+          "description": "pointer to a context object",
           "isOptional": false
         },
         {
@@ -550,7 +550,7 @@
           "type": "const secp256k1_pubkey*",
           "direction": "in",
           "nonnull": true,
-          "description": "first public key to compare\npubkey2:  second public key to compare",
+          "description": "first public key to compare",
           "size": 64,
           "isOptional": false
         },
@@ -579,7 +579,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object\nIn:   pubkeys: array of pointers to pubkeys to sort\nn_pubkeys: number of elements in the pubkeys array",
+          "description": "pointer to a context object",
           "isOptional": false
         },
         {
@@ -587,7 +587,7 @@
           "type": "const secp256k1_pubkey**",
           "direction": "in",
           "nonnull": true,
-          "description": "array of pointers to pubkeys to sort\nn_pubkeys: number of elements in the pubkeys array",
+          "description": "array of pointers to pubkeys to sort",
           "lengthParam": "n_pubkeys",
           "isOptional": false
         },
@@ -615,7 +615,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object\nOut:  sig:      pointer to a signature object\nIn:   input64:  pointer to the 64-byte array to parse\n\nThe signature must consist of a 32-byte big endian R value, followed by a\n32-byte big endian S value. If R or S fall outside of [0..order-1], the\nencoding is invalid. R and S with value 0 are allowed in the encoding.\n\nAfter the call, sig will always be initialized. If parsing failed or R or\nS are zero, the resulting sig value is guaranteed to fail verification for\nany message and public key.",
+          "description": "pointer to a context object",
           "isOptional": false
         },
         {
@@ -623,7 +623,7 @@
           "type": "secp256k1_ecdsa_signature*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a signature object\nIn:   input64:  pointer to the 64-byte array to parse\n\nThe signature must consist of a 32-byte big endian R value, followed by a\n32-byte big endian S value. If R or S fall outside of [0..order-1], the\nencoding is invalid. R and S with value 0 are allowed in the encoding.\n\nAfter the call, sig will always be initialized. If parsing failed or R or\nS are zero, the resulting sig value is guaranteed to fail verification for\nany message and public key.",
+          "description": "pointer to a signature object",
           "size": 64,
           "isOptional": false
         },
@@ -652,7 +652,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object\nOut:  sig:      pointer to a signature object\nIn:   input:    pointer to the signature to be parsed\ninputlen: the length of the array pointed to be input\n\nThis function will accept any valid DER encoded signature, even if the\nencoded numbers are out of range.\n\nAfter the call, sig will always be initialized. If parsing failed or the\nencoded numbers are out of range, signature verification with it is\nguaranteed to fail for every message and public key.",
+          "description": "pointer to a context object",
           "isOptional": false
         },
         {
@@ -660,7 +660,7 @@
           "type": "secp256k1_ecdsa_signature*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a signature object\nIn:   input:    pointer to the signature to be parsed\ninputlen: the length of the array pointed to be input\n\nThis function will accept any valid DER encoded signature, even if the\nencoded numbers are out of range.\n\nAfter the call, sig will always be initialized. If parsing failed or the\nencoded numbers are out of range, signature verification with it is\nguaranteed to fail for every message and public key.",
+          "description": "pointer to a signature object",
           "size": 64,
           "isOptional": false
         },
@@ -669,7 +669,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to the signature to be parsed\ninputlen: the length of the array pointed to be input\n\nThis function will accept any valid DER encoded signature, even if the\nencoded numbers are out of range.\n\nAfter the call, sig will always be initialized. If parsing failed or the\nencoded numbers are out of range, signature verification with it is\nguaranteed to fail for every message and public key.",
+          "description": "pointer to the signature to be parsed",
           "lengthParam": "inputlen",
           "isOptional": false
         },
@@ -677,7 +677,7 @@
           "name": "inputlen",
           "type": "size_t",
           "nonnull": false,
-          "description": "the length of the array pointed to be input",
+          "description": "the length of the array pointed to be input\n\nThis function will accept any valid DER encoded signature, even if the\nencoded numbers are out of range.\n\nAfter the call, sig will always be initialized. If parsing failed or the\nencoded numbers are out of range, signature verification with it is\nguaranteed to fail for every message and public key.",
           "isLengthFor": "input",
           "isOptional": false
         }
@@ -695,17 +695,17 @@
         {
           "name": "ctx",
           "type": "const secp256k1_context*",
-          "direction": "inout",
+          "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object\nOut:    output:    pointer to an array to store the DER serialization\nIn/Out: outputlen: pointer to a length integer. Initially, this integer\nshould be set to the length of output. After the call\nit will be set to the length of the serialization (even\nif 0 was returned).\nIn:     sig:       pointer to an initialized signature object",
+          "description": "pointer to a context object",
           "isOptional": false
         },
         {
           "name": "output",
           "type": "unsigned char*",
-          "direction": "inout",
+          "direction": "out",
           "nonnull": true,
-          "description": "pointer to an array to store the DER serialization\nIn/Out: outputlen: pointer to a length integer. Initially, this integer\nshould be set to the length of output. After the call\nit will be set to the length of the serialization (even\nif 0 was returned).\nIn:     sig:       pointer to an initialized signature object",
+          "description": "pointer to an array to store the DER serialization",
           "isOptional": false
         },
         {
@@ -713,7 +713,7 @@
           "type": "size_t*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a length integer. Initially, this integer\nshould be set to the length of output. After the call\nit will be set to the length of the serialization (even\nif 0 was returned).\nIn:     sig:       pointer to an initialized signature object",
+          "description": "pointer to a length integer. Initially, this integer\nshould be set to the length of output. After the call\nit will be set to the length of the serialization (even\nif 0 was returned).",
           "isOptional": false
         },
         {
@@ -741,8 +741,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object\nOut:    output64:  pointer to a 64-byte array to store the compact serialization\nIn:     sig:       pointer to an initialized signature object\n\nSee secp256k1_ecdsa_signature_parse_compact for details about the encoding.",
-          "size": 64,
+          "description": "pointer to a context object",
           "isOptional": false
         },
         {
@@ -750,7 +749,7 @@
           "type": "unsigned char*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a 64-byte array to store the compact serialization\nIn:     sig:       pointer to an initialized signature object\n\nSee secp256k1_ecdsa_signature_parse_compact for details about the encoding.",
+          "description": "pointer to a 64-byte array to store the compact serialization",
           "size": 64,
           "isOptional": false
         },
@@ -779,8 +778,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object\nIn:      sig:       the signature being verified.\nmsghash32: the 32-byte message hash being verified.\nThe verifier must make sure to apply a cryptographic\nhash function to the message by itself and not accept an\nmsghash32 value directly. Otherwise, it would be easy to\ncreate a \u0022valid\u0022 signature without knowledge of the\nsecret key. See also\nhttps://bitcoin.stackexchange.com/a/81116/35586 for more\nbackground on this topic.\npubkey:    pointer to an initialized public key to verify with.\n\nTo avoid accepting malleable signatures, only ECDSA signatures in lower-S\nform are accepted.\n\nIf you need to accept ECDSA signatures from sources that do not obey this\nrule, apply secp256k1_ecdsa_signature_normalize to the signature prior to\nverification, but be aware that doing so results in malleable signatures.\n\nFor details, see the comments for that function.",
-          "size": 32,
+          "description": "pointer to a context object",
           "isOptional": false
         },
         {
@@ -788,7 +786,7 @@
           "type": "const secp256k1_ecdsa_signature*",
           "direction": "in",
           "nonnull": true,
-          "description": "the signature being verified.\nmsghash32: the 32-byte message hash being verified.\nThe verifier must make sure to apply a cryptographic\nhash function to the message by itself and not accept an\nmsghash32 value directly. Otherwise, it would be easy to\ncreate a \u0022valid\u0022 signature without knowledge of the\nsecret key. See also\nhttps://bitcoin.stackexchange.com/a/81116/35586 for more\nbackground on this topic.\npubkey:    pointer to an initialized public key to verify with.\n\nTo avoid accepting malleable signatures, only ECDSA signatures in lower-S\nform are accepted.\n\nIf you need to accept ECDSA signatures from sources that do not obey this\nrule, apply secp256k1_ecdsa_signature_normalize to the signature prior to\nverification, but be aware that doing so results in malleable signatures.\n\nFor details, see the comments for that function.",
+          "description": "the signature being verified.",
           "size": 64,
           "isOptional": false
         },
@@ -797,7 +795,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": true,
-          "description": "the 32-byte message hash being verified.",
+          "description": "the 32-byte message hash being verified.\nThe verifier must make sure to apply a cryptographic\nhash function to the message by itself and not accept an\nmsghash32 value directly. Otherwise, it would be easy to\ncreate a \u0022valid\u0022 signature without knowledge of the\nsecret key. See also\nhttps://bitcoin.stackexchange.com/a/81116/35586 for more\nbackground on this topic.",
           "size": 32,
           "isOptional": false
         },
@@ -806,7 +804,7 @@
           "type": "const secp256k1_pubkey*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to an initialized public key to verify with.",
+          "description": "pointer to an initialized public key to verify with.\n\nTo avoid accepting malleable signatures, only ECDSA signatures in lower-S\nform are accepted.\n\nIf you need to accept ECDSA signatures from sources that do not obey this\nrule, apply secp256k1_ecdsa_signature_normalize to the signature prior to\nverification, but be aware that doing so results in malleable signatures.\n\nFor details, see the comments for that function.",
           "size": 64,
           "isOptional": false
         }
@@ -826,7 +824,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object\nOut:  sigout: pointer to a signature to fill with the normalized form,\nor copy if the input was already normalized. (can be NULL if\nyou\u0027re only interested in whether the input was already\nnormalized).\nIn:   sigin:  pointer to a signature to check/normalize (can be identical to sigout)\n\nWith ECDSA a third-party can forge a second distinct signature of the same\nmessage, given a single initial signature, but without knowing the key. This\nis done by negating the S value modulo the order of the curve, \u0027flipping\u0027\nthe sign of the random point R which is not included in the signature.\n\nForgery of the same message isn\u0027t universally problematic, but in systems\nwhere message malleability or uniqueness of signatures is important this can\ncause issues. This forgery can be blocked by all verifiers forcing signers\nto use a normalized form.\n\nThe lower-S form reduces the size of signatures slightly on average when\nvariable length encodings (such as DER) are used and is cheap to verify,\nmaking it a good choice. Security of always using lower-S is assured because\nanyone can trivially modify a signature after the fact to enforce this\nproperty anyway.\n\nThe lower S value is always between 0x1 and\n0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0,\ninclusive.\n\nNo other forms of ECDSA malleability are known and none seem likely, but\nthere is no formal proof that ECDSA, even with this additional restriction,\nis free of other malleability. Commonly used serialization schemes will also\naccept various non-unique encodings, so care should be taken when this\nproperty is required for an application.\n\nThe secp256k1_ecdsa_sign function will by default create signatures in the\nlower-S form, and secp256k1_ecdsa_verify will not accept others. In case\nsignatures come from a system that cannot enforce this property,\nsecp256k1_ecdsa_signature_normalize must be called before verification.",
+          "description": "pointer to a context object",
           "isOptional": false
         },
         {
@@ -834,7 +832,7 @@
           "type": "secp256k1_ecdsa_signature*",
           "direction": "out",
           "nonnull": false,
-          "description": "pointer to a signature to fill with the normalized form,\nor copy if the input was already normalized. (can be NULL if\nyou\u0027re only interested in whether the input was already\nnormalized).\nIn:   sigin:  pointer to a signature to check/normalize (can be identical to sigout)\n\nWith ECDSA a third-party can forge a second distinct signature of the same\nmessage, given a single initial signature, but without knowing the key. This\nis done by negating the S value modulo the order of the curve, \u0027flipping\u0027\nthe sign of the random point R which is not included in the signature.\n\nForgery of the same message isn\u0027t universally problematic, but in systems\nwhere message malleability or uniqueness of signatures is important this can\ncause issues. This forgery can be blocked by all verifiers forcing signers\nto use a normalized form.\n\nThe lower-S form reduces the size of signatures slightly on average when\nvariable length encodings (such as DER) are used and is cheap to verify,\nmaking it a good choice. Security of always using lower-S is assured because\nanyone can trivially modify a signature after the fact to enforce this\nproperty anyway.\n\nThe lower S value is always between 0x1 and\n0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0,\ninclusive.\n\nNo other forms of ECDSA malleability are known and none seem likely, but\nthere is no formal proof that ECDSA, even with this additional restriction,\nis free of other malleability. Commonly used serialization schemes will also\naccept various non-unique encodings, so care should be taken when this\nproperty is required for an application.\n\nThe secp256k1_ecdsa_sign function will by default create signatures in the\nlower-S form, and secp256k1_ecdsa_verify will not accept others. In case\nsignatures come from a system that cannot enforce this property,\nsecp256k1_ecdsa_signature_normalize must be called before verification.",
+          "description": "pointer to a signature to fill with the normalized form,\nor copy if the input was already normalized. (can be NULL if\nyou\u0027re only interested in whether the input was already\nnormalized).",
           "size": 64,
           "isOptional": false
         },
@@ -863,8 +861,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object (not secp256k1_context_static).\nOut:     sig:       pointer to an array where the signature will be placed.\nIn:      msghash32: the 32-byte message hash being signed.\nseckey:    pointer to a 32-byte secret key.\nnoncefp:   pointer to a nonce generation function. If NULL,\nsecp256k1_nonce_function_default is used.\nndata:     pointer to arbitrary data used by the nonce generation function\n(can be NULL). If it is non-NULL and\nsecp256k1_nonce_function_default is used, then ndata must be a\npointer to 32-bytes of additional data.\n\nThe created signature is always in lower-S form. See\nsecp256k1_ecdsa_signature_normalize for more details.",
-          "size": 32,
+          "description": "pointer to a context object (not secp256k1_context_static).",
           "isOptional": false
         },
         {
@@ -872,7 +869,7 @@
           "type": "secp256k1_ecdsa_signature*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to an array where the signature will be placed.\nIn:      msghash32: the 32-byte message hash being signed.\nseckey:    pointer to a 32-byte secret key.\nnoncefp:   pointer to a nonce generation function. If NULL,\nsecp256k1_nonce_function_default is used.\nndata:     pointer to arbitrary data used by the nonce generation function\n(can be NULL). If it is non-NULL and\nsecp256k1_nonce_function_default is used, then ndata must be a\npointer to 32-bytes of additional data.\n\nThe created signature is always in lower-S form. See\nsecp256k1_ecdsa_signature_normalize for more details.",
+          "description": "pointer to an array where the signature will be placed.",
           "size": 64,
           "isOptional": false
         },
@@ -881,7 +878,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": true,
-          "description": "the 32-byte message hash being signed.\nseckey:    pointer to a 32-byte secret key.\nnoncefp:   pointer to a nonce generation function. If NULL,\nsecp256k1_nonce_function_default is used.\nndata:     pointer to arbitrary data used by the nonce generation function\n(can be NULL). If it is non-NULL and\nsecp256k1_nonce_function_default is used, then ndata must be a\npointer to 32-bytes of additional data.\n\nThe created signature is always in lower-S form. See\nsecp256k1_ecdsa_signature_normalize for more details.",
+          "description": "the 32-byte message hash being signed.",
           "size": 32,
           "isOptional": false
         },
@@ -898,7 +895,7 @@
           "name": "noncefp",
           "type": "secp256k1_nonce_function",
           "nonnull": false,
-          "description": "pointer to a nonce generation function. If NULL,",
+          "description": "pointer to a nonce generation function. If NULL,\nsecp256k1_nonce_function_default is used.",
           "isOptional": false
         },
         {
@@ -906,7 +903,8 @@
           "type": "const void*",
           "direction": "in",
           "nonnull": false,
-          "description": "pointer to arbitrary data used by the nonce generation function",
+          "description": "pointer to arbitrary data used by the nonce generation function\n(can be NULL). If it is non-NULL and\nsecp256k1_nonce_function_default is used, then ndata must be a\npointer to 32-bytes of additional data.\n\nThe created signature is always in lower-S form. See\nsecp256k1_ecdsa_signature_normalize for more details.",
+          "size": 32,
           "isOptional": true
         }
       ],
@@ -925,8 +923,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object.\nIn:      seckey: pointer to a 32-byte secret key.",
-          "size": 32,
+          "description": "pointer to a context object.",
           "isOptional": false
         },
         {
@@ -954,8 +951,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object (not secp256k1_context_static).\nOut:     pubkey: pointer to the created public key.\nIn:      seckey: pointer to a 32-byte secret key.",
-          "size": 32,
+          "description": "pointer to a context object (not secp256k1_context_static).",
           "isOptional": false
         },
         {
@@ -963,7 +959,7 @@
           "type": "secp256k1_pubkey*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to the created public key.\nIn:      seckey: pointer to a 32-byte secret key.",
+          "description": "pointer to the created public key.",
           "size": 64,
           "isOptional": false
         },
@@ -990,10 +986,9 @@
         {
           "name": "ctx",
           "type": "const secp256k1_context*",
-          "direction": "inout",
+          "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object\nIn/Out: seckey: pointer to the 32-byte secret key to be negated. If the\nsecret key is invalid according to\nsecp256k1_ec_seckey_verify, this function returns 0 and\nseckey will be set to some unspecified value.",
-          "size": 32,
+          "description": "pointer to a context object",
           "isOptional": false
         },
         {
@@ -1019,9 +1014,9 @@
         {
           "name": "ctx",
           "type": "const secp256k1_context*",
-          "direction": "inout",
+          "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object\nIn/Out: pubkey:     pointer to the public key to be negated.",
+          "description": "pointer to a context object",
           "isOptional": false
         },
         {
@@ -1047,9 +1042,9 @@
         {
           "name": "ctx",
           "type": "const secp256k1_context*",
-          "direction": "inout",
+          "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object.\nIn/Out: seckey: pointer to a 32-byte secret key. If the secret key is\ninvalid according to secp256k1_ec_seckey_verify, this\nfunction returns 0. seckey will be set to some unspecified\nvalue if this function returns 0.\nIn:    tweak32: pointer to a 32-byte tweak, which must be valid according to\nsecp256k1_ec_seckey_verify or 32 zero bytes. For uniformly\nrandom 32-byte tweaks, the chance of being invalid is\nnegligible (around 1 in 2^128).",
+          "description": "pointer to a context object.",
           "isOptional": false
         },
         {
@@ -1057,7 +1052,7 @@
           "type": "unsigned char*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a 32-byte secret key. If the secret key is\ninvalid according to secp256k1_ec_seckey_verify, this\nfunction returns 0. seckey will be set to some unspecified\nvalue if this function returns 0.\nIn:    tweak32: pointer to a 32-byte tweak, which must be valid according to\nsecp256k1_ec_seckey_verify or 32 zero bytes. For uniformly\nrandom 32-byte tweaks, the chance of being invalid is\nnegligible (around 1 in 2^128).",
+          "description": "pointer to a 32-byte secret key. If the secret key is\ninvalid according to secp256k1_ec_seckey_verify, this\nfunction returns 0. seckey will be set to some unspecified\nvalue if this function returns 0.",
           "size": 32,
           "isOptional": false
         },
@@ -1084,9 +1079,9 @@
         {
           "name": "ctx",
           "type": "const secp256k1_context*",
-          "direction": "inout",
+          "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object.\nIn/Out: pubkey: pointer to a public key object. pubkey will be set to an\ninvalid value if this function returns 0.\nIn:    tweak32: pointer to a 32-byte tweak, which must be valid according to\nsecp256k1_ec_seckey_verify or 32 zero bytes. For uniformly\nrandom 32-byte tweaks, the chance of being invalid is\nnegligible (around 1 in 2^128).",
+          "description": "pointer to a context object.",
           "isOptional": false
         },
         {
@@ -1094,7 +1089,7 @@
           "type": "secp256k1_pubkey*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a public key object. pubkey will be set to an\ninvalid value if this function returns 0.\nIn:    tweak32: pointer to a 32-byte tweak, which must be valid according to\nsecp256k1_ec_seckey_verify or 32 zero bytes. For uniformly\nrandom 32-byte tweaks, the chance of being invalid is\nnegligible (around 1 in 2^128).",
+          "description": "pointer to a public key object. pubkey will be set to an\ninvalid value if this function returns 0.",
           "size": 64,
           "isOptional": false
         },
@@ -1121,10 +1116,9 @@
         {
           "name": "ctx",
           "type": "const secp256k1_context*",
-          "direction": "inout",
+          "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object.\nIn/Out: seckey: pointer to a 32-byte secret key. If the secret key is\ninvalid according to secp256k1_ec_seckey_verify, this\nfunction returns 0. seckey will be set to some unspecified\nvalue if this function returns 0.\nIn:    tweak32: pointer to a 32-byte tweak. If the tweak is invalid according to\nsecp256k1_ec_seckey_verify, this function returns 0. For\nuniformly random 32-byte arrays the chance of being invalid\nis negligible (around 1 in 2^128).",
-          "size": 32,
+          "description": "pointer to a context object.",
           "isOptional": false
         },
         {
@@ -1132,7 +1126,7 @@
           "type": "unsigned char*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a 32-byte secret key. If the secret key is\ninvalid according to secp256k1_ec_seckey_verify, this\nfunction returns 0. seckey will be set to some unspecified\nvalue if this function returns 0.\nIn:    tweak32: pointer to a 32-byte tweak. If the tweak is invalid according to\nsecp256k1_ec_seckey_verify, this function returns 0. For\nuniformly random 32-byte arrays the chance of being invalid\nis negligible (around 1 in 2^128).",
+          "description": "pointer to a 32-byte secret key. If the secret key is\ninvalid according to secp256k1_ec_seckey_verify, this\nfunction returns 0. seckey will be set to some unspecified\nvalue if this function returns 0.",
           "size": 32,
           "isOptional": false
         },
@@ -1159,10 +1153,9 @@
         {
           "name": "ctx",
           "type": "const secp256k1_context*",
-          "direction": "inout",
+          "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object.\nIn/Out: pubkey: pointer to a public key object. pubkey will be set to an\ninvalid value if this function returns 0.\nIn:    tweak32: pointer to a 32-byte tweak. If the tweak is invalid according to\nsecp256k1_ec_seckey_verify, this function returns 0. For\nuniformly random 32-byte arrays the chance of being invalid\nis negligible (around 1 in 2^128).",
-          "size": 32,
+          "description": "pointer to a context object.",
           "isOptional": false
         },
         {
@@ -1170,7 +1163,7 @@
           "type": "secp256k1_pubkey*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a public key object. pubkey will be set to an\ninvalid value if this function returns 0.\nIn:    tweak32: pointer to a 32-byte tweak. If the tweak is invalid according to\nsecp256k1_ec_seckey_verify, this function returns 0. For\nuniformly random 32-byte arrays the chance of being invalid\nis negligible (around 1 in 2^128).",
+          "description": "pointer to a public key object. pubkey will be set to an\ninvalid value if this function returns 0.",
           "size": 64,
           "isOptional": false
         },
@@ -1199,7 +1192,7 @@
           "type": "secp256k1_context*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a context object (not secp256k1_context_static).\nIn:      seed32:    pointer to a 32-byte random seed (NULL resets to initial state).\n\nWhile secp256k1 code is written and tested to be constant-time no matter what\nsecret values are, it is possible that a compiler may output code which is not,\nand also that the CPU may not emit the same radio frequencies or draw the same\namount of power for all values. Randomization of the context shields against\nside-channel observations which aim to exploit secret-dependent behaviour in\ncertain computations which involve secret keys.\n\nIt is highly recommended to call this function on contexts returned from\nsecp256k1_context_create or secp256k1_context_clone (or from the corresponding\nfunctions in secp256k1_preallocated.h) before using these contexts to call API\nfunctions that perform computations involving secret keys, e.g., signing and\npublic key generation. It is possible to call this function more than once on\nthe same context, and doing so before every few computations involving secret\nkeys is recommended as a defense-in-depth measure. Randomization of the static\ncontext secp256k1_context_static is not supported.\n\nCurrently, the random seed is mainly used for blinding multiplications of a\nsecret scalar with the elliptic curve base point. Multiplications of this\nkind are performed by exactly those API functions which are documented to\nrequire a context that is not secp256k1_context_static. As a rule of thumb,\nthese are all functions which take a secret key (or a keypair) as an input.\nA notable exception to that rule is the ECDH module, which relies on a different\nkind of elliptic curve point multiplication and thus does not benefit from\nenhanced protection against side-channel leakage currently.",
+          "description": "pointer to a context object (not secp256k1_context_static).",
           "isOptional": false
         },
         {
@@ -1227,7 +1220,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object.\nOut:    out:        pointer to a public key object for placing the resulting public key.\nIn:     ins:        pointer to array of pointers to public keys.\nn:          the number of public keys to add together (must be at least 1).",
+          "description": "pointer to a context object.",
           "isOptional": false
         },
         {
@@ -1235,7 +1228,7 @@
           "type": "secp256k1_pubkey*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a public key object for placing the resulting public key.\nIn:     ins:        pointer to array of pointers to public keys.\nn:          the number of public keys to add together (must be at least 1).",
+          "description": "pointer to a public key object for placing the resulting public key.",
           "size": 64,
           "isOptional": false
         },
@@ -1244,7 +1237,7 @@
           "type": "const secp256k1_pubkey * const*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to array of pointers to public keys.\nn:          the number of public keys to add together (must be at least 1).",
+          "description": "pointer to array of pointers to public keys.",
           "lengthParam": "n",
           "isOptional": false
         },
@@ -1272,8 +1265,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object\nOut:  hash32: pointer to a 32-byte array to store the resulting hash\nIn:      tag: pointer to an array containing the tag\ntaglen: length of the tag array\nmsg: pointer to an array containing the message\nmsglen: length of the message array",
-          "size": 32,
+          "description": "pointer to a context object",
           "isOptional": false
         },
         {
@@ -1281,7 +1273,7 @@
           "type": "unsigned char*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a 32-byte array to store the resulting hash\nIn:      tag: pointer to an array containing the tag\ntaglen: length of the tag array\nmsg: pointer to an array containing the message\nmsglen: length of the message array",
+          "description": "pointer to a 32-byte array to store the resulting hash",
           "size": 32,
           "isOptional": false
         },
@@ -1290,7 +1282,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to an array containing the tag\ntaglen: length of the tag array\nmsg: pointer to an array containing the message\nmsglen: length of the message array",
+          "description": "pointer to an array containing the tag",
           "lengthParam": "taglen",
           "isOptional": false
         },
@@ -1353,14 +1345,14 @@
           "type": "void*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a rewritable contiguous block of memory of\nsize at least secp256k1_context_preallocated_size(flags)\nbytes, as detailed above.\nflags:    which parts of the context to initialize.\n\nSee secp256k1_context_create (in secp256k1.h) for further details.\n\nSee also secp256k1_context_randomize (in secp256k1.h)\nand secp256k1_context_preallocated_destroy.",
+          "description": "pointer to a rewritable contiguous block of memory of\nsize at least secp256k1_context_preallocated_size(flags)\nbytes, as detailed above.",
           "isOptional": false
         },
         {
           "name": "flags",
           "type": "unsigned int",
           "nonnull": false,
-          "description": "which parts of the context to initialize.",
+          "description": "which parts of the context to initialize.\n\nSee secp256k1_context_create (in secp256k1.h) for further details.\n\nSee also secp256k1_context_randomize (in secp256k1.h)\nand secp256k1_context_preallocated_destroy.",
           "isOptional": false
         }
       ],
@@ -1398,7 +1390,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context to copy (not secp256k1_context_static).\nIn:      prealloc: pointer to a rewritable contiguous block of memory of\nsize at least secp256k1_context_preallocated_size(flags)\nbytes, as detailed above.",
+          "description": "pointer to a context to copy (not secp256k1_context_static).",
           "isOptional": false
         },
         {
@@ -1443,7 +1435,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object\nOut:  sig:     pointer to a signature object\nIn:   input64: pointer to a 64-byte compact signature\nrecid:   the recovery id (0, 1, 2 or 3)",
+          "description": "pointer to a context object",
           "isOptional": false
         },
         {
@@ -1451,7 +1443,7 @@
           "type": "secp256k1_ecdsa_recoverable_signature*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a signature object\nIn:   input64: pointer to a 64-byte compact signature\nrecid:   the recovery id (0, 1, 2 or 3)",
+          "description": "pointer to a signature object",
           "size": 65,
           "isOptional": false
         },
@@ -1460,7 +1452,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a 64-byte compact signature\nrecid:   the recovery id (0, 1, 2 or 3)",
+          "description": "pointer to a 64-byte compact signature",
           "size": 64,
           "isOptional": false
         },
@@ -1487,7 +1479,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object.\nOut:  sig:    pointer to a normal signature.\nIn:   sigin:  pointer to a recoverable signature.",
+          "description": "pointer to a context object.",
           "isOptional": false
         },
         {
@@ -1495,7 +1487,7 @@
           "type": "secp256k1_ecdsa_signature*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a normal signature.\nIn:   sigin:  pointer to a recoverable signature.",
+          "description": "pointer to a normal signature.",
           "size": 64,
           "isOptional": false
         },
@@ -1524,8 +1516,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object.\nOut:  output64: pointer to a 64-byte array of the compact signature.\nrecid:    pointer to an integer to hold the recovery id.\nIn:   sig:      pointer to an initialized signature object.",
-          "size": 64,
+          "description": "pointer to a context object.",
           "isOptional": false
         },
         {
@@ -1533,7 +1524,7 @@
           "type": "unsigned char*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a 64-byte array of the compact signature.\nrecid:    pointer to an integer to hold the recovery id.\nIn:   sig:      pointer to an initialized signature object.",
+          "description": "pointer to a 64-byte array of the compact signature.",
           "size": 64,
           "isOptional": false
         },
@@ -1570,8 +1561,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object (not secp256k1_context_static).\nOut:     sig:       pointer to an array where the signature will be placed.\nIn:      msghash32: the 32-byte message hash being signed.\nseckey:    pointer to a 32-byte secret key.\nnoncefp:   pointer to a nonce generation function. If NULL,\nsecp256k1_nonce_function_default is used.\nndata:     pointer to arbitrary data used by the nonce generation function\n(can be NULL for secp256k1_nonce_function_default).",
-          "size": 32,
+          "description": "pointer to a context object (not secp256k1_context_static).",
           "isOptional": false
         },
         {
@@ -1579,7 +1569,7 @@
           "type": "secp256k1_ecdsa_recoverable_signature*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to an array where the signature will be placed.\nIn:      msghash32: the 32-byte message hash being signed.\nseckey:    pointer to a 32-byte secret key.\nnoncefp:   pointer to a nonce generation function. If NULL,\nsecp256k1_nonce_function_default is used.\nndata:     pointer to arbitrary data used by the nonce generation function\n(can be NULL for secp256k1_nonce_function_default).",
+          "description": "pointer to an array where the signature will be placed.",
           "size": 65,
           "isOptional": false
         },
@@ -1588,7 +1578,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": true,
-          "description": "the 32-byte message hash being signed.\nseckey:    pointer to a 32-byte secret key.\nnoncefp:   pointer to a nonce generation function. If NULL,\nsecp256k1_nonce_function_default is used.\nndata:     pointer to arbitrary data used by the nonce generation function\n(can be NULL for secp256k1_nonce_function_default).",
+          "description": "the 32-byte message hash being signed.",
           "size": 32,
           "isOptional": false
         },
@@ -1605,7 +1595,7 @@
           "name": "noncefp",
           "type": "secp256k1_nonce_function",
           "nonnull": false,
-          "description": "pointer to a nonce generation function. If NULL,",
+          "description": "pointer to a nonce generation function. If NULL,\nsecp256k1_nonce_function_default is used.",
           "isOptional": false
         },
         {
@@ -1613,7 +1603,7 @@
           "type": "const void*",
           "direction": "in",
           "nonnull": false,
-          "description": "pointer to arbitrary data used by the nonce generation function",
+          "description": "pointer to arbitrary data used by the nonce generation function\n(can be NULL for secp256k1_nonce_function_default).",
           "isOptional": true
         }
       ],
@@ -1632,8 +1622,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object.\nOut:     pubkey:    pointer to the recovered public key.\nIn:      sig:       pointer to initialized signature that supports pubkey recovery.\nmsghash32: the 32-byte message hash assumed to be signed.",
-          "size": 32,
+          "description": "pointer to a context object.",
           "isOptional": false
         },
         {
@@ -1641,7 +1630,7 @@
           "type": "secp256k1_pubkey*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to the recovered public key.\nIn:      sig:       pointer to initialized signature that supports pubkey recovery.\nmsghash32: the 32-byte message hash assumed to be signed.",
+          "description": "pointer to the recovered public key.",
           "size": 64,
           "isOptional": false
         },
@@ -1650,7 +1639,7 @@
           "type": "const secp256k1_ecdsa_recoverable_signature*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to initialized signature that supports pubkey recovery.\nmsghash32: the 32-byte message hash assumed to be signed.",
+          "description": "pointer to initialized signature that supports pubkey recovery.",
           "size": 65,
           "isOptional": false
         },
@@ -1679,8 +1668,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object.\nOut:     output:     pointer to an array to be filled by hashfp.\nIn:      pubkey:     pointer to a secp256k1_pubkey containing an initialized public key.\nseckey:     a 32-byte scalar with which to multiply the point.\nhashfp:     pointer to a hash function. If NULL,\nsecp256k1_ecdh_hash_function_sha256 is used\n(in which case, 32 bytes will be written to output).\ndata:       arbitrary data pointer that is passed through to hashfp\n(can be NULL for secp256k1_ecdh_hash_function_sha256).",
-          "size": 32,
+          "description": "pointer to a context object.",
           "isOptional": false
         },
         {
@@ -1688,7 +1676,7 @@
           "type": "unsigned char*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to an array to be filled by hashfp.\nIn:      pubkey:     pointer to a secp256k1_pubkey containing an initialized public key.\nseckey:     a 32-byte scalar with which to multiply the point.\nhashfp:     pointer to a hash function. If NULL,\nsecp256k1_ecdh_hash_function_sha256 is used\n(in which case, 32 bytes will be written to output).\ndata:       arbitrary data pointer that is passed through to hashfp\n(can be NULL for secp256k1_ecdh_hash_function_sha256).",
+          "description": "pointer to an array to be filled by hashfp.",
           "size": 32,
           "isOptional": false
         },
@@ -1697,7 +1685,7 @@
           "type": "const secp256k1_pubkey*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a secp256k1_pubkey containing an initialized public key.\nseckey:     a 32-byte scalar with which to multiply the point.\nhashfp:     pointer to a hash function. If NULL,\nsecp256k1_ecdh_hash_function_sha256 is used\n(in which case, 32 bytes will be written to output).\ndata:       arbitrary data pointer that is passed through to hashfp\n(can be NULL for secp256k1_ecdh_hash_function_sha256).",
+          "description": "pointer to a secp256k1_pubkey containing an initialized public key.",
           "size": 64,
           "isOptional": false
         },
@@ -1714,7 +1702,7 @@
           "name": "hashfp",
           "type": "secp256k1_ecdh_hash_function",
           "nonnull": false,
-          "description": "pointer to a hash function. If NULL,",
+          "description": "pointer to a hash function. If NULL,\nsecp256k1_ecdh_hash_function_sha256 is used\n(in which case, 32 bytes will be written to output).",
           "isOptional": false
         },
         {
@@ -1722,7 +1710,7 @@
           "type": "void*",
           "direction": "out",
           "nonnull": false,
-          "description": "arbitrary data pointer that is passed through to hashfp",
+          "description": "arbitrary data pointer that is passed through to hashfp\n(can be NULL for secp256k1_ecdh_hash_function_sha256).",
           "isOptional": true
         }
       ],
@@ -1741,7 +1729,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object.\nOut: pubkey: pointer to a pubkey object. If 1 is returned, it is set to a\nparsed version of input. If not, it\u0027s set to an invalid value.\nIn: input32: pointer to a serialized xonly_pubkey.",
+          "description": "pointer to a context object.",
           "isOptional": false
         },
         {
@@ -1749,7 +1737,7 @@
           "type": "secp256k1_xonly_pubkey*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a pubkey object. If 1 is returned, it is set to a\nparsed version of input. If not, it\u0027s set to an invalid value.\nIn: input32: pointer to a serialized xonly_pubkey.",
+          "description": "pointer to a pubkey object. If 1 is returned, it is set to a\nparsed version of input. If not, it\u0027s set to an invalid value.",
           "size": 64,
           "isOptional": false
         },
@@ -1778,8 +1766,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object.\nOut: output32: pointer to a 32-byte array to place the serialized key in.\nIn:    pubkey: pointer to a secp256k1_xonly_pubkey containing an initialized public key.",
-          "size": 32,
+          "description": "pointer to a context object.",
           "isOptional": false
         },
         {
@@ -1787,7 +1774,7 @@
           "type": "unsigned char*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a 32-byte array to place the serialized key in.\nIn:    pubkey: pointer to a secp256k1_xonly_pubkey containing an initialized public key.",
+          "description": "pointer to a 32-byte array to place the serialized key in.",
           "size": 32,
           "isOptional": false
         },
@@ -1816,7 +1803,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object.\nIn:   pubkey1:  first public key to compare\npubkey2:  second public key to compare",
+          "description": "pointer to a context object.",
           "isOptional": false
         },
         {
@@ -1851,7 +1838,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object.\nOut: xonly_pubkey: pointer to an x-only public key object for placing the converted public key.\npk_parity: Ignored if NULL. Otherwise, pointer to an integer that\nwill be set to 1 if the point encoded by xonly_pubkey is\nthe negation of the pubkey and set to 0 otherwise.\nIn:        pubkey: pointer to a public key that is converted.",
+          "description": "pointer to a context object.",
           "isOptional": false
         },
         {
@@ -1859,7 +1846,7 @@
           "type": "secp256k1_xonly_pubkey*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to an x-only public key object for placing the converted public key.\npk_parity: Ignored if NULL. Otherwise, pointer to an integer that\nwill be set to 1 if the point encoded by xonly_pubkey is\nthe negation of the pubkey and set to 0 otherwise.\nIn:        pubkey: pointer to a public key that is converted.",
+          "description": "pointer to an x-only public key object for placing the converted public key.",
           "size": 64,
           "isOptional": false
         },
@@ -1868,7 +1855,7 @@
           "type": "int*",
           "direction": "out",
           "nonnull": false,
-          "description": "Ignored if NULL. Otherwise, pointer to an integer that",
+          "description": "Ignored if NULL. Otherwise, pointer to an integer that\nwill be set to 1 if the point encoded by xonly_pubkey is\nthe negation of the pubkey and set to 0 otherwise.",
           "isOptional": false
         },
         {
@@ -1896,7 +1883,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object.\nOut:  output_pubkey: pointer to a public key to store the result. Will be set\nto an invalid value if this function returns 0.\nIn: internal_pubkey: pointer to an x-only pubkey to apply the tweak to.\ntweak32: pointer to a 32-byte tweak, which must be valid\naccording to secp256k1_ec_seckey_verify or 32 zero\nbytes. For uniformly random 32-byte tweaks, the chance of\nbeing invalid is negligible (around 1 in 2^128).",
+          "description": "pointer to a context object.",
           "isOptional": false
         },
         {
@@ -1904,7 +1891,7 @@
           "type": "secp256k1_pubkey*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a public key to store the result. Will be set\nto an invalid value if this function returns 0.\nIn: internal_pubkey: pointer to an x-only pubkey to apply the tweak to.\ntweak32: pointer to a 32-byte tweak, which must be valid\naccording to secp256k1_ec_seckey_verify or 32 zero\nbytes. For uniformly random 32-byte tweaks, the chance of\nbeing invalid is negligible (around 1 in 2^128).",
+          "description": "pointer to a public key to store the result. Will be set\nto an invalid value if this function returns 0.",
           "size": 64,
           "isOptional": false
         },
@@ -1913,7 +1900,7 @@
           "type": "const secp256k1_xonly_pubkey*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to an x-only pubkey to apply the tweak to.\ntweak32: pointer to a 32-byte tweak, which must be valid\naccording to secp256k1_ec_seckey_verify or 32 zero\nbytes. For uniformly random 32-byte tweaks, the chance of\nbeing invalid is negligible (around 1 in 2^128).",
+          "description": "pointer to an x-only pubkey to apply the tweak to.",
           "size": 64,
           "isOptional": false
         },
@@ -1922,7 +1909,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a 32-byte tweak, which must be valid",
+          "description": "pointer to a 32-byte tweak, which must be valid\naccording to secp256k1_ec_seckey_verify or 32 zero\nbytes. For uniformly random 32-byte tweaks, the chance of\nbeing invalid is negligible (around 1 in 2^128).",
           "size": 32,
           "isOptional": false
         }
@@ -1942,8 +1929,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object.\nIn: tweaked_pubkey32: pointer to a serialized xonly_pubkey.\ntweaked_pk_parity: the parity of the tweaked pubkey (whose serialization\nis passed in as tweaked_pubkey32). This must match the\npk_parity value that is returned when calling\nsecp256k1_xonly_pubkey with the tweaked pubkey, or\nthis function will fail.\ninternal_pubkey: pointer to an x-only public key object to apply the tweak to.\ntweak32: pointer to a 32-byte tweak.",
-          "size": 32,
+          "description": "pointer to a context object.",
           "isOptional": false
         },
         {
@@ -1951,7 +1937,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a serialized xonly_pubkey.\ntweaked_pk_parity: the parity of the tweaked pubkey (whose serialization\nis passed in as tweaked_pubkey32). This must match the\npk_parity value that is returned when calling\nsecp256k1_xonly_pubkey with the tweaked pubkey, or\nthis function will fail.\ninternal_pubkey: pointer to an x-only public key object to apply the tweak to.\ntweak32: pointer to a 32-byte tweak.",
+          "description": "pointer to a serialized xonly_pubkey.",
           "size": 32,
           "isOptional": false
         },
@@ -1959,7 +1945,7 @@
           "name": "tweaked_pk_parity",
           "type": "int",
           "nonnull": false,
-          "description": "the parity of the tweaked pubkey (whose serialization",
+          "description": "the parity of the tweaked pubkey (whose serialization\nis passed in as tweaked_pubkey32). This must match the\npk_parity value that is returned when calling\nsecp256k1_xonly_pubkey with the tweaked pubkey, or\nthis function will fail.",
           "isOptional": false
         },
         {
@@ -1996,8 +1982,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object (not secp256k1_context_static).\nOut: keypair: pointer to the created keypair.\nIn:   seckey: pointer to a 32-byte secret key.",
-          "size": 32,
+          "description": "pointer to a context object (not secp256k1_context_static).",
           "isOptional": false
         },
         {
@@ -2005,7 +1990,7 @@
           "type": "secp256k1_keypair*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to the created keypair.\nIn:   seckey: pointer to a 32-byte secret key.",
+          "description": "pointer to the created keypair.",
           "size": 96,
           "isOptional": false
         },
@@ -2034,8 +2019,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object.\nOut: seckey: pointer to a 32-byte buffer for the secret key.\nIn: keypair: pointer to a keypair.",
-          "size": 32,
+          "description": "pointer to a context object.",
           "isOptional": false
         },
         {
@@ -2043,7 +2027,7 @@
           "type": "unsigned char*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a 32-byte buffer for the secret key.\nIn: keypair: pointer to a keypair.",
+          "description": "pointer to a 32-byte buffer for the secret key.",
           "size": 32,
           "isOptional": false
         },
@@ -2072,7 +2056,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object.\nOut: pubkey: pointer to a pubkey object, set to the keypair public key.\nIn: keypair: pointer to a keypair.",
+          "description": "pointer to a context object.",
           "isOptional": false
         },
         {
@@ -2080,7 +2064,7 @@
           "type": "secp256k1_pubkey*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a pubkey object, set to the keypair public key.\nIn: keypair: pointer to a keypair.",
+          "description": "pointer to a pubkey object, set to the keypair public key.",
           "size": 64,
           "isOptional": false
         },
@@ -2109,7 +2093,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object.\nOut: pubkey: pointer to an xonly_pubkey object, set to the keypair\npublic key after converting it to an xonly_pubkey.\npk_parity: Ignored if NULL. Otherwise, pointer to an integer that will be set to the\npk_parity argument of secp256k1_xonly_pubkey_from_pubkey.\nIn: keypair: pointer to a keypair.",
+          "description": "pointer to a context object.",
           "isOptional": false
         },
         {
@@ -2117,7 +2101,7 @@
           "type": "secp256k1_xonly_pubkey*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to an xonly_pubkey object, set to the keypair\npublic key after converting it to an xonly_pubkey.\npk_parity: Ignored if NULL. Otherwise, pointer to an integer that will be set to the\npk_parity argument of secp256k1_xonly_pubkey_from_pubkey.\nIn: keypair: pointer to a keypair.",
+          "description": "pointer to an xonly_pubkey object, set to the keypair\npublic key after converting it to an xonly_pubkey.",
           "size": 64,
           "isOptional": false
         },
@@ -2126,7 +2110,7 @@
           "type": "int*",
           "direction": "out",
           "nonnull": false,
-          "description": "Ignored if NULL. Otherwise, pointer to an integer that will be set to the",
+          "description": "Ignored if NULL. Otherwise, pointer to an integer that will be set to the\npk_parity argument of secp256k1_xonly_pubkey_from_pubkey.",
           "isOptional": false
         },
         {
@@ -2152,9 +2136,9 @@
         {
           "name": "ctx",
           "type": "const secp256k1_context*",
-          "direction": "inout",
+          "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object.\nIn/Out: keypair: pointer to a keypair to apply the tweak to. Will be set to\nan invalid value if this function returns 0.\nIn:     tweak32: pointer to a 32-byte tweak, which must be valid according to\nsecp256k1_ec_seckey_verify or 32 zero bytes. For uniformly\nrandom 32-byte tweaks, the chance of being invalid is\nnegligible (around 1 in 2^128).",
+          "description": "pointer to a context object.",
           "isOptional": false
         },
         {
@@ -2162,7 +2146,7 @@
           "type": "secp256k1_keypair*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a keypair to apply the tweak to. Will be set to\nan invalid value if this function returns 0.\nIn:     tweak32: pointer to a 32-byte tweak, which must be valid according to\nsecp256k1_ec_seckey_verify or 32 zero bytes. For uniformly\nrandom 32-byte tweaks, the chance of being invalid is\nnegligible (around 1 in 2^128).",
+          "description": "pointer to a keypair to apply the tweak to. Will be set to\nan invalid value if this function returns 0.",
           "size": 96,
           "isOptional": false
         },
@@ -2191,8 +2175,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object (not secp256k1_context_static).\nOut:   sig64: pointer to a 64-byte array to store the serialized signature.\nIn:    msg32: the 32-byte message being signed.\nkeypair: pointer to an initialized keypair.\naux_rand32: 32 bytes of fresh randomness. While recommended to provide\nthis, it is only supplemental to security and can be NULL. A\nNULL argument is treated the same as an all-zero one. See\nBIP-340 \u0022Default Signing\u0022 for a full explanation of this\nargument and for guidance if randomness is expensive.",
-          "size": 64,
+          "description": "pointer to a context object (not secp256k1_context_static).",
           "isOptional": false
         },
         {
@@ -2200,7 +2183,7 @@
           "type": "unsigned char*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a 64-byte array to store the serialized signature.\nIn:    msg32: the 32-byte message being signed.\nkeypair: pointer to an initialized keypair.\naux_rand32: 32 bytes of fresh randomness. While recommended to provide\nthis, it is only supplemental to security and can be NULL. A\nNULL argument is treated the same as an all-zero one. See\nBIP-340 \u0022Default Signing\u0022 for a full explanation of this\nargument and for guidance if randomness is expensive.",
+          "description": "pointer to a 64-byte array to store the serialized signature.",
           "size": 64,
           "isOptional": false
         },
@@ -2209,7 +2192,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": true,
-          "description": "the 32-byte message being signed.\nkeypair: pointer to an initialized keypair.\naux_rand32: 32 bytes of fresh randomness. While recommended to provide\nthis, it is only supplemental to security and can be NULL. A\nNULL argument is treated the same as an all-zero one. See\nBIP-340 \u0022Default Signing\u0022 for a full explanation of this\nargument and for guidance if randomness is expensive.",
+          "description": "the 32-byte message being signed.",
           "size": 32,
           "isOptional": false
         },
@@ -2227,7 +2210,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": false,
-          "description": "32 bytes of fresh randomness. While recommended to provide",
+          "description": "32 bytes of fresh randomness. While recommended to provide\nthis, it is only supplemental to security and can be NULL. A\nNULL argument is treated the same as an all-zero one. See\nBIP-340 \u0022Default Signing\u0022 for a full explanation of this\nargument and for guidance if randomness is expensive.",
           "size": 32,
           "isOptional": false
         }
@@ -2296,8 +2279,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object (not secp256k1_context_static).\nOut:  sig64: pointer to a 64-byte array to store the serialized signature.\nIn:     msg: the message being signed. Can only be NULL if msglen is 0.\nmsglen: length of the message.\nkeypair: pointer to an initialized keypair.\nextraparams: pointer to an extraparams object (can be NULL).",
-          "size": 64,
+          "description": "pointer to a context object (not secp256k1_context_static).",
           "isOptional": false
         },
         {
@@ -2305,7 +2287,7 @@
           "type": "unsigned char*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a 64-byte array to store the serialized signature.\nIn:     msg: the message being signed. Can only be NULL if msglen is 0.\nmsglen: length of the message.\nkeypair: pointer to an initialized keypair.\nextraparams: pointer to an extraparams object (can be NULL).",
+          "description": "pointer to a 64-byte array to store the serialized signature.",
           "size": 64,
           "isOptional": false
         },
@@ -2314,7 +2296,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": false,
-          "description": "the message being signed. Can only be NULL if msglen is 0.\nmsglen: length of the message.\nkeypair: pointer to an initialized keypair.\nextraparams: pointer to an extraparams object (can be NULL).",
+          "description": "the message being signed. Can only be NULL if msglen is 0.",
           "lengthParam": "msglen",
           "isOptional": false
         },
@@ -2358,8 +2340,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object.\nIn:    sig64: pointer to the 64-byte signature to verify.\nmsg: the message being verified. Can only be NULL if msglen is 0.\nmsglen: length of the message\npubkey: pointer to an x-only public key to verify with",
-          "size": 64,
+          "description": "pointer to a context object.",
           "isOptional": false
         },
         {
@@ -2367,7 +2348,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to the 64-byte signature to verify.\nmsg: the message being verified. Can only be NULL if msglen is 0.\nmsglen: length of the message\npubkey: pointer to an x-only public key to verify with",
+          "description": "pointer to the 64-byte signature to verify.",
           "size": 64,
           "isOptional": false
         },
@@ -2413,8 +2394,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object\nOut:     ell64:      pointer to a 64-byte array to be filled\nIn:      pubkey:     pointer to a secp256k1_pubkey containing an\ninitialized public key\nrnd32:      pointer to 32 bytes of randomness\n\nIt is recommended that rnd32 consists of 32 uniformly random bytes, not\nknown to any adversary trying to detect whether public keys are being\nencoded, though 16 bytes of randomness (padded to an array of 32 bytes,\ne.g., with zeros) suffice to make the result indistinguishable from\nuniform. The randomness in rnd32 must not be a deterministic function of\nthe pubkey (it can be derived from the private key, though).\n\nIt is not guaranteed that the computed encoding is stable across versions\nof the library, even if all arguments to this function (including rnd32)\nare the same.\n\nThis function runs in variable time.",
-          "size": 64,
+          "description": "pointer to a context object",
           "isOptional": false
         },
         {
@@ -2422,7 +2402,7 @@
           "type": "unsigned char*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a 64-byte array to be filled\nIn:      pubkey:     pointer to a secp256k1_pubkey containing an\ninitialized public key\nrnd32:      pointer to 32 bytes of randomness\n\nIt is recommended that rnd32 consists of 32 uniformly random bytes, not\nknown to any adversary trying to detect whether public keys are being\nencoded, though 16 bytes of randomness (padded to an array of 32 bytes,\ne.g., with zeros) suffice to make the result indistinguishable from\nuniform. The randomness in rnd32 must not be a deterministic function of\nthe pubkey (it can be derived from the private key, though).\n\nIt is not guaranteed that the computed encoding is stable across versions\nof the library, even if all arguments to this function (including rnd32)\nare the same.\n\nThis function runs in variable time.",
+          "description": "pointer to a 64-byte array to be filled",
           "size": 64,
           "isOptional": false
         },
@@ -2431,7 +2411,7 @@
           "type": "const secp256k1_pubkey*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a secp256k1_pubkey containing an\ninitialized public key\nrnd32:      pointer to 32 bytes of randomness\n\nIt is recommended that rnd32 consists of 32 uniformly random bytes, not\nknown to any adversary trying to detect whether public keys are being\nencoded, though 16 bytes of randomness (padded to an array of 32 bytes,\ne.g., with zeros) suffice to make the result indistinguishable from\nuniform. The randomness in rnd32 must not be a deterministic function of\nthe pubkey (it can be derived from the private key, though).\n\nIt is not guaranteed that the computed encoding is stable across versions\nof the library, even if all arguments to this function (including rnd32)\nare the same.\n\nThis function runs in variable time.",
+          "description": "pointer to a secp256k1_pubkey containing an\ninitialized public key",
           "size": 64,
           "isOptional": false
         },
@@ -2440,7 +2420,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to 32 bytes of randomness",
+          "description": "pointer to 32 bytes of randomness\n\nIt is recommended that rnd32 consists of 32 uniformly random bytes, not\nknown to any adversary trying to detect whether public keys are being\nencoded, though 16 bytes of randomness (padded to an array of 32 bytes,\ne.g., with zeros) suffice to make the result indistinguishable from\nuniform. The randomness in rnd32 must not be a deterministic function of\nthe pubkey (it can be derived from the private key, though).\n\nIt is not guaranteed that the computed encoding is stable across versions\nof the library, even if all arguments to this function (including rnd32)\nare the same.\n\nThis function runs in variable time.",
           "size": 32,
           "isOptional": false
         }
@@ -2460,8 +2440,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object\nOut:     pubkey:     pointer to a secp256k1_pubkey that will be filled\nIn:      ell64:      pointer to a 64-byte array to decode\n\nThis function runs in variable time.",
-          "size": 64,
+          "description": "pointer to a context object",
           "isOptional": false
         },
         {
@@ -2469,7 +2448,7 @@
           "type": "secp256k1_pubkey*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a secp256k1_pubkey that will be filled\nIn:      ell64:      pointer to a 64-byte array to decode\n\nThis function runs in variable time.",
+          "description": "pointer to a secp256k1_pubkey that will be filled",
           "size": 64,
           "isOptional": false
         },
@@ -2498,8 +2477,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object (not secp256k1_context_static)\nOut:     ell64:      pointer to a 64-byte array to receive the ElligatorSwift\npublic key\nIn:      seckey32:   pointer to a 32-byte secret key\nauxrnd32:   (optional) pointer to 32 bytes of randomness\n\nConstant time in seckey and auxrnd32, but not in the resulting public key.\n\nIt is recommended that auxrnd32 contains 32 uniformly random bytes, though\nit is optional (and does result in encodings that are indistinguishable from\nuniform even without any auxrnd32). It differs from the (mandatory) rnd32\nargument to secp256k1_ellswift_encode in this regard.\n\nThis function can be used instead of calling secp256k1_ec_pubkey_create\nfollowed by secp256k1_ellswift_encode. It is safer, as it uses the secret\nkey as entropy for the encoding (supplemented with auxrnd32, if provided).\n\nLike secp256k1_ellswift_encode, this function does not guarantee that the\ncomputed encoding is stable across versions of the library, even if all\narguments (including auxrnd32) are the same.",
-          "size": 64,
+          "description": "pointer to a context object (not secp256k1_context_static)",
           "isOptional": false
         },
         {
@@ -2507,7 +2485,7 @@
           "type": "unsigned char*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a 64-byte array to receive the ElligatorSwift\npublic key\nIn:      seckey32:   pointer to a 32-byte secret key\nauxrnd32:   (optional) pointer to 32 bytes of randomness\n\nConstant time in seckey and auxrnd32, but not in the resulting public key.\n\nIt is recommended that auxrnd32 contains 32 uniformly random bytes, though\nit is optional (and does result in encodings that are indistinguishable from\nuniform even without any auxrnd32). It differs from the (mandatory) rnd32\nargument to secp256k1_ellswift_encode in this regard.\n\nThis function can be used instead of calling secp256k1_ec_pubkey_create\nfollowed by secp256k1_ellswift_encode. It is safer, as it uses the secret\nkey as entropy for the encoding (supplemented with auxrnd32, if provided).\n\nLike secp256k1_ellswift_encode, this function does not guarantee that the\ncomputed encoding is stable across versions of the library, even if all\narguments (including auxrnd32) are the same.",
+          "description": "pointer to a 64-byte array to receive the ElligatorSwift\npublic key",
           "size": 64,
           "isOptional": false
         },
@@ -2516,7 +2494,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a 32-byte secret key\nauxrnd32:   (optional) pointer to 32 bytes of randomness\n\nConstant time in seckey and auxrnd32, but not in the resulting public key.\n\nIt is recommended that auxrnd32 contains 32 uniformly random bytes, though\nit is optional (and does result in encodings that are indistinguishable from\nuniform even without any auxrnd32). It differs from the (mandatory) rnd32\nargument to secp256k1_ellswift_encode in this regard.\n\nThis function can be used instead of calling secp256k1_ec_pubkey_create\nfollowed by secp256k1_ellswift_encode. It is safer, as it uses the secret\nkey as entropy for the encoding (supplemented with auxrnd32, if provided).\n\nLike secp256k1_ellswift_encode, this function does not guarantee that the\ncomputed encoding is stable across versions of the library, even if all\narguments (including auxrnd32) are the same.",
+          "description": "pointer to a 32-byte secret key",
           "size": 32,
           "isOptional": false
         },
@@ -2525,7 +2503,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": false,
-          "description": "(optional) pointer to 32 bytes of randomness",
+          "description": "(optional) pointer to 32 bytes of randomness\n\nConstant time in seckey and auxrnd32, but not in the resulting public key.\n\nIt is recommended that auxrnd32 contains 32 uniformly random bytes, though\nit is optional (and does result in encodings that are indistinguishable from\nuniform even without any auxrnd32). It differs from the (mandatory) rnd32\nargument to secp256k1_ellswift_encode in this regard.\n\nThis function can be used instead of calling secp256k1_ec_pubkey_create\nfollowed by secp256k1_ellswift_encode. It is safer, as it uses the secret\nkey as entropy for the encoding (supplemented with auxrnd32, if provided).\n\nLike secp256k1_ellswift_encode, this function does not guarantee that the\ncomputed encoding is stable across versions of the library, even if all\narguments (including auxrnd32) are the same.",
           "size": 32,
           "isOptional": false
         }
@@ -2545,8 +2523,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object.\nOut:     output:    pointer to an array to be filled by hashfp.\nIn:      ell_a64:   pointer to the 64-byte encoded public key of party A\n(will not be NULL)\nell_b64:   pointer to the 64-byte encoded public key of party B\n(will not be NULL)\nseckey32:  pointer to our 32-byte secret key\nparty:     boolean indicating which party we are: zero if we are\nparty A, non-zero if we are party B. seckey32 must be\nthe private key corresponding to that party\u0027s ell_?64.\nThis correspondence is not checked.\nhashfp:    pointer to a hash function.\ndata:      arbitrary data pointer passed through to hashfp.\n\nConstant time in seckey32.\n\nThis function is more efficient than decoding the public keys, and performing\nECDH on them.",
-          "size": 64,
+          "description": "pointer to a context object.",
           "isOptional": false
         },
         {
@@ -2554,7 +2531,7 @@
           "type": "unsigned char*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to an array to be filled by hashfp.\nIn:      ell_a64:   pointer to the 64-byte encoded public key of party A\n(will not be NULL)\nell_b64:   pointer to the 64-byte encoded public key of party B\n(will not be NULL)\nseckey32:  pointer to our 32-byte secret key\nparty:     boolean indicating which party we are: zero if we are\nparty A, non-zero if we are party B. seckey32 must be\nthe private key corresponding to that party\u0027s ell_?64.\nThis correspondence is not checked.\nhashfp:    pointer to a hash function.\ndata:      arbitrary data pointer passed through to hashfp.\n\nConstant time in seckey32.\n\nThis function is more efficient than decoding the public keys, and performing\nECDH on them.",
+          "description": "pointer to an array to be filled by hashfp.",
           "size": 32,
           "isOptional": false
         },
@@ -2563,7 +2540,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to the 64-byte encoded public key of party A\n(will not be NULL)\nell_b64:   pointer to the 64-byte encoded public key of party B\n(will not be NULL)\nseckey32:  pointer to our 32-byte secret key\nparty:     boolean indicating which party we are: zero if we are\nparty A, non-zero if we are party B. seckey32 must be\nthe private key corresponding to that party\u0027s ell_?64.\nThis correspondence is not checked.\nhashfp:    pointer to a hash function.\ndata:      arbitrary data pointer passed through to hashfp.\n\nConstant time in seckey32.\n\nThis function is more efficient than decoding the public keys, and performing\nECDH on them.",
+          "description": "pointer to the 64-byte encoded public key of party A\n(will not be NULL)",
           "size": 64,
           "isOptional": false
         },
@@ -2572,7 +2549,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to the 64-byte encoded public key of party B",
+          "description": "pointer to the 64-byte encoded public key of party B\n(will not be NULL)",
           "size": 64,
           "isOptional": false
         },
@@ -2589,7 +2566,7 @@
           "name": "party",
           "type": "int",
           "nonnull": false,
-          "description": "boolean indicating which party we are: zero if we are",
+          "description": "boolean indicating which party we are: zero if we are\nparty A, non-zero if we are party B. seckey32 must be\nthe private key corresponding to that party\u0027s ell_?64.\nThis correspondence is not checked.",
           "isOptional": false
         },
         {
@@ -2604,7 +2581,7 @@
           "type": "void*",
           "direction": "out",
           "nonnull": false,
-          "description": "arbitrary data pointer passed through to hashfp.",
+          "description": "arbitrary data pointer passed through to hashfp.\n\nConstant time in seckey32.\n\nThis function is more efficient than decoding the public keys, and performing\nECDH on them.",
           "isOptional": true
         }
       ],
@@ -2623,8 +2600,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object\nOut:   nonce: pointer to a nonce object\nIn:     in66: pointer to the 66-byte nonce to be parsed",
-          "size": 66,
+          "description": "pointer to a context object",
           "isOptional": false
         },
         {
@@ -2632,7 +2608,7 @@
           "type": "secp256k1_musig_pubnonce*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a nonce object\nIn:     in66: pointer to the 66-byte nonce to be parsed",
+          "description": "pointer to a nonce object",
           "size": 132,
           "isOptional": false
         },
@@ -2661,8 +2637,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object\nOut:   out66: pointer to a 66-byte array to store the serialized nonce\nIn:    nonce: pointer to the nonce",
-          "size": 66,
+          "description": "pointer to a context object",
           "isOptional": false
         },
         {
@@ -2670,7 +2645,7 @@
           "type": "unsigned char*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a 66-byte array to store the serialized nonce\nIn:    nonce: pointer to the nonce",
+          "description": "pointer to a 66-byte array to store the serialized nonce",
           "size": 66,
           "isOptional": false
         },
@@ -2699,8 +2674,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object\nOut:   nonce: pointer to a nonce object\nIn:     in66: pointer to the 66-byte nonce to be parsed",
-          "size": 66,
+          "description": "pointer to a context object",
           "isOptional": false
         },
         {
@@ -2708,7 +2682,7 @@
           "type": "secp256k1_musig_aggnonce*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a nonce object\nIn:     in66: pointer to the 66-byte nonce to be parsed",
+          "description": "pointer to a nonce object",
           "size": 132,
           "isOptional": false
         },
@@ -2737,8 +2711,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object\nOut:   out66: pointer to a 66-byte array to store the serialized nonce\nIn:    nonce: pointer to the nonce",
-          "size": 66,
+          "description": "pointer to a context object",
           "isOptional": false
         },
         {
@@ -2746,7 +2719,7 @@
           "type": "unsigned char*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a 66-byte array to store the serialized nonce\nIn:    nonce: pointer to the nonce",
+          "description": "pointer to a 66-byte array to store the serialized nonce",
           "size": 66,
           "isOptional": false
         },
@@ -2775,8 +2748,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object\nOut:     sig: pointer to a signature object\nIn:     in32: pointer to the 32-byte signature to be parsed",
-          "size": 32,
+          "description": "pointer to a context object",
           "isOptional": false
         },
         {
@@ -2784,7 +2756,7 @@
           "type": "secp256k1_musig_partial_sig*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a signature object\nIn:     in32: pointer to the 32-byte signature to be parsed",
+          "description": "pointer to a signature object",
           "size": 36,
           "isOptional": false
         },
@@ -2813,8 +2785,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object\nOut:   out32: pointer to a 32-byte array to store the serialized signature\nIn:      sig: pointer to the signature",
-          "size": 32,
+          "description": "pointer to a context object",
           "isOptional": false
         },
         {
@@ -2822,7 +2793,7 @@
           "type": "unsigned char*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a 32-byte array to store the serialized signature\nIn:      sig: pointer to the signature",
+          "description": "pointer to a 32-byte array to store the serialized signature",
           "size": 32,
           "isOptional": false
         },
@@ -2851,7 +2822,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object\nOut:      agg_pk: the MuSig-aggregated x-only public key. If you do not need it,\nthis arg can be NULL.\nkeyagg_cache: if non-NULL, pointer to a musig_keyagg_cache struct that\nis required for signing (or observing the signing session\nand verifying partial signatures).\nIn:     pubkeys: input array of pointers to public keys to aggregate. The order\nis important; a different order will result in a different\naggregate public key.\nn_pubkeys: length of pubkeys array. Must be greater than 0.",
+          "description": "pointer to a context object",
           "isOptional": false
         },
         {
@@ -2859,7 +2830,7 @@
           "type": "secp256k1_xonly_pubkey*",
           "direction": "out",
           "nonnull": false,
-          "description": "the MuSig-aggregated x-only public key. If you do not need it,\nthis arg can be NULL.\nkeyagg_cache: if non-NULL, pointer to a musig_keyagg_cache struct that\nis required for signing (or observing the signing session\nand verifying partial signatures).\nIn:     pubkeys: input array of pointers to public keys to aggregate. The order\nis important; a different order will result in a different\naggregate public key.\nn_pubkeys: length of pubkeys array. Must be greater than 0.",
+          "description": "the MuSig-aggregated x-only public key. If you do not need it,\nthis arg can be NULL.",
           "size": 64,
           "isOptional": false
         },
@@ -2868,7 +2839,7 @@
           "type": "secp256k1_musig_keyagg_cache*",
           "direction": "out",
           "nonnull": false,
-          "description": "if non-NULL, pointer to a musig_keyagg_cache struct that",
+          "description": "if non-NULL, pointer to a musig_keyagg_cache struct that\nis required for signing (or observing the signing session\nand verifying partial signatures).",
           "size": 197,
           "isOptional": false
         },
@@ -2877,7 +2848,7 @@
           "type": "const secp256k1_pubkey * const*",
           "direction": "in",
           "nonnull": true,
-          "description": "input array of pointers to public keys to aggregate. The order\nis important; a different order will result in a different\naggregate public key.\nn_pubkeys: length of pubkeys array. Must be greater than 0.",
+          "description": "input array of pointers to public keys to aggregate. The order\nis important; a different order will result in a different\naggregate public key.",
           "lengthParam": "n_pubkeys",
           "isOptional": false
         },
@@ -2905,7 +2876,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object\nOut:      agg_pk: the MuSig-aggregated public key.\nIn: keyagg_cache: pointer to a \u0060musig_keyagg_cache\u0060 struct initialized by\n\u0060musig_pubkey_agg\u0060",
+          "description": "pointer to a context object",
           "isOptional": false
         },
         {
@@ -2913,7 +2884,7 @@
           "type": "secp256k1_pubkey*",
           "direction": "out",
           "nonnull": true,
-          "description": "the MuSig-aggregated public key.\nIn: keyagg_cache: pointer to a \u0060musig_keyagg_cache\u0060 struct initialized by\n\u0060musig_pubkey_agg\u0060",
+          "description": "the MuSig-aggregated public key.",
           "size": 64,
           "isOptional": false
         },
@@ -3020,18 +2991,17 @@
         {
           "name": "ctx",
           "type": "const secp256k1_context*",
-          "direction": "inout",
+          "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object (not secp256k1_context_static)\nOut:     secnonce: pointer to a structure to store the secret nonce\npubnonce: pointer to a structure to store the public nonce\nIn/Out:\nsession_secrand32: a 32-byte session_secrand32 as explained above. Must be unique to this\ncall to secp256k1_musig_nonce_gen and must be uniformly\nrandom. If the function call is successful, the\nsession_secrand32 buffer is invalidated to prevent reuse.\nIn:\nseckey: the 32-byte secret key that will later be used for signing, if\nalready known (can be NULL)\npubkey: public key of the signer creating the nonce. The secnonce\noutput of this function cannot be used to sign for any\nother public key. While the public key should correspond\nto the provided seckey, a mismatch will not cause the\nfunction to return 0.\nmsg32: the 32-byte message that will later be signed, if already known\n(can be NULL)\nkeyagg_cache: pointer to the keyagg_cache that was used to create the aggregate\n(and potentially tweaked) public key if already known\n(can be NULL)\nextra_input32: an optional 32-byte array that is input to the nonce\nderivation function (can be NULL)",
-          "size": 32,
+          "description": "pointer to a context object (not secp256k1_context_static)",
           "isOptional": false
         },
         {
           "name": "secnonce",
           "type": "secp256k1_musig_secnonce*",
-          "direction": "inout",
+          "direction": "out",
           "nonnull": true,
-          "description": "pointer to a structure to store the secret nonce\npubnonce: pointer to a structure to store the public nonce\nIn/Out:\nsession_secrand32: a 32-byte session_secrand32 as explained above. Must be unique to this\ncall to secp256k1_musig_nonce_gen and must be uniformly\nrandom. If the function call is successful, the\nsession_secrand32 buffer is invalidated to prevent reuse.\nIn:\nseckey: the 32-byte secret key that will later be used for signing, if\nalready known (can be NULL)\npubkey: public key of the signer creating the nonce. The secnonce\noutput of this function cannot be used to sign for any\nother public key. While the public key should correspond\nto the provided seckey, a mismatch will not cause the\nfunction to return 0.\nmsg32: the 32-byte message that will later be signed, if already known\n(can be NULL)\nkeyagg_cache: pointer to the keyagg_cache that was used to create the aggregate\n(and potentially tweaked) public key if already known\n(can be NULL)\nextra_input32: an optional 32-byte array that is input to the nonce\nderivation function (can be NULL)",
+          "description": "pointer to a structure to store the secret nonce",
           "size": 132,
           "isOptional": false
         },
@@ -3049,7 +3019,7 @@
           "type": "unsigned char*",
           "direction": "out",
           "nonnull": true,
-          "description": "a 32-byte session_secrand32 as explained above. Must be unique to this",
+          "description": "a 32-byte session_secrand32 as explained above. Must be unique to this\ncall to secp256k1_musig_nonce_gen and must be uniformly\nrandom. If the function call is successful, the\nsession_secrand32 buffer is invalidated to prevent reuse.",
           "size": 32,
           "isOptional": false
         },
@@ -3058,7 +3028,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": false,
-          "description": "the 32-byte secret key that will later be used for signing, if",
+          "description": "the 32-byte secret key that will later be used for signing, if\nalready known (can be NULL)",
           "size": 32,
           "isOptional": false
         },
@@ -3067,7 +3037,7 @@
           "type": "const secp256k1_pubkey*",
           "direction": "in",
           "nonnull": true,
-          "description": "public key of the signer creating the nonce. The secnonce",
+          "description": "public key of the signer creating the nonce. The secnonce\noutput of this function cannot be used to sign for any\nother public key. While the public key should correspond\nto the provided seckey, a mismatch will not cause the\nfunction to return 0.",
           "size": 64,
           "isOptional": false
         },
@@ -3076,7 +3046,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": false,
-          "description": "the 32-byte message that will later be signed, if already known",
+          "description": "the 32-byte message that will later be signed, if already known\n(can be NULL)",
           "size": 32,
           "isOptional": false
         },
@@ -3085,7 +3055,7 @@
           "type": "const secp256k1_musig_keyagg_cache*",
           "direction": "in",
           "nonnull": false,
-          "description": "pointer to the keyagg_cache that was used to create the aggregate",
+          "description": "pointer to the keyagg_cache that was used to create the aggregate\n(and potentially tweaked) public key if already known\n(can be NULL)",
           "size": 197,
           "isOptional": false
         },
@@ -3094,7 +3064,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": false,
-          "description": "an optional 32-byte array that is input to the nonce",
+          "description": "an optional 32-byte array that is input to the nonce\nderivation function (can be NULL)",
           "size": 32,
           "isOptional": false
         }
@@ -3114,8 +3084,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object (not secp256k1_context_static)\nOut:     secnonce: pointer to a structure to store the secret nonce\npubnonce: pointer to a structure to store the public nonce\nIn:\nnonrepeating_cnt: the value of a counter as explained above. Must be\nunique to this call to secp256k1_musig_nonce_gen.\nkeypair: keypair of the signer creating the nonce. The secnonce\noutput of this function cannot be used to sign for any\nother keypair.\nmsg32: the 32-byte message that will later be signed, if already known\n(can be NULL)\nkeyagg_cache: pointer to the keyagg_cache that was used to create the aggregate\n(and potentially tweaked) public key if already known\n(can be NULL)\nextra_input32: an optional 32-byte array that is input to the nonce\nderivation function (can be NULL)",
-          "size": 32,
+          "description": "pointer to a context object (not secp256k1_context_static)",
           "isOptional": false
         },
         {
@@ -3123,7 +3092,7 @@
           "type": "secp256k1_musig_secnonce*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a structure to store the secret nonce\npubnonce: pointer to a structure to store the public nonce\nIn:\nnonrepeating_cnt: the value of a counter as explained above. Must be\nunique to this call to secp256k1_musig_nonce_gen.\nkeypair: keypair of the signer creating the nonce. The secnonce\noutput of this function cannot be used to sign for any\nother keypair.\nmsg32: the 32-byte message that will later be signed, if already known\n(can be NULL)\nkeyagg_cache: pointer to the keyagg_cache that was used to create the aggregate\n(and potentially tweaked) public key if already known\n(can be NULL)\nextra_input32: an optional 32-byte array that is input to the nonce\nderivation function (can be NULL)",
+          "description": "pointer to a structure to store the secret nonce",
           "size": 132,
           "isOptional": false
         },
@@ -3140,7 +3109,7 @@
           "name": "nonrepeating_cnt",
           "type": "uint64_t",
           "nonnull": false,
-          "description": "the value of a counter as explained above. Must be",
+          "description": "the value of a counter as explained above. Must be\nunique to this call to secp256k1_musig_nonce_gen.",
           "isOptional": false
         },
         {
@@ -3148,7 +3117,7 @@
           "type": "const secp256k1_keypair*",
           "direction": "in",
           "nonnull": true,
-          "description": "keypair of the signer creating the nonce. The secnonce",
+          "description": "keypair of the signer creating the nonce. The secnonce\noutput of this function cannot be used to sign for any\nother keypair.",
           "size": 96,
           "isOptional": false
         },
@@ -3157,7 +3126,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": false,
-          "description": "the 32-byte message that will later be signed, if already known",
+          "description": "the 32-byte message that will later be signed, if already known\n(can be NULL)",
           "size": 32,
           "isOptional": false
         },
@@ -3166,7 +3135,7 @@
           "type": "const secp256k1_musig_keyagg_cache*",
           "direction": "in",
           "nonnull": false,
-          "description": "pointer to the keyagg_cache that was used to create the aggregate",
+          "description": "pointer to the keyagg_cache that was used to create the aggregate\n(and potentially tweaked) public key if already known\n(can be NULL)",
           "size": 197,
           "isOptional": false
         },
@@ -3175,7 +3144,7 @@
           "type": "const unsigned char*",
           "direction": "in",
           "nonnull": false,
-          "description": "an optional 32-byte array that is input to the nonce",
+          "description": "an optional 32-byte array that is input to the nonce\nderivation function (can be NULL)",
           "size": 32,
           "isOptional": false
         }
@@ -3195,7 +3164,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object\nOut:       aggnonce: pointer to an aggregate public nonce object for\nmusig_nonce_process\nIn:       pubnonces: array of pointers to public nonces sent by the\nsigners\nn_pubnonces: number of elements in the pubnonces array. Must be\ngreater than 0.",
+          "description": "pointer to a context object",
           "isOptional": false
         },
         {
@@ -3203,7 +3172,7 @@
           "type": "secp256k1_musig_aggnonce*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to an aggregate public nonce object for\nmusig_nonce_process\nIn:       pubnonces: array of pointers to public nonces sent by the\nsigners\nn_pubnonces: number of elements in the pubnonces array. Must be\ngreater than 0.",
+          "description": "pointer to an aggregate public nonce object for\nmusig_nonce_process",
           "size": 132,
           "isOptional": false
         },
@@ -3212,7 +3181,7 @@
           "type": "const secp256k1_musig_pubnonce * const*",
           "direction": "in",
           "nonnull": true,
-          "description": "array of pointers to public nonces sent by the\nsigners\nn_pubnonces: number of elements in the pubnonces array. Must be\ngreater than 0.",
+          "description": "array of pointers to public nonces sent by the\nsigners",
           "lengthParam": "n_pubnonces",
           "isOptional": false
         },
@@ -3220,7 +3189,7 @@
           "name": "n_pubnonces",
           "type": "size_t",
           "nonnull": false,
-          "description": "number of elements in the pubnonces array. Must be",
+          "description": "number of elements in the pubnonces array. Must be\ngreater than 0.",
           "isLengthFor": "pubnonces",
           "isOptional": false
         }
@@ -3240,8 +3209,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object\nOut:       session: pointer to a struct to store the session\nIn:       aggnonce: pointer to an aggregate public nonce object that is the\noutput of musig_nonce_agg\nmsg32:  the 32-byte message to sign\nkeyagg_cache:  pointer to the keyagg_cache that was used to create the\naggregate (and potentially tweaked) pubkey",
-          "size": 32,
+          "description": "pointer to a context object",
           "isOptional": false
         },
         {
@@ -3249,7 +3217,7 @@
           "type": "secp256k1_musig_session*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to a struct to store the session\nIn:       aggnonce: pointer to an aggregate public nonce object that is the\noutput of musig_nonce_agg\nmsg32:  the 32-byte message to sign\nkeyagg_cache:  pointer to the keyagg_cache that was used to create the\naggregate (and potentially tweaked) pubkey",
+          "description": "pointer to a struct to store the session",
           "size": 133,
           "isOptional": false
         },
@@ -3258,7 +3226,7 @@
           "type": "const secp256k1_musig_aggnonce*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to an aggregate public nonce object that is the\noutput of musig_nonce_agg\nmsg32:  the 32-byte message to sign\nkeyagg_cache:  pointer to the keyagg_cache that was used to create the\naggregate (and potentially tweaked) pubkey",
+          "description": "pointer to an aggregate public nonce object that is the\noutput of musig_nonce_agg",
           "size": 132,
           "isOptional": false
         },
@@ -3276,7 +3244,7 @@
           "type": "const secp256k1_musig_keyagg_cache*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to the keyagg_cache that was used to create the",
+          "description": "pointer to the keyagg_cache that was used to create the\naggregate (and potentially tweaked) pubkey",
           "size": 197,
           "isOptional": false
         }
@@ -3294,17 +3262,17 @@
         {
           "name": "ctx",
           "type": "const secp256k1_context*",
-          "direction": "inout",
+          "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object\nOut:  partial_sig: pointer to struct to store the partial signature\nIn/Out:  secnonce: pointer to the secnonce struct created in\nmusig_nonce_gen that has been never used in a\npartial_sign call before and has been created for the\nkeypair\nIn:       keypair: pointer to keypair to sign the message with\nkeyagg_cache: pointer to the keyagg_cache that was output when the\naggregate public key for this session\nsession: pointer to the session that was created with\nmusig_nonce_process",
+          "description": "pointer to a context object",
           "isOptional": false
         },
         {
           "name": "partial_sig",
           "type": "secp256k1_musig_partial_sig*",
-          "direction": "inout",
+          "direction": "out",
           "nonnull": true,
-          "description": "pointer to struct to store the partial signature\nIn/Out:  secnonce: pointer to the secnonce struct created in\nmusig_nonce_gen that has been never used in a\npartial_sign call before and has been created for the\nkeypair\nIn:       keypair: pointer to keypair to sign the message with\nkeyagg_cache: pointer to the keyagg_cache that was output when the\naggregate public key for this session\nsession: pointer to the session that was created with\nmusig_nonce_process",
+          "description": "pointer to struct to store the partial signature",
           "size": 36,
           "isOptional": false
         },
@@ -3313,7 +3281,7 @@
           "type": "secp256k1_musig_secnonce*",
           "direction": "out",
           "nonnull": true,
-          "description": "pointer to the secnonce struct created in\nmusig_nonce_gen that has been never used in a\npartial_sign call before and has been created for the\nkeypair\nIn:       keypair: pointer to keypair to sign the message with\nkeyagg_cache: pointer to the keyagg_cache that was output when the\naggregate public key for this session\nsession: pointer to the session that was created with\nmusig_nonce_process",
+          "description": "pointer to the secnonce struct created in\nmusig_nonce_gen that has been never used in a\npartial_sign call before and has been created for the\nkeypair",
           "size": 132,
           "isOptional": false
         },
@@ -3322,7 +3290,7 @@
           "type": "const secp256k1_keypair*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to keypair to sign the message with\nkeyagg_cache: pointer to the keyagg_cache that was output when the\naggregate public key for this session\nsession: pointer to the session that was created with\nmusig_nonce_process",
+          "description": "pointer to keypair to sign the message with",
           "size": 96,
           "isOptional": false
         },
@@ -3331,7 +3299,7 @@
           "type": "const secp256k1_musig_keyagg_cache*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to the keyagg_cache that was output when the",
+          "description": "pointer to the keyagg_cache that was output when the\naggregate public key for this session",
           "size": 197,
           "isOptional": false
         },
@@ -3340,7 +3308,7 @@
           "type": "const secp256k1_musig_session*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to the session that was created with",
+          "description": "pointer to the session that was created with\nmusig_nonce_process",
           "size": 133,
           "isOptional": false
         }
@@ -3367,7 +3335,7 @@
           "type": "const secp256k1_musig_partial_sig*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to partial signature to verify, sent by\nthe signer associated with \u0060pubnonce\u0060 and \u0060pubkey\u0060\npubnonce: public nonce of the signer in the signing session\npubkey: public key of the signer in the signing session\nkeyagg_cache: pointer to the keyagg_cache that was output when the\naggregate public key for this signing session\nsession: pointer to the session that was created with\n\u0060musig_nonce_process\u0060",
+          "description": "pointer to partial signature to verify, sent by\nthe signer associated with \u0060pubnonce\u0060 and \u0060pubkey\u0060",
           "size": 36,
           "isOptional": false
         },
@@ -3394,7 +3362,7 @@
           "type": "const secp256k1_musig_keyagg_cache*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to the keyagg_cache that was output when the",
+          "description": "pointer to the keyagg_cache that was output when the\naggregate public key for this signing session",
           "size": 197,
           "isOptional": false
         },
@@ -3403,7 +3371,7 @@
           "type": "const secp256k1_musig_session*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to the session that was created with",
+          "description": "pointer to the session that was created with\n\u0060musig_nonce_process\u0060",
           "size": 133,
           "isOptional": false
         }
@@ -3423,7 +3391,7 @@
           "type": "const secp256k1_context*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to a context object\nOut:        sig64: complete (but possibly invalid) Schnorr signature\nIn:       session: pointer to the session that was created with\nmusig_nonce_process\npartial_sigs: array of pointers to partial signatures to aggregate\nn_sigs: number of elements in the partial_sigs array. Must be\ngreater than 0.",
+          "description": "pointer to a context object",
           "isOptional": false
         },
         {
@@ -3431,7 +3399,7 @@
           "type": "unsigned char*",
           "direction": "out",
           "nonnull": true,
-          "description": "complete (but possibly invalid) Schnorr signature\nIn:       session: pointer to the session that was created with\nmusig_nonce_process\npartial_sigs: array of pointers to partial signatures to aggregate\nn_sigs: number of elements in the partial_sigs array. Must be\ngreater than 0.",
+          "description": "complete (but possibly invalid) Schnorr signature",
           "size": 64,
           "isOptional": false
         },
@@ -3440,7 +3408,7 @@
           "type": "const secp256k1_musig_session*",
           "direction": "in",
           "nonnull": true,
-          "description": "pointer to the session that was created with\nmusig_nonce_process\npartial_sigs: array of pointers to partial signatures to aggregate\nn_sigs: number of elements in the partial_sigs array. Must be\ngreater than 0.",
+          "description": "pointer to the session that was created with\nmusig_nonce_process",
           "size": 133,
           "isOptional": false
         },
@@ -3457,7 +3425,7 @@
           "name": "n_sigs",
           "type": "size_t",
           "nonnull": false,
-          "description": "number of elements in the partial_sigs array. Must be",
+          "description": "number of elements in the partial_sigs array. Must be\ngreater than 0.",
           "isOptional": false
         }
       ],

@@ -50,7 +50,7 @@ namespace NativeLibTest
                 Console.Write("Test 3: Serializing public key... ");
                 var serializedPubKey = new byte[33];
                 nuint pubKeyLen = 33;
-                if (!secp256k1.EcPubkeySerialize(serializedPubKey, ref pubKeyLen, publicKey, (uint)Flags.SECP256K1_EC_COMPRESSED))
+                if (!secp256k1.EcPubkeySerialize(serializedPubKey, ref pubKeyLen, publicKey, Secp256k1EcFlags.Compressed))
                 {
                     Console.WriteLine("FAILED");
                     return 1;

@@ -11,35 +11,6 @@ namespace Secp256k1Net
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public unsafe delegate void ErrorCallbackDelegate(string message, void* data);
 
-    /// <summary>
-    /// Flags for secp256k1 context creation and serialization.
-    /// </summary>
-    [Flags]
-    public enum Flags : uint
-    {
-        /// <summary>All flags' lower 8 bits indicate what they're for. Do not use directly.</summary>
-        SECP256K1_FLAGS_TYPE_MASK = ((1 << 8) - 1),
-        /// <summary>Context flag type.</summary>
-        SECP256K1_FLAGS_TYPE_CONTEXT = (1 << 0),
-        /// <summary>Compression flag type.</summary>
-        SECP256K1_FLAGS_TYPE_COMPRESSION = (1 << 1),
-
-        /// <summary>The higher bits contain the actual data. Do not use directly.</summary>
-        SECP256K1_FLAGS_BIT_CONTEXT_VERIFY = (1 << 8),
-        /// <summary>Context sign bit.</summary>
-        SECP256K1_FLAGS_BIT_CONTEXT_SIGN = (1 << 9),
-        /// <summary>Compression bit.</summary>
-        SECP256K1_FLAGS_BIT_COMPRESSION = (1 << 8),
-
-        /// <summary>Flag to pass to secp256k1_context_create. Creates a context sufficient for all functionality.</summary>
-        SECP256K1_CONTEXT_NONE = (SECP256K1_FLAGS_TYPE_CONTEXT),
-
-        /// <summary>Flag to pass to secp256k1_ec_pubkey_serialize for compressed format.</summary>
-        SECP256K1_EC_COMPRESSED = (SECP256K1_FLAGS_TYPE_COMPRESSION | SECP256K1_FLAGS_BIT_COMPRESSION),
-        /// <summary>Flag to pass to secp256k1_ec_pubkey_serialize for uncompressed format.</summary>
-        SECP256K1_EC_UNCOMPRESSED = (SECP256K1_FLAGS_TYPE_COMPRESSION)
-    }
-
     public unsafe partial class Secp256k1 : IDisposable
     {
 
@@ -95,7 +66,7 @@ namespace Secp256k1Net
         public Secp256k1(ErrorCallbackDelegate errorCallback = null)
         {
             EnsureInitialized();
-            _ctx = _context_create((uint)Flags.SECP256K1_CONTEXT_NONE);
+            _ctx = _context_create((uint)Secp256k1ContextFlags.None);
 
             SetErrorCallback(errorCallback ?? DefaultErrorCallback, null);
         }

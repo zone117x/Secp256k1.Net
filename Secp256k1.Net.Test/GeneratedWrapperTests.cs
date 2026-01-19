@@ -73,7 +73,7 @@ namespace Secp256k1Net.Test
 
             var serialized = new byte[33];
             nuint outputLen = 33;
-            Assert.IsTrue(secp256k1.EcPubkeySerialize(serialized, ref outputLen, pubkey, (uint)Flags.SECP256K1_EC_COMPRESSED));
+            Assert.IsTrue(secp256k1.EcPubkeySerialize(serialized, ref outputLen, pubkey, Secp256k1EcFlags.Compressed));
 
             // Parse the compressed key
             var parsedPubkey = new byte[64];
@@ -91,7 +91,7 @@ namespace Secp256k1Net.Test
 
             var serialized = new byte[65];
             nuint outputLen = 65;
-            Assert.IsTrue(secp256k1.EcPubkeySerialize(serialized, ref outputLen, pubkey, (uint)Flags.SECP256K1_EC_UNCOMPRESSED));
+            Assert.IsTrue(secp256k1.EcPubkeySerialize(serialized, ref outputLen, pubkey, Secp256k1EcFlags.Uncompressed));
 
             var parsedPubkey = new byte[64];
             Assert.IsTrue(secp256k1.EcPubkeyParse(parsedPubkey, serialized));
@@ -108,7 +108,7 @@ namespace Secp256k1Net.Test
 
             var output = new byte[33];
             nuint outputLen = 33;
-            Assert.IsTrue(secp256k1.EcPubkeySerialize(output, ref outputLen, pubkey, (uint)Flags.SECP256K1_EC_COMPRESSED));
+            Assert.IsTrue(secp256k1.EcPubkeySerialize(output, ref outputLen, pubkey, Secp256k1EcFlags.Compressed));
             Assert.AreEqual((nuint)33, outputLen);
             // Compressed keys start with 0x02 or 0x03
             Assert.IsTrue(output[0] == 0x02 || output[0] == 0x03);
@@ -124,7 +124,7 @@ namespace Secp256k1Net.Test
 
             var output = new byte[65];
             nuint outputLen = 65;
-            Assert.IsTrue(secp256k1.EcPubkeySerialize(output, ref outputLen, pubkey, (uint)Flags.SECP256K1_EC_UNCOMPRESSED));
+            Assert.IsTrue(secp256k1.EcPubkeySerialize(output, ref outputLen, pubkey, Secp256k1EcFlags.Uncompressed));
             Assert.AreEqual((nuint)65, outputLen);
             // Uncompressed keys start with 0x04
             Assert.AreEqual(0x04, output[0]);
@@ -869,8 +869,8 @@ namespace Secp256k1Net.Test
             var serialized2 = new byte[33];
             nuint outputLen1 = 33;
             nuint outputLen2 = 33;
-            Assert.IsTrue(secp256k1.EcPubkeySerialize(serialized1, ref outputLen1, pubkey1, (uint)Flags.SECP256K1_EC_COMPRESSED));
-            Assert.IsTrue(secp256k1.EcPubkeySerialize(serialized2, ref outputLen2, pubkey2, (uint)Flags.SECP256K1_EC_COMPRESSED));
+            Assert.IsTrue(secp256k1.EcPubkeySerialize(serialized1, ref outputLen1, pubkey1, Secp256k1EcFlags.Compressed));
+            Assert.IsTrue(secp256k1.EcPubkeySerialize(serialized2, ref outputLen2, pubkey2, Secp256k1EcFlags.Compressed));
 
             // Determine which should come first lexicographically
             var comparison = CompareBytes(serialized1, serialized2);
@@ -1047,7 +1047,7 @@ namespace Secp256k1Net.Test
             nuint outputLen = 32;
 
             // The native library will fail and potentially write an error to stderr
-            var result = secp256k1.EcPubkeySerialize(output, ref outputLen, pubkey, (uint)Flags.SECP256K1_EC_COMPRESSED);
+            var result = secp256k1.EcPubkeySerialize(output, ref outputLen, pubkey, Secp256k1EcFlags.Compressed);
             Assert.IsFalse(result);
         }
 

@@ -785,18 +785,47 @@ public partial class Secp256k1HeaderParser
             return null;
 
         // Look for param in Args:, In:, Out:, or In/Out: sections
-        var patterns = new[]
+        // The description ends when we hit:
+        // - Another section marker (Args:, In:, Out:, In/Out:, Returns:)
+        // - Another parameter name pattern (word followed by colon at start of description area)
+        // - End of comment
+
+        // Pattern to match the start of the parameter description
+        var startPatterns = new[]
         {
-            $@"\*\s*(?:Args|In|Out|In/Out):\s*{Regex.Escape(paramName)}:\s*([^\n]+(?:\n\s*\*\s+[^\n]+)*)",
-            $@"\*\s+{Regex.Escape(paramName)}:\s*([^\n]+)"
+            $@"\*\s*(?:Args|In|Out|In/Out):\s*{Regex.Escape(paramName)}:\s*",
+            $@"\*\s+{Regex.Escape(paramName)}:\s*"
         };
 
-        foreach (var pattern in patterns)
+        foreach (var startPattern in startPatterns)
         {
-            var match = Regex.Match(docComment, pattern, RegexOptions.IgnoreCase);
-            if (match.Success)
+            var startMatch = Regex.Match(docComment, startPattern, RegexOptions.IgnoreCase);
+            if (startMatch.Success)
             {
-                return CleanMultilineText(match.Groups[1].Value);
+                // Find where description starts
+                var descStart = startMatch.Index + startMatch.Length;
+                var remaining = docComment.Substring(descStart);
+
+                // Find where description ends - look for next parameter or section marker
+                // Pattern: newline, optional whitespace, *, optional whitespace, then either:
+                // - A section marker like "In:", "Out:", "In/Out:", "Args:", "Returns:"
+                // - A parameter name pattern: "word:" at the start of the content area
+                var endPattern = @"\n\s*\*\s*(?:(?:Args|In|Out|In/Out|Returns):|\s*\w+:\s)";
+                var endMatch = Regex.Match(remaining, endPattern);
+
+                string description;
+                if (endMatch.Success)
+                {
+                    description = remaining.Substring(0, endMatch.Index);
+                }
+                else
+                {
+                    // No next param found, take until end of comment (but stop at */)
+                    var commentEnd = remaining.IndexOf("*/");
+                    description = commentEnd >= 0 ? remaining.Substring(0, commentEnd) : remaining;
+                }
+
+                return CleanMultilineText(description);
             }
         }
 

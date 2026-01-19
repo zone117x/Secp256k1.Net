@@ -29,7 +29,7 @@ namespace Secp256k1Net.Test
             // Serialize the public key to compressed format
             var serializedKey = new byte[Secp256k1.SERIALIZED_COMPRESSED_PUBKEY_LENGTH];
             nuint outputLen = (nuint)serializedKey.Length;
-            Assert.IsTrue(secp256k1.EcPubkeySerialize(serializedKey, ref outputLen, publicKey, (uint)Flags.SECP256K1_EC_COMPRESSED));
+            Assert.IsTrue(secp256k1.EcPubkeySerialize(serializedKey, ref outputLen, publicKey, Secp256k1EcFlags.Compressed));
 
             // Sign a message hash
             var messageBytes = System.Text.Encoding.UTF8.GetBytes("Hello world.");
@@ -132,12 +132,12 @@ namespace Secp256k1Net.Test
             // Serialize the public key to compressed format
             var serializedCompressedPublicKey = new byte[Secp256k1.SERIALIZED_COMPRESSED_PUBKEY_LENGTH];
             nuint compressedLen = (nuint)serializedCompressedPublicKey.Length;
-            Assert.IsTrue(secp256k1.EcPubkeySerialize(serializedCompressedPublicKey, ref compressedLen, publicKey, (uint)Flags.SECP256K1_EC_COMPRESSED));
+            Assert.IsTrue(secp256k1.EcPubkeySerialize(serializedCompressedPublicKey, ref compressedLen, publicKey, Secp256k1EcFlags.Compressed));
 
             // Serialize the public key to uncompressed format
             var serializedUncompressedPublicKey = new byte[Secp256k1.SERIALIZED_UNCOMPRESSED_PUBKEY_LENGTH];
             nuint uncompressedLen = (nuint)serializedUncompressedPublicKey.Length;
-            Assert.IsTrue(secp256k1.EcPubkeySerialize(serializedUncompressedPublicKey, ref uncompressedLen, publicKey, (uint)Flags.SECP256K1_EC_UNCOMPRESSED));
+            Assert.IsTrue(secp256k1.EcPubkeySerialize(serializedUncompressedPublicKey, ref uncompressedLen, publicKey, Secp256k1EcFlags.Uncompressed));
 
             // Parse public key from serialized compressed public key
             var parsedPublicKey1 = new byte[Secp256k1.PUBKEY_LENGTH];
@@ -262,7 +262,7 @@ namespace Secp256k1Net.Test
             // Serialize the public key
             var serializedKey = new byte[Secp256k1.SERIALIZED_UNCOMPRESSED_PUBKEY_LENGTH];
             nuint outputLen = (nuint)serializedKey.Length;
-            Assert.IsTrue(secp256k1.EcPubkeySerialize(serializedKey, ref outputLen, publicKeyOutput, (uint)Flags.SECP256K1_EC_UNCOMPRESSED));
+            Assert.IsTrue(secp256k1.EcPubkeySerialize(serializedKey, ref outputLen, publicKeyOutput, Secp256k1EcFlags.Uncompressed));
 
             // Slice off any prefix.
             var serializedKeySlice = serializedKey.AsSpan().Slice(serializedKey.Length - Secp256k1.PUBKEY_LENGTH);
@@ -292,7 +292,7 @@ namespace Secp256k1Net.Test
             // Serialize the public key
             serializedKey = new byte[Secp256k1.SERIALIZED_UNCOMPRESSED_PUBKEY_LENGTH];
             outputLen = (nuint)serializedKey.Length;
-            Assert.IsTrue(secp256k1.EcPubkeySerialize(serializedKey, ref outputLen, publicKeyOutput, (uint)Flags.SECP256K1_EC_UNCOMPRESSED));
+            Assert.IsTrue(secp256k1.EcPubkeySerialize(serializedKey, ref outputLen, publicKeyOutput, Secp256k1EcFlags.Uncompressed));
 
             // Slice off any prefix.
             serializedKeySlice = serializedKey.AsSpan().Slice(serializedKey.Length - Secp256k1.PUBKEY_LENGTH);
@@ -1672,7 +1672,7 @@ namespace Secp256k1Net.Test
             secp256k1.EcPubkeyCreate(pubkey, TestPrivateKey);
             var output = new byte[31]; // Too small for compressed (33 bytes)
             nuint outputLen = (nuint)output.Length;
-            var result = secp256k1.EcPubkeySerialize(output, ref outputLen, pubkey, (uint)Flags.SECP256K1_EC_COMPRESSED);
+            var result = secp256k1.EcPubkeySerialize(output, ref outputLen, pubkey, Secp256k1EcFlags.Compressed);
             Assert.IsFalse(result, "Native library should reject too-small buffer");
         }
 
@@ -1684,7 +1684,7 @@ namespace Secp256k1Net.Test
             var pubkey = new byte[63]; // Should be 64
             var output = new byte[65];
             nuint outputLen = 65;
-            secp256k1.EcPubkeySerialize(output, ref outputLen, pubkey, (uint)Flags.SECP256K1_EC_UNCOMPRESSED);
+            secp256k1.EcPubkeySerialize(output, ref outputLen, pubkey, Secp256k1EcFlags.Uncompressed);
         }
 
         [TestMethod]

@@ -569,6 +569,181 @@ public class InteropGenerator
         return result.ToString();
     }
 
+    #region Enum Generation
+
+    /// <summary>
+    /// Defines enum groupings for constants. Maps enum name to the list of constant names to include.
+    /// </summary>
+    private static readonly Dictionary<string, EnumDefinition> EnumDefinitions = new()
+    {
+        ["Secp256k1EcFlags"] = new EnumDefinition
+        {
+            Description = "Flags for public key serialization format.",
+            IsFlags = false,
+            Members = new()
+            {
+                { "SECP256K1_EC_COMPRESSED", "Compressed format (33 bytes)." },
+                { "SECP256K1_EC_UNCOMPRESSED", "Uncompressed format (65 bytes)." },
+            }
+        },
+        ["Secp256k1ContextFlags"] = new EnumDefinition
+        {
+            Description = "Flags for secp256k1 context creation.",
+            IsFlags = false,
+            Members = new()
+            {
+                { "SECP256K1_CONTEXT_NONE", "Creates a context sufficient for all functionality." },
+            }
+        },
+    };
+
+    /// <summary>
+    /// Maps function parameters (by function name + param name) to the enum type they should use.
+    /// </summary>
+    private static readonly Dictionary<(string FunctionName, string ParamName), string> ParameterEnumMappings = new()
+    {
+        { ("secp256k1_ec_pubkey_serialize", "flags"), "Secp256k1EcFlags" },
+    };
+
+    private class EnumDefinition
+    {
+        public string? Description { get; set; }
+        public bool IsFlags { get; set; }
+        public Dictionary<string, string?> Members { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Generates enum types from constants based on predefined groupings.
+    /// </summary>
+    public void GenerateEnums(StringBuilder sb, Secp256k1Api api)
+    {
+        foreach (var (enumName, enumDef) in EnumDefinitions)
+        {
+            sb.AppendLine();
+            if (!string.IsNullOrEmpty(enumDef.Description))
+            {
+                sb.AppendLine($"    /// <summary>{enumDef.Description}</summary>");
+            }
+            if (enumDef.IsFlags)
+            {
+                sb.AppendLine("    [Flags]");
+            }
+            sb.AppendLine($"    public enum {enumName} : uint");
+            sb.AppendLine("    {");
+
+            foreach (var (constantName, memberDesc) in enumDef.Members)
+            {
+                var constant = api.Constants.FirstOrDefault(c => c.Name == constantName);
+                if (constant == null) continue;
+
+                // Generate member name by removing SECP256K1_ prefix and converting to PascalCase
+                var memberName = GetEnumMemberName(constantName);
+
+                // Use numeric value if available, otherwise try to evaluate the expression
+                var value = constant.NumericValue?.ToString() ?? EvaluateConstantValue(constant.Value, api);
+
+                var desc = memberDesc ?? constant.Description;
+                if (!string.IsNullOrEmpty(desc))
+                {
+                    var cleanDesc = CleanDescription(desc);
+                    sb.AppendLine($"        /// <summary>{EscapeXml(cleanDesc)}</summary>");
+                }
+                sb.AppendLine($"        {memberName} = {value},");
+            }
+
+            sb.AppendLine("    }");
+        }
+    }
+
+    /// <summary>
+    /// Converts a constant name like SECP256K1_EC_COMPRESSED to a C# enum member name like Compressed.
+    /// </summary>
+    private static string GetEnumMemberName(string constantName)
+    {
+        // Remove SECP256K1_ prefix
+        var name = constantName;
+        if (name.StartsWith("SECP256K1_"))
+            name = name.Substring("SECP256K1_".Length);
+
+        // Remove EC_ prefix for EC flags
+        if (name.StartsWith("EC_"))
+            name = name.Substring("EC_".Length);
+
+        // Remove CONTEXT_ prefix for context flags
+        if (name.StartsWith("CONTEXT_"))
+            name = name.Substring("CONTEXT_".Length);
+
+        // Convert SCREAMING_SNAKE_CASE to PascalCase
+        var parts = name.Split('_');
+        return string.Join("", parts.Select(p =>
+            p.Length > 0 ? char.ToUpper(p[0]) + p.Substring(1).ToLower() : ""));
+    }
+
+    /// <summary>
+    /// Evaluates a constant value expression that may reference other constants.
+    /// </summary>
+    private static string EvaluateConstantValue(string value, Secp256k1Api api)
+    {
+        // Handle simple numeric values
+        if (int.TryParse(value, out var intVal))
+            return intVal.ToString();
+        if (value.StartsWith("0x") && int.TryParse(value.Substring(2), System.Globalization.NumberStyles.HexNumber, null, out intVal))
+            return intVal.ToString();
+
+        // Handle bit shifts like (1 << 8)
+        var shiftMatch = System.Text.RegularExpressions.Regex.Match(value, @"\((\d+)\s*<<\s*(\d+)\)");
+        if (shiftMatch.Success)
+        {
+            var baseVal = int.Parse(shiftMatch.Groups[1].Value);
+            var shift = int.Parse(shiftMatch.Groups[2].Value);
+            return (baseVal << shift).ToString();
+        }
+
+        // Handle expressions that reference other constants like (SECP256K1_FLAGS_TYPE_COMPRESSION | SECP256K1_FLAGS_BIT_COMPRESSION)
+        var orMatch = System.Text.RegularExpressions.Regex.Match(value, @"\((\w+)\s*\|\s*(\w+)\)");
+        if (orMatch.Success)
+        {
+            var left = ResolveConstantValue(orMatch.Groups[1].Value, api);
+            var right = ResolveConstantValue(orMatch.Groups[2].Value, api);
+            if (left.HasValue && right.HasValue)
+                return (left.Value | right.Value).ToString();
+        }
+
+        // Handle single constant reference like (SECP256K1_FLAGS_TYPE_COMPRESSION)
+        var singleMatch = System.Text.RegularExpressions.Regex.Match(value, @"\((\w+)\)");
+        if (singleMatch.Success)
+        {
+            var resolved = ResolveConstantValue(singleMatch.Groups[1].Value, api);
+            if (resolved.HasValue)
+                return resolved.Value.ToString();
+        }
+
+        // Fallback - return as-is (will likely cause compile error if invalid)
+        return value;
+    }
+
+    /// <summary>
+    /// Resolves a constant name to its numeric value.
+    /// </summary>
+    private static long? ResolveConstantValue(string constantName, Secp256k1Api api)
+    {
+        var constant = api.Constants.FirstOrDefault(c => c.Name == constantName);
+        if (constant == null)
+            return null;
+
+        if (constant.NumericValue.HasValue)
+            return constant.NumericValue.Value;
+
+        // Try to evaluate the expression recursively
+        var evaluated = EvaluateConstantValue(constant.Value, api);
+        if (long.TryParse(evaluated, out var result))
+            return result;
+
+        return null;
+    }
+
+    #endregion
+
     #region Wrapper Generation
 
     // Functions to skip in wrapper generation (need manual implementation or are internal)
@@ -645,6 +820,9 @@ public class InteropGenerator
         sb.AppendLine();
         sb.AppendLine("namespace Secp256k1Net");
         sb.AppendLine("{");
+
+        // Generate enum types from constants
+        GenerateEnums(sb, api);
 
         // Generate user-friendly delegate types for callback functions
         GenerateUserFriendlyCallbackDelegates(sb, api);
@@ -1135,7 +1313,7 @@ public class InteropGenerator
             };
 
             // Determine wrapper type and size
-            DetermineWrapperType(wrapper, param, structSizes);
+            DetermineWrapperType(wrapper, param, structSizes, func.Name);
 
             result.Add(wrapper);
         }
@@ -1158,7 +1336,7 @@ public class InteropGenerator
         return result;
     }
 
-    private void DetermineWrapperType(WrapperParameter wrapper, ParameterDef param, Dictionary<string, int> structSizes)
+    private void DetermineWrapperType(WrapperParameter wrapper, ParameterDef param, Dictionary<string, int> structSizes, string functionName)
     {
         var cType = param.Type.Trim();
         var name = param.Name;
@@ -1211,6 +1389,15 @@ public class InteropGenerator
             wrapper.WrapperName = SanitizeParamName(name);
             wrapper.IsRefParam = true;
             wrapper.RefParamType = "int";
+            return;
+        }
+
+        // Check for enum mappings for this parameter
+        if (ParameterEnumMappings.TryGetValue((functionName, name), out var enumType))
+        {
+            wrapper.WrapperType = enumType;
+            wrapper.WrapperName = SanitizeParamName(name);
+            wrapper.IsEnumParam = true;
             return;
         }
 
@@ -1336,6 +1523,11 @@ public class InteropGenerator
                 var cleanName = param.WrapperName.TrimStart('@');
                 args.Add($"{cleanName}Ptr");
             }
+            else if (param.IsEnumParam)
+            {
+                // Cast enum to uint for native call
+                args.Add($"(uint){param.WrapperName}");
+            }
             else
             {
                 args.Add(param.WrapperName);
@@ -1364,6 +1556,7 @@ public class InteropGenerator
         public bool IsOptionalCallback { get; set; }  // Optional callback/data parameter - pass IntPtr.Zero
         public string? IsLengthFor { get; set; }  // If this is a length param, the name of the buffer param it's for
         public string? LengthForSpanName { get; set; }  // The wrapper name of the span this length is for (resolved)
+        public bool IsEnumParam { get; set; }  // If true, this param uses an enum type and needs casting to uint
     }
 
     /// <summary>

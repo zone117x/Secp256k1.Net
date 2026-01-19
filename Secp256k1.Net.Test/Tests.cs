@@ -141,12 +141,12 @@ namespace Secp256k1Net.Test
 
             // Parse public key from serialized compressed public key
             var parsedPublicKey1 = new byte[Secp256k1.PUBKEY_LENGTH];
-            Assert.IsTrue(secp256k1.EcPubkeyParse(parsedPublicKey1, serializedCompressedPublicKey, (nuint)serializedCompressedPublicKey.Length));
+            Assert.IsTrue(secp256k1.EcPubkeyParse(parsedPublicKey1, serializedCompressedPublicKey));
             Assert.AreEqual(Convert.ToHexString(publicKey), Convert.ToHexString(parsedPublicKey1));
 
             // Parse public key from serialied uncompressed public key
             var parsedPublicKey2 = new byte[Secp256k1.PUBKEY_LENGTH];
-            Assert.IsTrue(secp256k1.EcPubkeyParse(parsedPublicKey2, serializedUncompressedPublicKey, (nuint)serializedUncompressedPublicKey.Length));
+            Assert.IsTrue(secp256k1.EcPubkeyParse(parsedPublicKey2, serializedUncompressedPublicKey));
             Assert.AreEqual(Convert.ToHexString(publicKey), Convert.ToHexString(parsedPublicKey2));
         }
 
@@ -205,7 +205,7 @@ namespace Secp256k1Net.Test
             // Parse DER signature
             var signatureOutput = new byte[Secp256k1.SIGNATURE_LENGTH];
             var derSignature = Convert.FromHexString("30440220484ECE2B365D2B2C2EAD34B518328BBFEF0F4409349EEEC9CB19837B5795A5F5022040C4F6901FE489F923C49D4104554FD08595EAF864137F87DADDD0E3619B0605");
-            Assert.IsTrue(secp256k1.EcdsaSignatureParseDer(signatureOutput, derSignature, (nuint)derSignature.Length));
+            Assert.IsTrue(secp256k1.EcdsaSignatureParseDer(signatureOutput, derSignature));
 
             // Serialize DER signature
             var derSignatureOutput = new byte[Secp256k1.SERIALIZED_DER_SIGNATURE_MAX_SIZE];
@@ -219,7 +219,7 @@ namespace Secp256k1Net.Test
             // Ensure invalid signature does not parse
             var invalidSignatureOutput = new byte[Secp256k1.SIGNATURE_LENGTH];
             var invalidDerSignature = Convert.FromHexString("00");
-            Assert.IsFalse(secp256k1.EcdsaSignatureParseDer(invalidSignatureOutput, invalidDerSignature, (nuint)invalidDerSignature.Length));
+            Assert.IsFalse(secp256k1.EcdsaSignatureParseDer(invalidSignatureOutput, invalidDerSignature));
         }
 
         [TestMethod]
@@ -748,7 +748,7 @@ namespace Secp256k1Net.Test
             var derSignature = new byte[72];
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.EcdsaSignatureParseDer(signatureOutput, derSignature, (nuint)derSignature.Length));
+                secp256k1.EcdsaSignatureParseDer(signatureOutput, derSignature));
         }
 
         [TestMethod]
@@ -1097,7 +1097,7 @@ namespace Secp256k1Net.Test
             Assert.IsTrue(secp256k1.SchnorrsigSign32(sig64, msg32, keypair, auxRand));
 
             // Verify the signature
-            Assert.IsTrue(secp256k1.SchnorrsigVerify(sig64, msg32, (nuint)msg32.Length, xonlyPubkey));
+            Assert.IsTrue(secp256k1.SchnorrsigVerify(sig64, msg32, xonlyPubkey));
         }
 
         [TestMethod]
@@ -1125,10 +1125,10 @@ namespace Secp256k1Net.Test
             extraparams[3] = 0x8C;
 
             var sig64 = new byte[64];
-            Assert.IsTrue(secp256k1.SchnorrsigSignCustom(sig64, msg, (nuint)msg.Length, keypair, extraparams));
+            Assert.IsTrue(secp256k1.SchnorrsigSignCustom(sig64, msg, keypair, extraparams));
 
             // Verify the signature
-            Assert.IsTrue(secp256k1.SchnorrsigVerify(sig64, msg, (nuint)msg.Length, xonlyPubkey));
+            Assert.IsTrue(secp256k1.SchnorrsigVerify(sig64, msg, xonlyPubkey));
         }
     }
 
@@ -1367,7 +1367,7 @@ namespace Secp256k1Net.Test
             Assert.IsTrue(secp256k1.MusigPartialSigAgg(finalSig, session, new[] { partialSig1, partialSig2 }));
 
             // Verify the final Schnorr signature
-            Assert.IsTrue(secp256k1.SchnorrsigVerify(finalSig, msg32, (nuint)msg32.Length, aggPubkey));
+            Assert.IsTrue(secp256k1.SchnorrsigVerify(finalSig, msg32, aggPubkey));
         }
 
         [TestMethod]
@@ -1694,7 +1694,7 @@ namespace Secp256k1Net.Test
             using var secp256k1 = new Secp256k1();
             var pubkey = new byte[63]; // Should be 64
             var input = new byte[33];
-            secp256k1.EcPubkeyParse(pubkey, input, (nuint)input.Length);
+            secp256k1.EcPubkeyParse(pubkey, input);
         }
 
         [TestMethod]
@@ -2328,7 +2328,7 @@ namespace Secp256k1Net.Test
             var sig64 = new byte[63]; // Should be 64
             var msg = new byte[32];
             var pubkey = new byte[64];
-            secp256k1.SchnorrsigVerify(sig64, msg, (nuint)msg.Length, pubkey);
+            secp256k1.SchnorrsigVerify(sig64, msg, pubkey);
         }
 
         [TestMethod]
@@ -2339,7 +2339,7 @@ namespace Secp256k1Net.Test
             var sig64 = new byte[64];
             var msg = new byte[32];
             var pubkey = new byte[63]; // Should be 64
-            secp256k1.SchnorrsigVerify(sig64, msg, (nuint)msg.Length, pubkey);
+            secp256k1.SchnorrsigVerify(sig64, msg, pubkey);
         }
 
         // Ellswift functions
@@ -2543,7 +2543,7 @@ namespace Secp256k1Net.Test
             var hash32 = new byte[31]; // Should be 32
             var tag = System.Text.Encoding.UTF8.GetBytes("test");
             var msg = System.Text.Encoding.UTF8.GetBytes("message");
-            secp256k1.TaggedSha256(hash32, tag, (nuint)tag.Length, msg, (nuint)msg.Length);
+            secp256k1.TaggedSha256(hash32, tag, msg);
         }
 
         // Global function pointer wrappers
@@ -2797,7 +2797,7 @@ namespace Secp256k1Net.Test
             using var secp256k1 = new Secp256k1();
             var sig = new byte[63]; // Should be 64
             var input = new byte[72];
-            secp256k1.EcdsaSignatureParseDer(sig, input, (nuint)input.Length);
+            secp256k1.EcdsaSignatureParseDer(sig, input);
         }
 
         // EcdsaSignRecoverable additional tests
@@ -2907,7 +2907,7 @@ namespace Secp256k1Net.Test
             var sig64 = new byte[63]; // Should be 64
             var keypair = new byte[96];
             var extraparams = new byte[1];
-            secp256k1.SchnorrsigSignCustom(sig64, Array.Empty<byte>(), 0, keypair, extraparams);
+            secp256k1.SchnorrsigSignCustom(sig64, Array.Empty<byte>(), keypair, extraparams);
         }
 
         [TestMethod]
@@ -2918,7 +2918,7 @@ namespace Secp256k1Net.Test
             var sig64 = new byte[64];
             var keypair = new byte[95]; // Should be 96
             var extraparams = new byte[1];
-            secp256k1.SchnorrsigSignCustom(sig64, Array.Empty<byte>(), 0, keypair, extraparams);
+            secp256k1.SchnorrsigSignCustom(sig64, Array.Empty<byte>(), keypair, extraparams);
         }
 
         // EcdhHashFunctionSha256 additional tests

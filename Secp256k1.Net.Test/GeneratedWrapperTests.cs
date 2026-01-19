@@ -77,7 +77,7 @@ namespace Secp256k1Net.Test
 
             // Parse the compressed key
             var parsedPubkey = new byte[64];
-            Assert.IsTrue(secp256k1.EcPubkeyParse(parsedPubkey, serialized, 33));
+            Assert.IsTrue(secp256k1.EcPubkeyParse(parsedPubkey, serialized));
             Assert.AreEqual(BytesToHex(pubkey), BytesToHex(parsedPubkey));
         }
 
@@ -94,7 +94,7 @@ namespace Secp256k1Net.Test
             Assert.IsTrue(secp256k1.EcPubkeySerialize(serialized, ref outputLen, pubkey, (uint)Flags.SECP256K1_EC_UNCOMPRESSED));
 
             var parsedPubkey = new byte[64];
-            Assert.IsTrue(secp256k1.EcPubkeyParse(parsedPubkey, serialized, 65));
+            Assert.IsTrue(secp256k1.EcPubkeyParse(parsedPubkey, serialized));
             Assert.AreEqual(BytesToHex(pubkey), BytesToHex(parsedPubkey));
         }
 
@@ -309,7 +309,7 @@ namespace Secp256k1Net.Test
 
             // Parse it back
             var parsedSig = new byte[64];
-            Assert.IsTrue(secp256k1.EcdsaSignatureParseDer(parsedSig, der.AsSpan(0, (int)derLen).ToArray(), derLen));
+            Assert.IsTrue(secp256k1.EcdsaSignatureParseDer(parsedSig, der.AsSpan(0, (int)derLen)));
             Assert.AreEqual(BytesToHex(sig), BytesToHex(parsedSig));
         }
 
@@ -418,7 +418,7 @@ namespace Secp256k1Net.Test
             var msg = System.Text.Encoding.UTF8.GetBytes("test message");
             var hash = new byte[32];
 
-            Assert.IsTrue(secp256k1.TaggedSha256(hash, tag, (nuint)tag.Length, msg, (nuint)msg.Length));
+            Assert.IsTrue(secp256k1.TaggedSha256(hash, tag, msg));
 
             // Hash should not be all zeros
             Assert.IsFalse(hash.All(b => b == 0));
@@ -634,7 +634,7 @@ namespace Secp256k1Net.Test
             var xonlyPubkey = new byte[64];
             Assert.IsTrue(secp256k1.KeypairXonlyPub(xonlyPubkey, out _, keypair));
 
-            Assert.IsTrue(secp256k1.SchnorrsigVerify(sig64, msg32, 32, xonlyPubkey));
+            Assert.IsTrue(secp256k1.SchnorrsigVerify(sig64, msg32, xonlyPubkey));
         }
 
         [TestMethod]
@@ -656,7 +656,7 @@ namespace Secp256k1Net.Test
             var xonlyPubkey = new byte[64];
             Assert.IsTrue(secp256k1.KeypairXonlyPub(xonlyPubkey, out _, keypair));
 
-            Assert.IsFalse(secp256k1.SchnorrsigVerify(sig64, wrongMsg, 32, xonlyPubkey));
+            Assert.IsFalse(secp256k1.SchnorrsigVerify(sig64, wrongMsg, xonlyPubkey));
         }
 
         #endregion
@@ -1029,7 +1029,7 @@ namespace Secp256k1Net.Test
             var input = new byte[33];
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.EcPubkeyParse(pubkey, input, 33));
+                secp256k1.EcPubkeyParse(pubkey, input));
         }
 
         [TestMethod]

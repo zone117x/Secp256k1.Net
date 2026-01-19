@@ -769,9 +769,10 @@ public class InteropGenerator
         var allParameters = GetWrapperParameters(func, structSizes);
         var hasContextParam = func.Parameters.FirstOrDefault()?.Type.Contains("secp256k1_context") == true;
 
-        // Skip context parameter and optional callbacks in wrapper signature
+        // Skip context parameter, optional callbacks, and length params for input spans in wrapper signature
         var wrapperParams = (hasContextParam ? allParameters.Skip(1) : allParameters)
             .Where(p => !p.IsOptionalCallback)
+            .Where(p => p.LengthForSpanName == null)  // Skip length params - we'll use span.Length
             .ToList();
 
         // Generate XML documentation
@@ -1129,13 +1130,29 @@ public class InteropGenerator
                 OriginalName = param.Name,
                 OriginalType = param.Type,
                 Direction = param.Direction ?? "in",
-                Description = param.Description
+                Description = param.Description,
+                IsLengthFor = param.IsLengthFor
             };
 
             // Determine wrapper type and size
             DetermineWrapperType(wrapper, param, structSizes);
 
             result.Add(wrapper);
+        }
+
+        // Second pass: resolve LengthForSpanName for length params where the buffer is a ReadOnlySpan
+        foreach (var wrapper in result)
+        {
+            if (!string.IsNullOrEmpty(wrapper.IsLengthFor))
+            {
+                // Find the buffer parameter this length is for
+                var bufferParam = result.FirstOrDefault(p => p.OriginalName == wrapper.IsLengthFor);
+                // Only hide length param if the buffer became a ReadOnlySpan (input buffer)
+                if (bufferParam != null && bufferParam.WrapperType == "ReadOnlySpan<byte>")
+                {
+                    wrapper.LengthForSpanName = bufferParam.WrapperName;
+                }
+            }
         }
 
         return result;
@@ -1304,6 +1321,11 @@ public class InteropGenerator
                     args.Add("IntPtr.Zero");
                 }
             }
+            else if (param.LengthForSpanName != null)
+            {
+                // This is a length param for an input span - use span.Length
+                args.Add($"(nuint){param.LengthForSpanName}.Length");
+            }
             else if (param.IsSpan)
             {
                 args.Add($"{param.WrapperName}Ptr");
@@ -1340,6 +1362,8 @@ public class InteropGenerator
         public int ElementSize { get; set; }
         public string? CountParamName { get; set; }
         public bool IsOptionalCallback { get; set; }  // Optional callback/data parameter - pass IntPtr.Zero
+        public string? IsLengthFor { get; set; }  // If this is a length param, the name of the buffer param it's for
+        public string? LengthForSpanName { get; set; }  // The wrapper name of the span this length is for (resolved)
     }
 
     /// <summary>

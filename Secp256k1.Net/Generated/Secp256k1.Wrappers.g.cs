@@ -58,9 +58,8 @@ namespace Secp256k1Net
         /// <summary>Parse a variable-length public key into the pubkey object.</summary>
         /// <param name="pubkey">pointer to a pubkey object. If 1 is returned, it is set to a parsed version of input. If not, its value is undefined. In:   input:    pointer to a serialized public key inputlen: length of the array pointed to by input<para>This function supports parsing compressed (33 bytes, header byte 0x02 or 0x03), uncompressed (65 bytes, header byte 0x04), or hybrid (65 bytes, header byte 0x06 or 0x07) format public keys.</para></param>
         /// <param name="input">pointer to a serialized public key inputlen: length of the array pointed to by input<para>This function supports parsing compressed (33 bytes, header byte 0x02 or 0x03), uncompressed (65 bytes, header byte 0x04), or hybrid (65 bytes, header byte 0x06 or 0x07) format public keys.</para></param>
-        /// <param name="inputlen">length of the array pointed to by input</param>
         /// <returns>1 if the public key was fully valid. 0 if the public key could not be parsed or is invalid.</returns>
-        public bool EcPubkeyParse(Span<byte> pubkey, ReadOnlySpan<byte> input, nuint inputlen)
+        public bool EcPubkeyParse(Span<byte> pubkey, ReadOnlySpan<byte> input)
         {
             if (pubkey.Length < 64)
                 throw new ArgumentException($"{nameof(pubkey)} must be at least 64 bytes");
@@ -68,7 +67,7 @@ namespace Secp256k1Net
             fixed (byte* pubkeyPtr = &MemoryMarshal.GetReference(pubkey),
                 inputPtr = &MemoryMarshal.GetReference(input))
             {
-                return _ec_pubkey_parse(_ctx, pubkeyPtr, inputPtr, inputlen) == 1;
+                return _ec_pubkey_parse(_ctx, pubkeyPtr, inputPtr, (nuint)input.Length) == 1;
             }
         }
 
@@ -130,9 +129,8 @@ namespace Secp256k1Net
         /// <summary>Parse a DER ECDSA signature.</summary>
         /// <param name="sig">pointer to a signature object In:   input:    pointer to the signature to be parsed inputlen: the length of the array pointed to be input<para>This function will accept any valid DER encoded signature, even if the encoded numbers are out of range.</para><para>After the call, sig will always be initialized. If parsing failed or the encoded numbers are out of range, signature verification with it is guaranteed to fail for every message and public key.</para></param>
         /// <param name="input">pointer to the signature to be parsed inputlen: the length of the array pointed to be input<para>This function will accept any valid DER encoded signature, even if the encoded numbers are out of range.</para><para>After the call, sig will always be initialized. If parsing failed or the encoded numbers are out of range, signature verification with it is guaranteed to fail for every message and public key.</para></param>
-        /// <param name="inputlen">the length of the array pointed to be input</param>
         /// <returns>1 when the signature could be parsed, 0 otherwise.</returns>
-        public bool EcdsaSignatureParseDer(Span<byte> sig, ReadOnlySpan<byte> input, nuint inputlen)
+        public bool EcdsaSignatureParseDer(Span<byte> sig, ReadOnlySpan<byte> input)
         {
             if (sig.Length < 64)
                 throw new ArgumentException($"{nameof(sig)} must be at least 64 bytes");
@@ -140,7 +138,7 @@ namespace Secp256k1Net
             fixed (byte* sigPtr = &MemoryMarshal.GetReference(sig),
                 inputPtr = &MemoryMarshal.GetReference(input))
             {
-                return _ecdsa_signature_parse_der(_ctx, sigPtr, inputPtr, inputlen) == 1;
+                return _ecdsa_signature_parse_der(_ctx, sigPtr, inputPtr, (nuint)input.Length) == 1;
             }
         }
 
@@ -462,11 +460,9 @@ namespace Secp256k1Net
         /// <summary>Compute a tagged hash as defined in BIP-340.<para>This is useful for creating a message hash and achieving domain separation through an application-specific tag. This function returns SHA256(SHA256(tag)||SHA256(tag)||msg). Therefore, tagged hash implementations optimized for a specific tag can precompute the SHA256 state after hashing the tag hashes.</para></summary>
         /// <param name="hash32">pointer to a 32-byte array to store the resulting hash In:      tag: pointer to an array containing the tag taglen: length of the tag array msg: pointer to an array containing the message msglen: length of the message array</param>
         /// <param name="tag">pointer to an array containing the tag taglen: length of the tag array msg: pointer to an array containing the message msglen: length of the message array</param>
-        /// <param name="taglen">length of the tag array</param>
         /// <param name="msg">pointer to an array containing the message</param>
-        /// <param name="msglen">length of the message array</param>
         /// <returns>1 always.</returns>
-        public bool TaggedSha256(Span<byte> hash32, ReadOnlySpan<byte> tag, nuint taglen, ReadOnlySpan<byte> msg, nuint msglen)
+        public bool TaggedSha256(Span<byte> hash32, ReadOnlySpan<byte> tag, ReadOnlySpan<byte> msg)
         {
             if (hash32.Length < 32)
                 throw new ArgumentException($"{nameof(hash32)} must be at least 32 bytes");
@@ -475,7 +471,7 @@ namespace Secp256k1Net
                 tagPtr = &MemoryMarshal.GetReference(tag),
                 msgPtr = &MemoryMarshal.GetReference(msg))
             {
-                return _tagged_sha256(_ctx, hash32Ptr, tagPtr, taglen, msgPtr, msglen) == 1;
+                return _tagged_sha256(_ctx, hash32Ptr, tagPtr, (nuint)tag.Length, msgPtr, (nuint)msg.Length) == 1;
             }
         }
 
@@ -908,10 +904,9 @@ namespace Secp256k1Net
         /// <summary>Create a Schnorr signature with a more flexible API.<para>Same arguments as secp256k1_schnorrsig_sign except that it allows signing variable length messages and accepts a pointer to an extraparams object that allows customizing signing by passing additional arguments.</para><para>Equivalent to secp256k1_schnorrsig_sign32(..., aux_rand32) if msglen is 32 and extraparams is initialized as follows: ``` secp256k1_schnorrsig_extraparams extraparams = SECP256K1_SCHNORRSIG_EXTRAPARAMS_INIT; extraparams.ndata = (unsigned char*)aux_rand32; ```</para><para>Returns 1 on success, 0 on failure.</para></summary>
         /// <param name="sig64">pointer to a 64-byte array to store the serialized signature. In:     msg: the message being signed. Can only be NULL if msglen is 0. msglen: length of the message. keypair: pointer to an initialized keypair. extraparams: pointer to an extraparams object (can be NULL).</param>
         /// <param name="msg">the message being signed. Can only be NULL if msglen is 0. msglen: length of the message. keypair: pointer to an initialized keypair. extraparams: pointer to an extraparams object (can be NULL).</param>
-        /// <param name="msglen">length of the message.</param>
         /// <param name="keypair">pointer to an initialized keypair.</param>
         /// <param name="extraparams">pointer to an extraparams object (can be NULL).</param>
-        public bool SchnorrsigSignCustom(Span<byte> sig64, ReadOnlySpan<byte> msg, nuint msglen, ReadOnlySpan<byte> keypair, Span<byte> extraparams)
+        public bool SchnorrsigSignCustom(Span<byte> sig64, ReadOnlySpan<byte> msg, ReadOnlySpan<byte> keypair, Span<byte> extraparams)
         {
             if (sig64.Length < 64)
                 throw new ArgumentException($"{nameof(sig64)} must be at least 64 bytes");
@@ -923,17 +918,16 @@ namespace Secp256k1Net
                 keypairPtr = &MemoryMarshal.GetReference(keypair),
                 extraparamsPtr = &MemoryMarshal.GetReference(extraparams))
             {
-                return _schnorrsig_sign_custom(_ctx, sig64Ptr, msgPtr, msglen, keypairPtr, extraparamsPtr) == 1;
+                return _schnorrsig_sign_custom(_ctx, sig64Ptr, msgPtr, (nuint)msg.Length, keypairPtr, extraparamsPtr) == 1;
             }
         }
 
         /// <summary>Verify a Schnorr signature.</summary>
         /// <param name="sig64">pointer to the 64-byte signature to verify. msg: the message being verified. Can only be NULL if msglen is 0. msglen: length of the message pubkey: pointer to an x-only public key to verify with</param>
         /// <param name="msg">the message being verified. Can only be NULL if msglen is 0.</param>
-        /// <param name="msglen">length of the message</param>
         /// <param name="pubkey">pointer to an x-only public key to verify with</param>
         /// <returns>1: correct signature 0: incorrect signature</returns>
-        public bool SchnorrsigVerify(ReadOnlySpan<byte> sig64, ReadOnlySpan<byte> msg, nuint msglen, ReadOnlySpan<byte> pubkey)
+        public bool SchnorrsigVerify(ReadOnlySpan<byte> sig64, ReadOnlySpan<byte> msg, ReadOnlySpan<byte> pubkey)
         {
             if (sig64.Length < 64)
                 throw new ArgumentException($"{nameof(sig64)} must be at least 64 bytes");
@@ -944,7 +938,7 @@ namespace Secp256k1Net
                 msgPtr = &MemoryMarshal.GetReference(msg),
                 pubkeyPtr = &MemoryMarshal.GetReference(pubkey))
             {
-                return _schnorrsig_verify(_ctx, sig64Ptr, msgPtr, msglen, pubkeyPtr) == 1;
+                return _schnorrsig_verify(_ctx, sig64Ptr, msgPtr, (nuint)msg.Length, pubkeyPtr) == 1;
             }
         }
 

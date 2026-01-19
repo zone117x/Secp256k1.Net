@@ -44,8 +44,9 @@ namespace Secp256k1Net.Bench
         public byte[] EcdsaSign_Secp256k1Net()
         {
             using var secp256k1 = new Secp256k1();
-            var msgHash = System.Security.Cryptography.SHA256.HashData(inputs.Msg.MsgBytes);
-            var sig = new byte[Secp256k1.SIGNATURE_LENGTH];
+            Span<byte> msgHash = stackalloc byte[32];
+            System.Security.Cryptography.SHA256.HashData(inputs.Msg.MsgBytes, msgHash);
+            Span<byte> sig = stackalloc byte[Secp256k1.SIGNATURE_LENGTH];
             if (!secp256k1.EcdsaSign(sig, msgHash, inputs.KeyPair.PrivateKey))
                 throw new Exception();
             var serializedSig = new byte[Secp256k1.SERIALIZED_SIGNATURE_SIZE];
@@ -135,10 +136,10 @@ namespace Secp256k1Net.Bench
         public void EcdsaVerify_Secp256k1Net()
         {
             using var secp256k1 = new Secp256k1();
-            var parsedSig = new byte[Secp256k1.SIGNATURE_LENGTH];
+            Span<byte> parsedSig = stackalloc byte[Secp256k1.SIGNATURE_LENGTH];
             if (!secp256k1.EcdsaSignatureParseCompact(parsedSig, inputs.EcdsaSig))
                 throw new Exception();
-            var parsedPubKey = new byte[Secp256k1.PUBKEY_LENGTH];
+            Span<byte> parsedPubKey = stackalloc byte[Secp256k1.PUBKEY_LENGTH];
             if (!secp256k1.EcPubkeyParse(parsedPubKey, inputs.KeyPair.PublicKeyCompressed))
                 throw new Exception();
             if (!secp256k1.EcdsaVerify(parsedSig, inputs.Msg.MsgHash, parsedPubKey))
@@ -195,7 +196,7 @@ namespace Secp256k1Net.Bench
         public byte[] PubKeyCreate_Secp256k1Net()
         {
             using var secp256k1 = new Secp256k1();
-            var pubKey = new byte[Secp256k1.PUBKEY_LENGTH];
+            Span<byte> pubKey = stackalloc byte[Secp256k1.PUBKEY_LENGTH];
             if (!secp256k1.EcPubkeyCreate(pubKey, inputs.KeyPair.PrivateKey))
                 throw new Exception();
             // Serialize to compressed format for fair comparison
@@ -256,10 +257,10 @@ namespace Secp256k1Net.Bench
         public byte[] Ecdh_Secp256k1Net()
         {
             using var secp256k1 = new Secp256k1();
-            var output = new byte[32];
-            var parsedPubKey = new byte[Secp256k1.PUBKEY_LENGTH];
+            Span<byte> parsedPubKey = stackalloc byte[Secp256k1.PUBKEY_LENGTH];
             if (!secp256k1.EcPubkeyParse(parsedPubKey, inputs.AlicePubKeyCompressed))
                 throw new Exception();
+            var output = new byte[32];
             // Default Ecdh returns SHA256(compressed_point)
             if (!secp256k1.Ecdh(output, parsedPubKey, inputs.KeyPair.PrivateKey))
                 throw new Exception();
@@ -310,15 +311,15 @@ namespace Secp256k1Net.Bench
         public byte[] EcdsaSignRecoverable_Secp256k1Net()
         {
             using var secp256k1 = new Secp256k1();
-            var sig = new byte[Secp256k1.UNSERIALIZED_SIGNATURE_SIZE];
+            Span<byte> sig = stackalloc byte[Secp256k1.UNSERIALIZED_SIGNATURE_SIZE];
             if (!secp256k1.EcdsaSignRecoverable(sig, inputs.Msg.MsgHash, inputs.KeyPair.PrivateKey))
                 throw new Exception();
             // Serialize to compact format for fair comparison
-            var output = new byte[64];
+            Span<byte> output = stackalloc byte[64];
             if (!secp256k1.EcdsaRecoverableSignatureSerializeCompact(output, out var recId, sig))
                 throw new Exception();
             var result = new byte[65];
-            output.CopyTo(result, 0);
+            output.CopyTo(result);
             result[64] = (byte)recId;
             return result;
         }
@@ -365,10 +366,10 @@ namespace Secp256k1Net.Bench
         public byte[] EcdsaRecover_Secp256k1Net()
         {
             using var secp256k1 = new Secp256k1();
-            var recSig = new byte[Secp256k1.UNSERIALIZED_SIGNATURE_SIZE];
+            Span<byte> recSig = stackalloc byte[Secp256k1.UNSERIALIZED_SIGNATURE_SIZE];
             if (!secp256k1.EcdsaSignRecoverable(recSig, inputs.Msg.MsgHash, inputs.KeyPair.PrivateKey))
                 throw new Exception();
-            var pubKey = new byte[Secp256k1.PUBKEY_LENGTH];
+            Span<byte> pubKey = stackalloc byte[Secp256k1.PUBKEY_LENGTH];
             if (!secp256k1.EcdsaRecover(pubKey, recSig, inputs.Msg.MsgHash))
                 throw new Exception();
             // Serialize to compressed format for fair comparison
@@ -414,7 +415,7 @@ namespace Secp256k1Net.Bench
         public byte[] SchnorrSign_Secp256k1Net()
         {
             using var secp256k1 = new Secp256k1();
-            var keypair = new byte[96];
+            Span<byte> keypair = stackalloc byte[96];
             if (!secp256k1.KeypairCreate(keypair, inputs.KeyPair.PrivateKey))
                 throw new Exception();
             var sig = new byte[64];

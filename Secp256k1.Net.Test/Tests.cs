@@ -91,7 +91,7 @@ namespace Secp256k1Net.Test
                 PublicKey = Convert.FromHexString("62127c4563f711169b1d3e56a34f218302a2587c3725bd418b9388933373e095d45ec4d74ca734599598c89d7719bda5fb799afeec89c6940d569e05bd5a1bba")
             };
 
-            EcdhHashFunction hashFunc = (Span<byte> output, Span<byte> x, Span<byte> y, IntPtr data) =>
+            EcdhHashFunction hashFunc = (Span<byte> output, ReadOnlySpan<byte> x, ReadOnlySpan<byte> y, IntPtr data) =>
             {
                 // XOR points together (dumb)
                 for (var i = 0; i < Secp256k1.HASH_LENGTH; i++)
@@ -543,7 +543,7 @@ namespace Secp256k1Net.Test
         }
 
         [TestMethod]
-        public void Rfc6979NonceTest()
+        public void NonceFunctionRfc6979Test()
         {
             // Reference test cases in https://github.com/decred/dcrd/blob/113758cab3304375cbfb7bfbc8e5d75406315d8b/dcrec/secp256k1/nonce_test.go#L40-L143
             using var secp256k1 = new Secp256k1();
@@ -551,8 +551,7 @@ namespace Secp256k1Net.Test
             var hash = Convert.FromHexString("0000000000000000000000000000000000000000000000000000000000000001");
             var secretKey = Convert.FromHexString("0011111111111111111111111111111111111111111111111111111111111111");
             var nonceOutput = new byte[Secp256k1.NONCE_LENGTH];
-            var s = Convert.ToHexString(nonceOutput);
-            Assert.IsTrue(secp256k1.Rfc6979Nonce(nonceOutput, hash, secretKey, null, null, 0));
+            Assert.IsTrue(secp256k1.NonceFunctionRfc6979(nonceOutput, hash, secretKey, default, default, 0));
             Assert.IsTrue(nonceOutput.SequenceEqual(nonce));
         }
 
@@ -877,7 +876,7 @@ namespace Secp256k1Net.Test
             var resultOutput = new byte[Secp256k1.SECRET_LENGTH - 1]; // Too small
             var publicKey = new byte[Secp256k1.PUBKEY_LENGTH];
             var privateKey = new byte[Secp256k1.PRIVKEY_LENGTH];
-            EcdhHashFunction hashFunc = (Span<byte> o, Span<byte> x, Span<byte> y, IntPtr d) => 1;
+            EcdhHashFunction hashFunc = (Span<byte> o, ReadOnlySpan<byte> x, ReadOnlySpan<byte> y, IntPtr d) => 1;
 
             Assert.ThrowsException<ArgumentException>(() =>
                 secp256k1.Ecdh(resultOutput, publicKey, privateKey, hashFunc, IntPtr.Zero));
@@ -890,7 +889,7 @@ namespace Secp256k1Net.Test
             var resultOutput = new byte[Secp256k1.SECRET_LENGTH];
             var publicKey = new byte[Secp256k1.PUBKEY_LENGTH - 1]; // Too small
             var privateKey = new byte[Secp256k1.PRIVKEY_LENGTH];
-            EcdhHashFunction hashFunc = (Span<byte> o, Span<byte> x, Span<byte> y, IntPtr d) => 1;
+            EcdhHashFunction hashFunc = (Span<byte> o, ReadOnlySpan<byte> x, ReadOnlySpan<byte> y, IntPtr d) => 1;
 
             Assert.ThrowsException<ArgumentException>(() =>
                 secp256k1.Ecdh(resultOutput, publicKey, privateKey, hashFunc, IntPtr.Zero));
@@ -903,7 +902,7 @@ namespace Secp256k1Net.Test
             var resultOutput = new byte[Secp256k1.SECRET_LENGTH];
             var publicKey = new byte[Secp256k1.PUBKEY_LENGTH];
             var privateKey = new byte[Secp256k1.PRIVKEY_LENGTH - 1]; // Too small
-            EcdhHashFunction hashFunc = (Span<byte> o, Span<byte> x, Span<byte> y, IntPtr d) => 1;
+            EcdhHashFunction hashFunc = (Span<byte> o, ReadOnlySpan<byte> x, ReadOnlySpan<byte> y, IntPtr d) => 1;
 
             Assert.ThrowsException<ArgumentException>(() =>
                 secp256k1.Ecdh(resultOutput, publicKey, privateKey, hashFunc, IntPtr.Zero));
@@ -973,7 +972,7 @@ namespace Secp256k1Net.Test
         }
 
         [TestMethod]
-        public void Rfc6979Nonce_InvalidNonceOutput_ThrowsArgumentException()
+        public void NonceFunctionRfc6979_InvalidNonceOutput_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var nonceOutput = new byte[Secp256k1.NONCE_LENGTH - 1]; // Too small
@@ -981,11 +980,11 @@ namespace Secp256k1Net.Test
             var secretKey = new byte[Secp256k1.SECRET_LENGTH];
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.Rfc6979Nonce(nonceOutput, hash, secretKey, null, null, 0));
+                secp256k1.NonceFunctionRfc6979(nonceOutput, hash, secretKey, default, default, 0));
         }
 
         [TestMethod]
-        public void Rfc6979Nonce_InvalidHash_ThrowsArgumentException()
+        public void NonceFunctionRfc6979_InvalidHash_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var nonceOutput = new byte[Secp256k1.NONCE_LENGTH];
@@ -993,11 +992,11 @@ namespace Secp256k1Net.Test
             var secretKey = new byte[Secp256k1.SECRET_LENGTH];
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.Rfc6979Nonce(nonceOutput, hash, secretKey, null, null, 0));
+                secp256k1.NonceFunctionRfc6979(nonceOutput, hash, secretKey, default, default, 0));
         }
 
         [TestMethod]
-        public void Rfc6979Nonce_InvalidSecretKey_ThrowsArgumentException()
+        public void NonceFunctionRfc6979_InvalidSecretKey_ThrowsArgumentException()
         {
             using var secp256k1 = new Secp256k1();
             var nonceOutput = new byte[Secp256k1.NONCE_LENGTH];
@@ -1005,7 +1004,7 @@ namespace Secp256k1Net.Test
             var secretKey = new byte[Secp256k1.SECRET_LENGTH - 1]; // Too small
 
             Assert.ThrowsException<ArgumentException>(() =>
-                secp256k1.Rfc6979Nonce(nonceOutput, hash, secretKey, null, null, 0));
+                secp256k1.NonceFunctionRfc6979(nonceOutput, hash, secretKey, default, default, 0));
         }
     }
 

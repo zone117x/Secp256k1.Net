@@ -40,18 +40,6 @@ namespace Secp256k1Net
         SECP256K1_EC_UNCOMPRESSED = (SECP256K1_FLAGS_TYPE_COMPRESSION)
     }
 
-    /// <summary>
-    /// A pointer to a function that applies hash function to a point.
-    /// Returns: 1 if a point was successfully hashed. 0 will cause ecdh to fail.
-    /// </summary>
-    /// <param name="output">Pointer to an array to be filled by the function.</param>
-    /// <param name="x">Pointer to a 32-byte x coordinate.</param>
-    /// <param name="y">Pointer to a 32-byte y coordinate.</param>
-    /// <param name="data">Arbitrary data pointer that is passed through.</param>
-    /// <returns>Returns: 1 if a point was successfully hashed. 0 will cause ecdh to fail.</returns>
-    public delegate int EcdhHashFunction(Span<byte> output, Span<byte> x, Span<byte> y, IntPtr data);
-
-
     public unsafe partial class Secp256k1 : IDisposable
     {
 
@@ -129,85 +117,6 @@ namespace Secp256k1Net
 
             _context_set_illegal_callback(_ctx, _errorCallbackPtr, data);
             _context_set_error_callback(_ctx, _errorCallbackPtr, data);
-        }
-
-        /// <summary>
-        /// Compute an EC Diffie-Hellman secret in constant time.
-        /// </summary>
-        /// <param name="resultOutput">A 32-byte array which will be populated by an ECDH secret computed from the point and scalar.</param>
-        /// <param name="publicKey">A secp256k1_pubkey containing an initialized public key.</param>
-        /// <param name="privateKey">A 32-byte scalar with which to multiply the point.</param>
-        /// <param name="hashFunction">Pointer to a hash function. If null, sha256 is used.</param>
-        /// <param name="data">Arbitrary data that is passed through.</param>
-        /// <returns>True if exponentiation was successful, false if scalar was invalid (zero or overflow).</returns>
-        public bool Ecdh(Span<byte> resultOutput, Span<byte> publicKey, Span<byte> privateKey, EcdhHashFunction hashFunction, IntPtr data)
-        {
-            if (resultOutput.Length < SECRET_LENGTH)
-            {
-                throw new ArgumentException($"{nameof(resultOutput)} must be {SECRET_LENGTH} bytes");
-            }
-            if (publicKey.Length < PUBKEY_LENGTH)
-            {
-                throw new ArgumentException($"{nameof(publicKey)} must be {PUBKEY_LENGTH} bytes");
-            }
-            if (privateKey.Length < PRIVKEY_LENGTH)
-            {
-                throw new ArgumentException($"{nameof(privateKey)} must be {PRIVKEY_LENGTH} bytes");
-            }
-
-            int outputLength = resultOutput.Length;
-
-            secp256k1_ecdh_hash_function hashFunctionPtr = (void* output, void* x, void* y, void* d) =>
-            {
-                var outputSpan = new Span<byte>(output, outputLength);
-                var xSpan = new Span<byte>(x, 32);
-                var ySpan = new Span<byte>(y, 32);
-                return hashFunction(outputSpan, xSpan, ySpan, (IntPtr)d);
-            };
-
-            var hashFuncPtr = Marshal.GetFunctionPointerForDelegate(hashFunctionPtr);
-
-            fixed (byte* resPtr = &MemoryMarshal.GetReference(resultOutput),
-                pubPtr = &MemoryMarshal.GetReference(publicKey),
-                privPtr = &MemoryMarshal.GetReference(privateKey))
-            {
-                return _ecdh(_ctx, resPtr, pubPtr, privPtr, hashFuncPtr, data.ToPointer()) == 1;
-            }
-        }
-
-        /// <summary>
-        /// Deterministically generate a 32 byte nonce according to RFC6979 standard.
-        /// </summary>
-        /// <param name="nonceOutput">The 32 byte output nonce to be written to.</param>
-        /// <param name="hash">The 32 byte message hash being verified.</param>
-        /// <param name="secretKey">The 32 byte secret key.</param>
-        /// <param name="algo">A 16 byte array describing the signature algorithm (will be NULL for ECDSA for compatibility).</param>
-        /// <param name="data">Arbitrary data that is passed through.</param>
-        /// <param name="attempt">How many iterations we have tried to find a nonce. This will almost always be 0, but different attempt values are required to result in a different nonce.</param>
-        /// <returns>True if a nonce was successfully generated, false otherwise.</returns>
-        /// <exception cref="ArgumentException"></exception>
-        public bool Rfc6979Nonce(Span<byte> nonceOutput, Span<byte> hash, Span<byte> secretKey, Span<byte> algo, Span<byte> data, uint attempt)
-        {
-            if (nonceOutput.Length < NONCE_LENGTH)
-            {
-                throw new ArgumentException($"{nameof(nonceOutput)} must be {NONCE_LENGTH} bytes");
-            }
-            if (hash.Length < HASH_LENGTH)
-            {
-                throw new ArgumentException($"{nameof(hash)} must be {HASH_LENGTH} bytes");
-            }
-            if (secretKey.Length < SECRET_LENGTH)
-            {
-                throw new ArgumentException($"{nameof(secretKey)} must be {SECRET_LENGTH} bytes");
-            }
-            fixed (byte* nonceOutPtr = &MemoryMarshal.GetReference(nonceOutput),
-                   hashPtr = &MemoryMarshal.GetReference(hash),
-                   secPtr = &MemoryMarshal.GetReference(secretKey),
-                   algoPtr = &MemoryMarshal.GetReference(algo),
-                   dataPtr = &MemoryMarshal.GetReference(data))
-            {
-                return _nonce_function_rfc6979(nonceOutPtr, hashPtr, secPtr, algoPtr, dataPtr, attempt) == 1;
-            }
         }
 
         /// <summary>

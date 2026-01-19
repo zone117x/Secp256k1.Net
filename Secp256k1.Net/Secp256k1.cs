@@ -47,7 +47,7 @@ namespace Secp256k1Net
                 _libHandle = LoadLibNative.LoadLibrary(LIB, out var path);
                 _libPath = path;
 
-                LoadFunctions(_libHandle);
+                Secp256k1Interop.LoadFunctions(_libHandle);
                 _initialized = true;
             }
         }
@@ -66,7 +66,7 @@ namespace Secp256k1Net
         public Secp256k1(ErrorCallbackDelegate errorCallback = null)
         {
             EnsureInitialized();
-            _ctx = _context_create((uint)Secp256k1ContextFlags.None);
+            _ctx = Secp256k1Interop._context_create((uint)Secp256k1ContextFlags.None);
 
             SetErrorCallback(errorCallback ?? DefaultErrorCallback, null);
         }
@@ -86,8 +86,8 @@ namespace Secp256k1Net
             _errorCallbackHandle = GCHandle.Alloc(_errorCallback);
             _errorCallbackPtr = Marshal.GetFunctionPointerForDelegate(_errorCallback);
 
-            _context_set_illegal_callback(_ctx, _errorCallbackPtr, data);
-            _context_set_error_callback(_ctx, _errorCallbackPtr, data);
+            Secp256k1Interop._context_set_illegal_callback(_ctx, _errorCallbackPtr, data);
+            Secp256k1Interop._context_set_error_callback(_ctx, _errorCallbackPtr, data);
         }
 
         /// <summary>
@@ -127,7 +127,7 @@ namespace Secp256k1Net
                 }
 
                 // Call native function which sorts the pointer array in place
-                var result = _ec_pubkey_sort(_ctx, nativePtrArray, (nuint)count);
+                var result = Secp256k1Interop._ec_pubkey_sort(_ctx, nativePtrArray, (nuint)count);
                 if (result != 1)
                 {
                     return false;
@@ -187,7 +187,7 @@ namespace Secp256k1Net
             }
             if (_ctx != IntPtr.Zero)
             {
-                _context_destroy(_ctx);
+                Secp256k1Interop._context_destroy(_ctx);
                 _ctx = IntPtr.Zero;
             }
         }

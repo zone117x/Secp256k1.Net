@@ -68,7 +68,7 @@ namespace Secp256k1Net
         /// <summary>Perform basic self tests (to be used in conjunction with secp256k1_context_static)<para>This function performs self tests that detect some serious usage errors and similar conditions, e.g., when the library is compiled for the wrong endianness. This is a last resort measure to be used in production. The performed tests are very rudimentary and are not intended as a replacement for running the test binaries.</para><para>It is highly recommended to call this before using secp256k1_context_static. It is not necessary to call this function before using a context created with secp256k1_context_create (or secp256k1_context_preallocated_create), which will take care of performing the self tests.</para><para>If the tests fail, this function will call the default error callback to abort the program (see secp256k1_context_set_error_callback).</para></summary>
         public void Selftest()
         {
-            _selftest();
+            Secp256k1Interop._selftest();
         }
 
         /// <summary>Parse a variable-length public key into the pubkey object.</summary>
@@ -83,7 +83,7 @@ namespace Secp256k1Net
             fixed (byte* pubkeyPtr = &MemoryMarshal.GetReference(pubkey),
                 inputPtr = &MemoryMarshal.GetReference(input))
             {
-                return _ec_pubkey_parse(_ctx, pubkeyPtr, inputPtr, (nuint)input.Length) == 1;
+                return Secp256k1Interop._ec_pubkey_parse(_ctx, pubkeyPtr, inputPtr, (nuint)input.Length) == 1;
             }
         }
 
@@ -105,7 +105,7 @@ namespace Secp256k1Net
                 pubkeyPtr = &MemoryMarshal.GetReference(pubkey))
             fixed (nuint* outputlenPtr = &outputlen)
             {
-                return _ec_pubkey_serialize(_ctx, outputPtr, outputlenPtr, pubkeyPtr, (uint)flags) == 1;
+                return Secp256k1Interop._ec_pubkey_serialize(_ctx, outputPtr, outputlenPtr, pubkeyPtr, (uint)flags) == 1;
             }
         }
 
@@ -123,7 +123,7 @@ namespace Secp256k1Net
             fixed (byte* pubkey1Ptr = &MemoryMarshal.GetReference(pubkey1),
                 pubkey2Ptr = &MemoryMarshal.GetReference(pubkey2))
             {
-                return _ec_pubkey_cmp(_ctx, pubkey1Ptr, pubkey2Ptr);
+                return Secp256k1Interop._ec_pubkey_cmp(_ctx, pubkey1Ptr, pubkey2Ptr);
             }
         }
 
@@ -141,7 +141,7 @@ namespace Secp256k1Net
             fixed (byte* sigPtr = &MemoryMarshal.GetReference(sig),
                 input64Ptr = &MemoryMarshal.GetReference(input64))
             {
-                return _ecdsa_signature_parse_compact(_ctx, sigPtr, input64Ptr) == 1;
+                return Secp256k1Interop._ecdsa_signature_parse_compact(_ctx, sigPtr, input64Ptr) == 1;
             }
         }
 
@@ -157,7 +157,7 @@ namespace Secp256k1Net
             fixed (byte* sigPtr = &MemoryMarshal.GetReference(sig),
                 inputPtr = &MemoryMarshal.GetReference(input))
             {
-                return _ecdsa_signature_parse_der(_ctx, sigPtr, inputPtr, (nuint)input.Length) == 1;
+                return Secp256k1Interop._ecdsa_signature_parse_der(_ctx, sigPtr, inputPtr, (nuint)input.Length) == 1;
             }
         }
 
@@ -175,7 +175,7 @@ namespace Secp256k1Net
                 sigPtr = &MemoryMarshal.GetReference(sig))
             fixed (nuint* outputlenPtr = &outputlen)
             {
-                return _ecdsa_signature_serialize_der(_ctx, outputPtr, outputlenPtr, sigPtr) == 1;
+                return Secp256k1Interop._ecdsa_signature_serialize_der(_ctx, outputPtr, outputlenPtr, sigPtr) == 1;
             }
         }
 
@@ -193,7 +193,7 @@ namespace Secp256k1Net
             fixed (byte* output64Ptr = &MemoryMarshal.GetReference(output64),
                 sigPtr = &MemoryMarshal.GetReference(sig))
             {
-                return _ecdsa_signature_serialize_compact(_ctx, output64Ptr, sigPtr) == 1;
+                return Secp256k1Interop._ecdsa_signature_serialize_compact(_ctx, output64Ptr, sigPtr) == 1;
             }
         }
 
@@ -215,7 +215,7 @@ namespace Secp256k1Net
                 msghash32Ptr = &MemoryMarshal.GetReference(msghash32),
                 pubkeyPtr = &MemoryMarshal.GetReference(pubkey))
             {
-                return _ecdsa_verify(_ctx, sigPtr, msghash32Ptr, pubkeyPtr) == 1;
+                return Secp256k1Interop._ecdsa_verify(_ctx, sigPtr, msghash32Ptr, pubkeyPtr) == 1;
             }
         }
 
@@ -233,7 +233,7 @@ namespace Secp256k1Net
             fixed (byte* sigoutPtr = &MemoryMarshal.GetReference(sigout),
                 siginPtr = &MemoryMarshal.GetReference(sigin))
             {
-                return _ecdsa_signature_normalize(_ctx, sigoutPtr, siginPtr) == 1;
+                return Secp256k1Interop._ecdsa_signature_normalize(_ctx, sigoutPtr, siginPtr) == 1;
             }
         }
 
@@ -255,7 +255,7 @@ namespace Secp256k1Net
                 msghash32Ptr = &MemoryMarshal.GetReference(msghash32),
                 seckeyPtr = &MemoryMarshal.GetReference(seckey))
             {
-                return _ecdsa_sign(_ctx, sigPtr, msghash32Ptr, seckeyPtr, IntPtr.Zero, IntPtr.Zero.ToPointer()) == 1;
+                return Secp256k1Interop._ecdsa_sign(_ctx, sigPtr, msghash32Ptr, seckeyPtr, IntPtr.Zero, IntPtr.Zero.ToPointer()) == 1;
             }
         }
 
@@ -290,7 +290,7 @@ namespace Secp256k1Net
                 msghash32Ptr = &MemoryMarshal.GetReference(msghash32),
                 seckeyPtr = &MemoryMarshal.GetReference(seckey))
             {
-                return _ecdsa_sign(_ctx, sigPtr, msghash32Ptr, seckeyPtr, callbackPtr, ndata.ToPointer()) == 1;
+                return Secp256k1Interop._ecdsa_sign(_ctx, sigPtr, msghash32Ptr, seckeyPtr, callbackPtr, ndata.ToPointer()) == 1;
             }
         }
 
@@ -304,7 +304,7 @@ namespace Secp256k1Net
 
             fixed (byte* seckeyPtr = &MemoryMarshal.GetReference(seckey))
             {
-                return _ec_seckey_verify(_ctx, seckeyPtr) == 1;
+                return Secp256k1Interop._ec_seckey_verify(_ctx, seckeyPtr) == 1;
             }
         }
 
@@ -322,7 +322,7 @@ namespace Secp256k1Net
             fixed (byte* pubkeyPtr = &MemoryMarshal.GetReference(pubkey),
                 seckeyPtr = &MemoryMarshal.GetReference(seckey))
             {
-                return _ec_pubkey_create(_ctx, pubkeyPtr, seckeyPtr) == 1;
+                return Secp256k1Interop._ec_pubkey_create(_ctx, pubkeyPtr, seckeyPtr) == 1;
             }
         }
 
@@ -336,7 +336,7 @@ namespace Secp256k1Net
 
             fixed (byte* seckeyPtr = &MemoryMarshal.GetReference(seckey))
             {
-                return _ec_seckey_negate(_ctx, seckeyPtr) == 1;
+                return Secp256k1Interop._ec_seckey_negate(_ctx, seckeyPtr) == 1;
             }
         }
 
@@ -350,7 +350,7 @@ namespace Secp256k1Net
 
             fixed (byte* pubkeyPtr = &MemoryMarshal.GetReference(pubkey))
             {
-                return _ec_pubkey_negate(_ctx, pubkeyPtr) == 1;
+                return Secp256k1Interop._ec_pubkey_negate(_ctx, pubkeyPtr) == 1;
             }
         }
 
@@ -368,7 +368,7 @@ namespace Secp256k1Net
             fixed (byte* seckeyPtr = &MemoryMarshal.GetReference(seckey),
                 tweak32Ptr = &MemoryMarshal.GetReference(tweak32))
             {
-                return _ec_seckey_tweak_add(_ctx, seckeyPtr, tweak32Ptr) == 1;
+                return Secp256k1Interop._ec_seckey_tweak_add(_ctx, seckeyPtr, tweak32Ptr) == 1;
             }
         }
 
@@ -386,7 +386,7 @@ namespace Secp256k1Net
             fixed (byte* pubkeyPtr = &MemoryMarshal.GetReference(pubkey),
                 tweak32Ptr = &MemoryMarshal.GetReference(tweak32))
             {
-                return _ec_pubkey_tweak_add(_ctx, pubkeyPtr, tweak32Ptr) == 1;
+                return Secp256k1Interop._ec_pubkey_tweak_add(_ctx, pubkeyPtr, tweak32Ptr) == 1;
             }
         }
 
@@ -404,7 +404,7 @@ namespace Secp256k1Net
             fixed (byte* seckeyPtr = &MemoryMarshal.GetReference(seckey),
                 tweak32Ptr = &MemoryMarshal.GetReference(tweak32))
             {
-                return _ec_seckey_tweak_mul(_ctx, seckeyPtr, tweak32Ptr) == 1;
+                return Secp256k1Interop._ec_seckey_tweak_mul(_ctx, seckeyPtr, tweak32Ptr) == 1;
             }
         }
 
@@ -422,7 +422,7 @@ namespace Secp256k1Net
             fixed (byte* pubkeyPtr = &MemoryMarshal.GetReference(pubkey),
                 tweak32Ptr = &MemoryMarshal.GetReference(tweak32))
             {
-                return _ec_pubkey_tweak_mul(_ctx, pubkeyPtr, tweak32Ptr) == 1;
+                return Secp256k1Interop._ec_pubkey_tweak_mul(_ctx, pubkeyPtr, tweak32Ptr) == 1;
             }
         }
 
@@ -458,7 +458,7 @@ namespace Secp256k1Net
                                 Marshal.WriteIntPtr(nativePtrArray, i * ptrSize, handles[i].AddrOfPinnedObject());
                             }
 
-                            return _ec_pubkey_combine(_ctx, @outPtr, nativePtrArray, (nuint)count) == 1;
+                            return Secp256k1Interop._ec_pubkey_combine(_ctx, @outPtr, nativePtrArray, (nuint)count) == 1;
                         }
                         finally
                         {
@@ -490,7 +490,7 @@ namespace Secp256k1Net
                 tagPtr = &MemoryMarshal.GetReference(tag),
                 msgPtr = &MemoryMarshal.GetReference(msg))
             {
-                return _tagged_sha256(_ctx, hash32Ptr, tagPtr, (nuint)tag.Length, msgPtr, (nuint)msg.Length) == 1;
+                return Secp256k1Interop._tagged_sha256(_ctx, hash32Ptr, tagPtr, (nuint)tag.Length, msgPtr, (nuint)msg.Length) == 1;
             }
         }
 
@@ -509,7 +509,7 @@ namespace Secp256k1Net
             fixed (byte* sigPtr = &MemoryMarshal.GetReference(sig),
                 input64Ptr = &MemoryMarshal.GetReference(input64))
             {
-                return _ecdsa_recoverable_signature_parse_compact(_ctx, sigPtr, input64Ptr, recid) == 1;
+                return Secp256k1Interop._ecdsa_recoverable_signature_parse_compact(_ctx, sigPtr, input64Ptr, recid) == 1;
             }
         }
 
@@ -527,7 +527,7 @@ namespace Secp256k1Net
             fixed (byte* sigPtr = &MemoryMarshal.GetReference(sig),
                 siginPtr = &MemoryMarshal.GetReference(sigin))
             {
-                return _ecdsa_recoverable_signature_convert(_ctx, sigPtr, siginPtr) == 1;
+                return Secp256k1Interop._ecdsa_recoverable_signature_convert(_ctx, sigPtr, siginPtr) == 1;
             }
         }
 
@@ -547,7 +547,7 @@ namespace Secp256k1Net
                 sigPtr = &MemoryMarshal.GetReference(sig))
             fixed (int* recidPtr = &recid)
             {
-                return _ecdsa_recoverable_signature_serialize_compact(_ctx, output64Ptr, recidPtr, sigPtr) == 1;
+                return Secp256k1Interop._ecdsa_recoverable_signature_serialize_compact(_ctx, output64Ptr, recidPtr, sigPtr) == 1;
             }
         }
 
@@ -569,7 +569,7 @@ namespace Secp256k1Net
                 msghash32Ptr = &MemoryMarshal.GetReference(msghash32),
                 seckeyPtr = &MemoryMarshal.GetReference(seckey))
             {
-                return _ecdsa_sign_recoverable(_ctx, sigPtr, msghash32Ptr, seckeyPtr, IntPtr.Zero, IntPtr.Zero.ToPointer()) == 1;
+                return Secp256k1Interop._ecdsa_sign_recoverable(_ctx, sigPtr, msghash32Ptr, seckeyPtr, IntPtr.Zero, IntPtr.Zero.ToPointer()) == 1;
             }
         }
 
@@ -604,7 +604,7 @@ namespace Secp256k1Net
                 msghash32Ptr = &MemoryMarshal.GetReference(msghash32),
                 seckeyPtr = &MemoryMarshal.GetReference(seckey))
             {
-                return _ecdsa_sign_recoverable(_ctx, sigPtr, msghash32Ptr, seckeyPtr, callbackPtr, ndata.ToPointer()) == 1;
+                return Secp256k1Interop._ecdsa_sign_recoverable(_ctx, sigPtr, msghash32Ptr, seckeyPtr, callbackPtr, ndata.ToPointer()) == 1;
             }
         }
 
@@ -626,7 +626,7 @@ namespace Secp256k1Net
                 sigPtr = &MemoryMarshal.GetReference(sig),
                 msghash32Ptr = &MemoryMarshal.GetReference(msghash32))
             {
-                return _ecdsa_recover(_ctx, pubkeyPtr, sigPtr, msghash32Ptr) == 1;
+                return Secp256k1Interop._ecdsa_recover(_ctx, pubkeyPtr, sigPtr, msghash32Ptr) == 1;
             }
         }
 
@@ -648,7 +648,7 @@ namespace Secp256k1Net
                 pubkeyPtr = &MemoryMarshal.GetReference(pubkey),
                 seckeyPtr = &MemoryMarshal.GetReference(seckey))
             {
-                return _ecdh(_ctx, outputPtr, pubkeyPtr, seckeyPtr, IntPtr.Zero, IntPtr.Zero.ToPointer()) == 1;
+                return Secp256k1Interop._ecdh(_ctx, outputPtr, pubkeyPtr, seckeyPtr, IntPtr.Zero, IntPtr.Zero.ToPointer()) == 1;
             }
         }
 
@@ -682,7 +682,7 @@ namespace Secp256k1Net
                 pubkeyPtr = &MemoryMarshal.GetReference(pubkey),
                 seckeyPtr = &MemoryMarshal.GetReference(seckey))
             {
-                return _ecdh(_ctx, outputPtr, pubkeyPtr, seckeyPtr, callbackPtr, data.ToPointer()) == 1;
+                return Secp256k1Interop._ecdh(_ctx, outputPtr, pubkeyPtr, seckeyPtr, callbackPtr, data.ToPointer()) == 1;
             }
         }
 
@@ -700,7 +700,7 @@ namespace Secp256k1Net
             fixed (byte* pubkeyPtr = &MemoryMarshal.GetReference(pubkey),
                 input32Ptr = &MemoryMarshal.GetReference(input32))
             {
-                return _xonly_pubkey_parse(_ctx, pubkeyPtr, input32Ptr) == 1;
+                return Secp256k1Interop._xonly_pubkey_parse(_ctx, pubkeyPtr, input32Ptr) == 1;
             }
         }
 
@@ -718,7 +718,7 @@ namespace Secp256k1Net
             fixed (byte* output32Ptr = &MemoryMarshal.GetReference(output32),
                 pubkeyPtr = &MemoryMarshal.GetReference(pubkey))
             {
-                return _xonly_pubkey_serialize(_ctx, output32Ptr, pubkeyPtr) == 1;
+                return Secp256k1Interop._xonly_pubkey_serialize(_ctx, output32Ptr, pubkeyPtr) == 1;
             }
         }
 
@@ -734,7 +734,7 @@ namespace Secp256k1Net
             fixed (byte* pk1Ptr = &MemoryMarshal.GetReference(pk1),
                 pk2Ptr = &MemoryMarshal.GetReference(pk2))
             {
-                return _xonly_pubkey_cmp(_ctx, pk1Ptr, pk2Ptr);
+                return Secp256k1Interop._xonly_pubkey_cmp(_ctx, pk1Ptr, pk2Ptr);
             }
         }
 
@@ -754,7 +754,7 @@ namespace Secp256k1Net
                 pubkeyPtr = &MemoryMarshal.GetReference(pubkey))
             fixed (int* pk_parityPtr = &pk_parity)
             {
-                return _xonly_pubkey_from_pubkey(_ctx, xonly_pubkeyPtr, pk_parityPtr, pubkeyPtr) == 1;
+                return Secp256k1Interop._xonly_pubkey_from_pubkey(_ctx, xonly_pubkeyPtr, pk_parityPtr, pubkeyPtr) == 1;
             }
         }
 
@@ -776,7 +776,7 @@ namespace Secp256k1Net
                 internal_pubkeyPtr = &MemoryMarshal.GetReference(internal_pubkey),
                 tweak32Ptr = &MemoryMarshal.GetReference(tweak32))
             {
-                return _xonly_pubkey_tweak_add(_ctx, output_pubkeyPtr, internal_pubkeyPtr, tweak32Ptr) == 1;
+                return Secp256k1Interop._xonly_pubkey_tweak_add(_ctx, output_pubkeyPtr, internal_pubkeyPtr, tweak32Ptr) == 1;
             }
         }
 
@@ -799,7 +799,7 @@ namespace Secp256k1Net
                 internal_pubkeyPtr = &MemoryMarshal.GetReference(internal_pubkey),
                 tweak32Ptr = &MemoryMarshal.GetReference(tweak32))
             {
-                return _xonly_pubkey_tweak_add_check(_ctx, tweaked_pubkey32Ptr, tweaked_pk_parity, internal_pubkeyPtr, tweak32Ptr) == 1;
+                return Secp256k1Interop._xonly_pubkey_tweak_add_check(_ctx, tweaked_pubkey32Ptr, tweaked_pk_parity, internal_pubkeyPtr, tweak32Ptr) == 1;
             }
         }
 
@@ -817,7 +817,7 @@ namespace Secp256k1Net
             fixed (byte* keypairPtr = &MemoryMarshal.GetReference(keypair),
                 seckeyPtr = &MemoryMarshal.GetReference(seckey))
             {
-                return _keypair_create(_ctx, keypairPtr, seckeyPtr) == 1;
+                return Secp256k1Interop._keypair_create(_ctx, keypairPtr, seckeyPtr) == 1;
             }
         }
 
@@ -835,7 +835,7 @@ namespace Secp256k1Net
             fixed (byte* seckeyPtr = &MemoryMarshal.GetReference(seckey),
                 keypairPtr = &MemoryMarshal.GetReference(keypair))
             {
-                return _keypair_sec(_ctx, seckeyPtr, keypairPtr) == 1;
+                return Secp256k1Interop._keypair_sec(_ctx, seckeyPtr, keypairPtr) == 1;
             }
         }
 
@@ -853,7 +853,7 @@ namespace Secp256k1Net
             fixed (byte* pubkeyPtr = &MemoryMarshal.GetReference(pubkey),
                 keypairPtr = &MemoryMarshal.GetReference(keypair))
             {
-                return _keypair_pub(_ctx, pubkeyPtr, keypairPtr) == 1;
+                return Secp256k1Interop._keypair_pub(_ctx, pubkeyPtr, keypairPtr) == 1;
             }
         }
 
@@ -873,7 +873,7 @@ namespace Secp256k1Net
                 keypairPtr = &MemoryMarshal.GetReference(keypair))
             fixed (int* pk_parityPtr = &pk_parity)
             {
-                return _keypair_xonly_pub(_ctx, pubkeyPtr, pk_parityPtr, keypairPtr) == 1;
+                return Secp256k1Interop._keypair_xonly_pub(_ctx, pubkeyPtr, pk_parityPtr, keypairPtr) == 1;
             }
         }
 
@@ -891,7 +891,7 @@ namespace Secp256k1Net
             fixed (byte* keypairPtr = &MemoryMarshal.GetReference(keypair),
                 tweak32Ptr = &MemoryMarshal.GetReference(tweak32))
             {
-                return _keypair_xonly_tweak_add(_ctx, keypairPtr, tweak32Ptr) == 1;
+                return Secp256k1Interop._keypair_xonly_tweak_add(_ctx, keypairPtr, tweak32Ptr) == 1;
             }
         }
 
@@ -916,7 +916,7 @@ namespace Secp256k1Net
                 keypairPtr = &MemoryMarshal.GetReference(keypair),
                 aux_rand32Ptr = &MemoryMarshal.GetReference(aux_rand32))
             {
-                return _schnorrsig_sign32(_ctx, sig64Ptr, msg32Ptr, keypairPtr, aux_rand32Ptr) == 1;
+                return Secp256k1Interop._schnorrsig_sign32(_ctx, sig64Ptr, msg32Ptr, keypairPtr, aux_rand32Ptr) == 1;
             }
         }
 
@@ -937,7 +937,7 @@ namespace Secp256k1Net
                 keypairPtr = &MemoryMarshal.GetReference(keypair),
                 extraparamsPtr = &MemoryMarshal.GetReference(extraparams))
             {
-                return _schnorrsig_sign_custom(_ctx, sig64Ptr, msgPtr, (nuint)msg.Length, keypairPtr, extraparamsPtr) == 1;
+                return Secp256k1Interop._schnorrsig_sign_custom(_ctx, sig64Ptr, msgPtr, (nuint)msg.Length, keypairPtr, extraparamsPtr) == 1;
             }
         }
 
@@ -957,7 +957,7 @@ namespace Secp256k1Net
                 msgPtr = &MemoryMarshal.GetReference(msg),
                 pubkeyPtr = &MemoryMarshal.GetReference(pubkey))
             {
-                return _schnorrsig_verify(_ctx, sig64Ptr, msgPtr, (nuint)msg.Length, pubkeyPtr) == 1;
+                return Secp256k1Interop._schnorrsig_verify(_ctx, sig64Ptr, msgPtr, (nuint)msg.Length, pubkeyPtr) == 1;
             }
         }
 
@@ -979,7 +979,7 @@ namespace Secp256k1Net
                 pubkeyPtr = &MemoryMarshal.GetReference(pubkey),
                 rnd32Ptr = &MemoryMarshal.GetReference(rnd32))
             {
-                return _ellswift_encode(_ctx, ell64Ptr, pubkeyPtr, rnd32Ptr) == 1;
+                return Secp256k1Interop._ellswift_encode(_ctx, ell64Ptr, pubkeyPtr, rnd32Ptr) == 1;
             }
         }
 
@@ -997,7 +997,7 @@ namespace Secp256k1Net
             fixed (byte* pubkeyPtr = &MemoryMarshal.GetReference(pubkey),
                 ell64Ptr = &MemoryMarshal.GetReference(ell64))
             {
-                return _ellswift_decode(_ctx, pubkeyPtr, ell64Ptr) == 1;
+                return Secp256k1Interop._ellswift_decode(_ctx, pubkeyPtr, ell64Ptr) == 1;
             }
         }
 
@@ -1019,7 +1019,7 @@ namespace Secp256k1Net
                 seckey32Ptr = &MemoryMarshal.GetReference(seckey32),
                 auxrnd32Ptr = &MemoryMarshal.GetReference(auxrnd32))
             {
-                return _ellswift_create(_ctx, ell64Ptr, seckey32Ptr, auxrnd32Ptr) == 1;
+                return Secp256k1Interop._ellswift_create(_ctx, ell64Ptr, seckey32Ptr, auxrnd32Ptr) == 1;
             }
         }
 
@@ -1059,7 +1059,7 @@ namespace Secp256k1Net
                 ell_b64Ptr = &MemoryMarshal.GetReference(ell_b64),
                 seckey32Ptr = &MemoryMarshal.GetReference(seckey32))
             {
-                return _ellswift_xdh(_ctx, outputPtr, ell_a64Ptr, ell_b64Ptr, seckey32Ptr, party, callbackPtr, data.ToPointer()) == 1;
+                return Secp256k1Interop._ellswift_xdh(_ctx, outputPtr, ell_a64Ptr, ell_b64Ptr, seckey32Ptr, party, callbackPtr, data.ToPointer()) == 1;
             }
         }
 
@@ -1077,7 +1077,7 @@ namespace Secp256k1Net
             fixed (byte* noncePtr = &MemoryMarshal.GetReference(nonce),
                 in66Ptr = &MemoryMarshal.GetReference(in66))
             {
-                return _musig_pubnonce_parse(_ctx, noncePtr, in66Ptr) == 1;
+                return Secp256k1Interop._musig_pubnonce_parse(_ctx, noncePtr, in66Ptr) == 1;
             }
         }
 
@@ -1095,7 +1095,7 @@ namespace Secp256k1Net
             fixed (byte* out66Ptr = &MemoryMarshal.GetReference(out66),
                 noncePtr = &MemoryMarshal.GetReference(nonce))
             {
-                return _musig_pubnonce_serialize(_ctx, out66Ptr, noncePtr) == 1;
+                return Secp256k1Interop._musig_pubnonce_serialize(_ctx, out66Ptr, noncePtr) == 1;
             }
         }
 
@@ -1113,7 +1113,7 @@ namespace Secp256k1Net
             fixed (byte* noncePtr = &MemoryMarshal.GetReference(nonce),
                 in66Ptr = &MemoryMarshal.GetReference(in66))
             {
-                return _musig_aggnonce_parse(_ctx, noncePtr, in66Ptr) == 1;
+                return Secp256k1Interop._musig_aggnonce_parse(_ctx, noncePtr, in66Ptr) == 1;
             }
         }
 
@@ -1131,7 +1131,7 @@ namespace Secp256k1Net
             fixed (byte* out66Ptr = &MemoryMarshal.GetReference(out66),
                 noncePtr = &MemoryMarshal.GetReference(nonce))
             {
-                return _musig_aggnonce_serialize(_ctx, out66Ptr, noncePtr) == 1;
+                return Secp256k1Interop._musig_aggnonce_serialize(_ctx, out66Ptr, noncePtr) == 1;
             }
         }
 
@@ -1149,7 +1149,7 @@ namespace Secp256k1Net
             fixed (byte* sigPtr = &MemoryMarshal.GetReference(sig),
                 in32Ptr = &MemoryMarshal.GetReference(in32))
             {
-                return _musig_partial_sig_parse(_ctx, sigPtr, in32Ptr) == 1;
+                return Secp256k1Interop._musig_partial_sig_parse(_ctx, sigPtr, in32Ptr) == 1;
             }
         }
 
@@ -1167,7 +1167,7 @@ namespace Secp256k1Net
             fixed (byte* out32Ptr = &MemoryMarshal.GetReference(out32),
                 sigPtr = &MemoryMarshal.GetReference(sig))
             {
-                return _musig_partial_sig_serialize(_ctx, out32Ptr, sigPtr) == 1;
+                return Secp256k1Interop._musig_partial_sig_serialize(_ctx, out32Ptr, sigPtr) == 1;
             }
         }
 
@@ -1207,7 +1207,7 @@ namespace Secp256k1Net
                                 Marshal.WriteIntPtr(nativePtrArray, i * ptrSize, handles[i].AddrOfPinnedObject());
                             }
 
-                            return _musig_pubkey_agg(_ctx, agg_pkPtr, keyagg_cachePtr, nativePtrArray, (nuint)count) == 1;
+                            return Secp256k1Interop._musig_pubkey_agg(_ctx, agg_pkPtr, keyagg_cachePtr, nativePtrArray, (nuint)count) == 1;
                         }
                         finally
                         {
@@ -1239,7 +1239,7 @@ namespace Secp256k1Net
             fixed (byte* agg_pkPtr = &MemoryMarshal.GetReference(agg_pk),
                 keyagg_cachePtr = &MemoryMarshal.GetReference(keyagg_cache))
             {
-                return _musig_pubkey_get(_ctx, agg_pkPtr, keyagg_cachePtr) == 1;
+                return Secp256k1Interop._musig_pubkey_get(_ctx, agg_pkPtr, keyagg_cachePtr) == 1;
             }
         }
 
@@ -1256,7 +1256,7 @@ namespace Secp256k1Net
                 keyagg_cachePtr = &MemoryMarshal.GetReference(keyagg_cache),
                 tweak32Ptr = &MemoryMarshal.GetReference(tweak32))
             {
-                return _musig_pubkey_ec_tweak_add(_ctx, output_pubkeyPtr, keyagg_cachePtr, tweak32Ptr) == 1;
+                return Secp256k1Interop._musig_pubkey_ec_tweak_add(_ctx, output_pubkeyPtr, keyagg_cachePtr, tweak32Ptr) == 1;
             }
         }
 
@@ -1273,7 +1273,7 @@ namespace Secp256k1Net
                 keyagg_cachePtr = &MemoryMarshal.GetReference(keyagg_cache),
                 tweak32Ptr = &MemoryMarshal.GetReference(tweak32))
             {
-                return _musig_pubkey_xonly_tweak_add(_ctx, output_pubkeyPtr, keyagg_cachePtr, tweak32Ptr) == 1;
+                return Secp256k1Interop._musig_pubkey_xonly_tweak_add(_ctx, output_pubkeyPtr, keyagg_cachePtr, tweak32Ptr) == 1;
             }
         }
 
@@ -1315,7 +1315,7 @@ namespace Secp256k1Net
                 keyagg_cachePtr = &MemoryMarshal.GetReference(keyagg_cache),
                 extra_input32Ptr = &MemoryMarshal.GetReference(extra_input32))
             {
-                return _musig_nonce_gen(_ctx, secnoncePtr, pubnoncePtr, session_secrand32Ptr, seckeyPtr, pubkeyPtr, msg32Ptr, keyagg_cachePtr, extra_input32Ptr) == 1;
+                return Secp256k1Interop._musig_nonce_gen(_ctx, secnoncePtr, pubnoncePtr, session_secrand32Ptr, seckeyPtr, pubkeyPtr, msg32Ptr, keyagg_cachePtr, extra_input32Ptr) == 1;
             }
         }
 
@@ -1350,7 +1350,7 @@ namespace Secp256k1Net
                 keyagg_cachePtr = &MemoryMarshal.GetReference(keyagg_cache),
                 extra_input32Ptr = &MemoryMarshal.GetReference(extra_input32))
             {
-                return _musig_nonce_gen_counter(_ctx, secnoncePtr, pubnoncePtr, nonrepeating_cnt, keypairPtr, msg32Ptr, keyagg_cachePtr, extra_input32Ptr) == 1;
+                return Secp256k1Interop._musig_nonce_gen_counter(_ctx, secnoncePtr, pubnoncePtr, nonrepeating_cnt, keypairPtr, msg32Ptr, keyagg_cachePtr, extra_input32Ptr) == 1;
             }
         }
 
@@ -1386,7 +1386,7 @@ namespace Secp256k1Net
                                 Marshal.WriteIntPtr(nativePtrArray, i * ptrSize, handles[i].AddrOfPinnedObject());
                             }
 
-                            return _musig_nonce_agg(_ctx, aggnoncePtr, nativePtrArray, (nuint)count) == 1;
+                            return Secp256k1Interop._musig_nonce_agg(_ctx, aggnoncePtr, nativePtrArray, (nuint)count) == 1;
                         }
                         finally
                         {
@@ -1426,7 +1426,7 @@ namespace Secp256k1Net
                 msg32Ptr = &MemoryMarshal.GetReference(msg32),
                 keyagg_cachePtr = &MemoryMarshal.GetReference(keyagg_cache))
             {
-                return _musig_nonce_process(_ctx, sessionPtr, aggnoncePtr, msg32Ptr, keyagg_cachePtr) == 1;
+                return Secp256k1Interop._musig_nonce_process(_ctx, sessionPtr, aggnoncePtr, msg32Ptr, keyagg_cachePtr) == 1;
             }
         }
 
@@ -1456,7 +1456,7 @@ namespace Secp256k1Net
                 keyagg_cachePtr = &MemoryMarshal.GetReference(keyagg_cache),
                 sessionPtr = &MemoryMarshal.GetReference(session))
             {
-                return _musig_partial_sign(_ctx, partial_sigPtr, secnoncePtr, keypairPtr, keyagg_cachePtr, sessionPtr) == 1;
+                return Secp256k1Interop._musig_partial_sign(_ctx, partial_sigPtr, secnoncePtr, keypairPtr, keyagg_cachePtr, sessionPtr) == 1;
             }
         }
 
@@ -1486,7 +1486,7 @@ namespace Secp256k1Net
                 keyagg_cachePtr = &MemoryMarshal.GetReference(keyagg_cache),
                 sessionPtr = &MemoryMarshal.GetReference(session))
             {
-                return _musig_partial_sig_verify(_ctx, partial_sigPtr, pubnoncePtr, pubkeyPtr, keyagg_cachePtr, sessionPtr) == 1;
+                return Secp256k1Interop._musig_partial_sig_verify(_ctx, partial_sigPtr, pubnoncePtr, pubkeyPtr, keyagg_cachePtr, sessionPtr) == 1;
             }
         }
 
@@ -1526,7 +1526,7 @@ namespace Secp256k1Net
                                 Marshal.WriteIntPtr(nativePtrArray, i * ptrSize, handles[i].AddrOfPinnedObject());
                             }
 
-                            return _musig_partial_sig_agg(_ctx, sig64Ptr, sessionPtr, nativePtrArray, (nuint)count) == 1;
+                            return Secp256k1Interop._musig_partial_sig_agg(_ctx, sig64Ptr, sessionPtr, nativePtrArray, (nuint)count) == 1;
                         }
                         finally
                         {
@@ -1566,7 +1566,7 @@ namespace Secp256k1Net
                 algo16Ptr = &MemoryMarshal.GetReference(algo16),
                 dataPtr = &MemoryMarshal.GetReference(data))
             {
-                return _nonce_function_rfc6979(nonce32Ptr, msg32Ptr, key32Ptr, algo16Ptr, dataPtr, attempt) == 1;
+                return Secp256k1Interop._nonce_function_rfc6979(nonce32Ptr, msg32Ptr, key32Ptr, algo16Ptr, dataPtr, attempt) == 1;
             }
         }
 
@@ -1592,7 +1592,7 @@ namespace Secp256k1Net
                 algo16Ptr = &MemoryMarshal.GetReference(algo16),
                 dataPtr = &MemoryMarshal.GetReference(data))
             {
-                return _nonce_function_default(nonce32Ptr, msg32Ptr, key32Ptr, algo16Ptr, dataPtr, attempt) == 1;
+                return Secp256k1Interop._nonce_function_default(nonce32Ptr, msg32Ptr, key32Ptr, algo16Ptr, dataPtr, attempt) == 1;
             }
         }
 
@@ -1615,7 +1615,7 @@ namespace Secp256k1Net
                 y32Ptr = &MemoryMarshal.GetReference(y32),
                 dataPtr = &MemoryMarshal.GetReference(data))
             {
-                return _ecdh_hash_function_sha256(outputPtr, x32Ptr, y32Ptr, dataPtr) == 1;
+                return Secp256k1Interop._ecdh_hash_function_sha256(outputPtr, x32Ptr, y32Ptr, dataPtr) == 1;
             }
         }
 
@@ -1638,7 +1638,7 @@ namespace Secp256k1Net
                 y32Ptr = &MemoryMarshal.GetReference(y32),
                 dataPtr = &MemoryMarshal.GetReference(data))
             {
-                return _ecdh_hash_function_default(outputPtr, x32Ptr, y32Ptr, dataPtr) == 1;
+                return Secp256k1Interop._ecdh_hash_function_default(outputPtr, x32Ptr, y32Ptr, dataPtr) == 1;
             }
         }
 
@@ -1667,7 +1667,7 @@ namespace Secp256k1Net
                 algoPtr = &MemoryMarshal.GetReference(algo),
                 dataPtr = &MemoryMarshal.GetReference(data))
             {
-                return _nonce_function_bip340(nonce32Ptr, msgPtr, msglen, key32Ptr, xonly_pk32Ptr, algoPtr, algolen, dataPtr) == 1;
+                return Secp256k1Interop._nonce_function_bip340(nonce32Ptr, msgPtr, msglen, key32Ptr, xonly_pk32Ptr, algoPtr, algolen, dataPtr) == 1;
             }
         }
 
@@ -1694,7 +1694,7 @@ namespace Secp256k1Net
                 ell_b64Ptr = &MemoryMarshal.GetReference(ell_b64),
                 dataPtr = &MemoryMarshal.GetReference(data))
             {
-                return _ellswift_xdh_hash_function_prefix(outputPtr, x32Ptr, ell_a64Ptr, ell_b64Ptr, dataPtr) == 1;
+                return Secp256k1Interop._ellswift_xdh_hash_function_prefix(outputPtr, x32Ptr, ell_a64Ptr, ell_b64Ptr, dataPtr) == 1;
             }
         }
 
@@ -1721,7 +1721,7 @@ namespace Secp256k1Net
                 ell_b64Ptr = &MemoryMarshal.GetReference(ell_b64),
                 dataPtr = &MemoryMarshal.GetReference(data))
             {
-                return _ellswift_xdh_hash_function_bip324(outputPtr, x32Ptr, ell_a64Ptr, ell_b64Ptr, dataPtr) == 1;
+                return Secp256k1Interop._ellswift_xdh_hash_function_bip324(outputPtr, x32Ptr, ell_a64Ptr, ell_b64Ptr, dataPtr) == 1;
             }
         }
     }

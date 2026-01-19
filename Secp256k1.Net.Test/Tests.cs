@@ -3021,7 +3021,27 @@ namespace Secp256k1Net.Test
             secp256k1.MusigPubnonceParse(nonce, in66);
         }
 
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void MusigPubnonceParse_TooSmallIn66_ThrowsArgumentException()
+        {
+            using var secp256k1 = new Secp256k1();
+            var nonce = new byte[132];
+            var in66 = new byte[65]; // Should be 66
+            secp256k1.MusigPubnonceParse(nonce, in66);
+        }
+
         // MusigPubnonceSerialize tests
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void MusigPubnonceSerialize_TooSmallOut66_ThrowsArgumentException()
+        {
+            using var secp256k1 = new Secp256k1();
+            var out66 = new byte[65]; // Should be 66
+            var nonce = new byte[132];
+            secp256k1.MusigPubnonceSerialize(out66, nonce);
+        }
+
         [TestMethod]
         [ExpectedException(typeof(ArgumentException))]
         public void MusigPubnonceSerialize_TooSmallNonce_ThrowsArgumentException()
@@ -3043,7 +3063,27 @@ namespace Secp256k1Net.Test
             secp256k1.MusigAggnonceParse(nonce, in66);
         }
 
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void MusigAggnonceParse_TooSmallIn66_ThrowsArgumentException()
+        {
+            using var secp256k1 = new Secp256k1();
+            var nonce = new byte[132];
+            var in66 = new byte[65]; // Should be 66
+            secp256k1.MusigAggnonceParse(nonce, in66);
+        }
+
         // MusigAggnonceSerialize tests
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void MusigAggnonceSerialize_TooSmallOut66_ThrowsArgumentException()
+        {
+            using var secp256k1 = new Secp256k1();
+            var out66 = new byte[65]; // Should be 66
+            var nonce = new byte[132];
+            secp256k1.MusigAggnonceSerialize(out66, nonce);
+        }
+
         [TestMethod]
         [ExpectedException(typeof(ArgumentException))]
         public void MusigAggnonceSerialize_TooSmallNonce_ThrowsArgumentException()

@@ -63,7 +63,7 @@ public class InteropGenerator
 
         sb.AppendLine("#endif");
         sb.AppendLine();
-        sb.AppendLine("    public unsafe partial class Secp256k1");
+        sb.AppendLine("    internal static unsafe class Secp256k1Interop");
         sb.AppendLine("    {");
 
         // Generate symbol name constants
@@ -89,7 +89,7 @@ public class InteropGenerator
 
         // Generate LoadFunctions method
         sb.AppendLine();
-        sb.AppendLine("        private static void LoadFunctions(IntPtr lib)");
+        sb.AppendLine("        internal static void LoadFunctions(IntPtr lib)");
         sb.AppendLine("        {");
         sb.AppendLine("#if NET8_0_OR_GREATER");
         GenerateModernLoadFunctions(sb, api, signatureToAlias);
@@ -116,7 +116,7 @@ public class InteropGenerator
         var returnType = MapCTypeToCSharp(fpType.ReturnType);
         var hasPointerParams = fpType.Parameters.Any(p => p.Type.Contains("*"));
 
-        sb.Append($"    public {(hasPointerParams ? "unsafe " : "")}delegate {returnType} {fpType.Name}(");
+        sb.Append($"    internal {(hasPointerParams ? "unsafe " : "")}delegate {returnType} {fpType.Name}(");
 
         var paramStrings = fpType.Parameters.Select(p =>
         {
@@ -154,7 +154,7 @@ public class InteropGenerator
         // Create delegate name from function name
         var delegateName = func.Name;
 
-        sb.Append($"    public {(hasPointerParams ? "unsafe " : "")}delegate {returnType} {delegateName}(");
+        sb.Append($"    internal {(hasPointerParams ? "unsafe " : "")}delegate {returnType} {delegateName}(");
 
         var paramStrings = func.Parameters.Select(p =>
         {
@@ -205,7 +205,7 @@ public class InteropGenerator
             var fieldName = GetFieldName(func.Name);
             var funcPtrType = GetModernFunctionPointerType(func);
             var alias = signatureToAlias[funcPtrType];
-            sb.AppendLine($"        private static {alias} {fieldName};");
+            sb.AppendLine($"        internal static {alias} {fieldName};");
         }
 
         // Global function pointer variables
@@ -214,7 +214,7 @@ public class InteropGenerator
             var fieldName = GetFieldName(global.Name);
             var funcPtrType = GetModernFunctionPointerTypeForGlobal(global, api);
             var alias = signatureToAlias[funcPtrType];
-            sb.AppendLine($"        private static {alias} {fieldName};");
+            sb.AppendLine($"        internal static {alias} {fieldName};");
         }
 
         sb.AppendLine("#nullable restore");
@@ -229,14 +229,14 @@ public class InteropGenerator
         {
             var fieldName = GetFieldName(func.Name);
             var delegateType = func.Name;
-            sb.AppendLine($"        private static {delegateType} {fieldName};");
+            sb.AppendLine($"        internal static {delegateType} {fieldName};");
         }
 
         // Global function pointer variables use their typedef type
         foreach (var global in api.GlobalPointers.Where(g => g.Type.StartsWith("secp256k1_") && g.Type.Contains("function")))
         {
             var fieldName = GetFieldName(global.Name);
-            sb.AppendLine($"        private static {global.Type} {fieldName};");
+            sb.AppendLine($"        internal static {global.Type} {fieldName};");
         }
 
         sb.AppendLine("#nullable restore");
@@ -1047,15 +1047,15 @@ public class InteropGenerator
 
             if (returnsBool)
             {
-                sb.AppendLine($"                return {fieldName}({nativeArgs}) == 1;");
+                sb.AppendLine($"                return Secp256k1Interop.{fieldName}({nativeArgs}) == 1;");
             }
             else if (func.ReturnType == "void")
             {
-                sb.AppendLine($"                {fieldName}({nativeArgs});");
+                sb.AppendLine($"                Secp256k1Interop.{fieldName}({nativeArgs});");
             }
             else
             {
-                sb.AppendLine($"                return {fieldName}({nativeArgs});");
+                sb.AppendLine($"                return Secp256k1Interop.{fieldName}({nativeArgs});");
             }
 
             sb.AppendLine("            }");
@@ -1068,15 +1068,15 @@ public class InteropGenerator
 
             if (returnsBool)
             {
-                sb.AppendLine($"            return {fieldName}({nativeArgs}) == 1;");
+                sb.AppendLine($"            return Secp256k1Interop.{fieldName}({nativeArgs}) == 1;");
             }
             else if (func.ReturnType == "void")
             {
-                sb.AppendLine($"            {fieldName}({nativeArgs});");
+                sb.AppendLine($"            Secp256k1Interop.{fieldName}({nativeArgs});");
             }
             else
             {
-                sb.AppendLine($"            return {fieldName}({nativeArgs});");
+                sb.AppendLine($"            return Secp256k1Interop.{fieldName}({nativeArgs});");
             }
         }
 
@@ -1241,15 +1241,15 @@ public class InteropGenerator
 
             if (returnsBool)
             {
-                sb.AppendLine($"                return {fieldName}({nativeArgs}) == 1;");
+                sb.AppendLine($"                return Secp256k1Interop.{fieldName}({nativeArgs}) == 1;");
             }
             else if (func.ReturnType == "void")
             {
-                sb.AppendLine($"                {fieldName}({nativeArgs});");
+                sb.AppendLine($"                Secp256k1Interop.{fieldName}({nativeArgs});");
             }
             else
             {
-                sb.AppendLine($"                return {fieldName}({nativeArgs});");
+                sb.AppendLine($"                return Secp256k1Interop.{fieldName}({nativeArgs});");
             }
 
             sb.AppendLine("            }");
@@ -1262,15 +1262,15 @@ public class InteropGenerator
 
             if (returnsBool)
             {
-                sb.AppendLine($"            return {fieldName}({nativeArgs}) == 1;");
+                sb.AppendLine($"            return Secp256k1Interop.{fieldName}({nativeArgs}) == 1;");
             }
             else if (func.ReturnType == "void")
             {
-                sb.AppendLine($"            {fieldName}({nativeArgs});");
+                sb.AppendLine($"            Secp256k1Interop.{fieldName}({nativeArgs});");
             }
             else
             {
-                sb.AppendLine($"            return {fieldName}({nativeArgs});");
+                sb.AppendLine($"            return Secp256k1Interop.{fieldName}({nativeArgs});");
             }
         }
 
@@ -1765,15 +1765,15 @@ public class InteropGenerator
 
         if (returnsBool)
         {
-            sb.AppendLine($"{indent}        return {fieldName}({argsStr}) == 1;");
+            sb.AppendLine($"{indent}        return Secp256k1Interop.{fieldName}({argsStr}) == 1;");
         }
         else if (func.ReturnType == "void")
         {
-            sb.AppendLine($"{indent}        {fieldName}({argsStr});");
+            sb.AppendLine($"{indent}        Secp256k1Interop.{fieldName}({argsStr});");
         }
         else
         {
-            sb.AppendLine($"{indent}        return {fieldName}({argsStr});");
+            sb.AppendLine($"{indent}        return Secp256k1Interop.{fieldName}({argsStr});");
         }
 
         sb.AppendLine($"{indent}    }}");
@@ -1931,15 +1931,15 @@ public class InteropGenerator
 
             if (returnsBool)
             {
-                sb.AppendLine($"                return {fieldName}({nativeArgs}) == 1;");
+                sb.AppendLine($"                return Secp256k1Interop.{fieldName}({nativeArgs}) == 1;");
             }
             else if (func.ReturnType == "void")
             {
-                sb.AppendLine($"                {fieldName}({nativeArgs});");
+                sb.AppendLine($"                Secp256k1Interop.{fieldName}({nativeArgs});");
             }
             else
             {
-                sb.AppendLine($"                return {fieldName}({nativeArgs});");
+                sb.AppendLine($"                return Secp256k1Interop.{fieldName}({nativeArgs});");
             }
 
             sb.AppendLine("            }");
@@ -1952,15 +1952,15 @@ public class InteropGenerator
 
             if (returnsBool)
             {
-                sb.AppendLine($"            return {fieldName}({nativeArgs}) == 1;");
+                sb.AppendLine($"            return Secp256k1Interop.{fieldName}({nativeArgs}) == 1;");
             }
             else if (func.ReturnType == "void")
             {
-                sb.AppendLine($"            {fieldName}({nativeArgs});");
+                sb.AppendLine($"            Secp256k1Interop.{fieldName}({nativeArgs});");
             }
             else
             {
-                sb.AppendLine($"            return {fieldName}({nativeArgs});");
+                sb.AppendLine($"            return Secp256k1Interop.{fieldName}({nativeArgs});");
             }
         }
 
@@ -2229,15 +2229,15 @@ public class InteropGenerator
 
             if (returnsBool)
             {
-                sb.AppendLine($"                return {fieldName}({nativeArgs}) == 1;");
+                sb.AppendLine($"                return Secp256k1Interop.{fieldName}({nativeArgs}) == 1;");
             }
             else if (fpType.ReturnType == "void")
             {
-                sb.AppendLine($"                {fieldName}({nativeArgs});");
+                sb.AppendLine($"                Secp256k1Interop.{fieldName}({nativeArgs});");
             }
             else
             {
-                sb.AppendLine($"                return {fieldName}({nativeArgs});");
+                sb.AppendLine($"                return Secp256k1Interop.{fieldName}({nativeArgs});");
             }
 
             sb.AppendLine("            }");
@@ -2249,15 +2249,15 @@ public class InteropGenerator
 
             if (returnsBool)
             {
-                sb.AppendLine($"            return {fieldName}({nativeArgs}) == 1;");
+                sb.AppendLine($"            return Secp256k1Interop.{fieldName}({nativeArgs}) == 1;");
             }
             else if (fpType.ReturnType == "void")
             {
-                sb.AppendLine($"            {fieldName}({nativeArgs});");
+                sb.AppendLine($"            Secp256k1Interop.{fieldName}({nativeArgs});");
             }
             else
             {
-                sb.AppendLine($"            return {fieldName}({nativeArgs});");
+                sb.AppendLine($"            return Secp256k1Interop.{fieldName}({nativeArgs});");
             }
         }
 

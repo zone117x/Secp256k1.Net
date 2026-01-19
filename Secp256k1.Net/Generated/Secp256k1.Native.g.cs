@@ -46,49 +46,49 @@ namespace Secp256k1Net
 
     /// <summary>A pointer to a function to deterministically generate a nonce.</summary>
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public unsafe delegate int secp256k1_nonce_function(void* nonce32, void* msg32, void* key32, void* algo16, void* data, uint attempt);
+    internal unsafe delegate int secp256k1_nonce_function(void* nonce32, void* msg32, void* key32, void* algo16, void* data, uint attempt);
 
     /// <summary>A pointer to a function that hashes an EC point to obtain an ECDH secret</summary>
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public unsafe delegate int secp256k1_ecdh_hash_function(void* output, void* x32, void* y32, void* data);
+    internal unsafe delegate int secp256k1_ecdh_hash_function(void* output, void* x32, void* y32, void* data);
 
     /// <summary>A pointer to a function to deterministically generate a nonce.<para>Same as secp256k1_nonce function with the exception of accepting an additional pubkey argument and not requiring an attempt argument. The pubkey argument can protect signature schemes with key-prefixed challenge hash inputs against reusing the nonce when signing with the wrong precomputed pubkey.</para></summary>
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public unsafe delegate int secp256k1_nonce_function_hardened(void* nonce32, void* msg, nuint msglen, void* key32, void* xonly_pk32, void* algo, nuint algolen, void* data);
+    internal unsafe delegate int secp256k1_nonce_function_hardened(void* nonce32, void* msg, nuint msglen, void* key32, void* xonly_pk32, void* algo, nuint algolen, void* data);
 
     /// <summary>A pointer to a function used by secp256k1_ellswift_xdh to hash the shared X coordinate along with the encoded public keys to a uniform shared secret.</summary>
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public unsafe delegate int secp256k1_ellswift_xdh_hash_function(void* output, void* x32, void* ell_a64, void* ell_b64, void* data);
+    internal unsafe delegate int secp256k1_ellswift_xdh_hash_function(void* output, void* x32, void* ell_a64, void* ell_b64, void* data);
 #if !NET8_0_OR_GREATER
 
     /// <summary>Perform basic self tests (to be used in conjunction with secp256k1_context_static)<para>This function performs self tests that detect some serious usage errors and similar conditions, e.g., when the library is compiled for the wrong endianness. This is a last resort measure to be used in production. The performed tests are very rudimentary and are not intended as a replacement for running the test binaries.</para><para>It is highly recommended to call this before using secp256k1_context_static. It is not necessary to call this function before using a context created with secp256k1_context_create (or secp256k1_context_preallocated_create), which will take care of performing the self tests.</para><para>If the tests fail, this function will call the default error callback to abort the program (see secp256k1_context_set_error_callback).</para></summary>
-    public delegate void secp256k1_selftest();
+    internal delegate void secp256k1_selftest();
 
     /// <summary>Create a secp256k1 context object (in dynamically allocated memory).<para>This function uses malloc to allocate memory. It is guaranteed that malloc is called at most once for every call of this function. If you need to avoid dynamic memory allocation entirely, see secp256k1_context_static and the functions in secp256k1_preallocated.h.</para></summary>
     /// <param name="flags">Always set to SECP256K1_CONTEXT_NONE (see below).<para>The only valid non-deprecated flag in recent library versions is SECP256K1_CONTEXT_NONE, which will create a context sufficient for all functionality offered by the library. All other (deprecated) flags will be treated as equivalent to the SECP256K1_CONTEXT_NONE flag. Though the flags parameter primarily exists for historical reasons, future versions of the library may introduce new flags.</para><para>If the context is intended to be used for API functions that perform computations involving secret keys, e.g., signing and public key generation, then it is highly recommended to call secp256k1_context_randomize on the context before calling those API functions. This will provide enhanced protection against side-channel leakage, see secp256k1_context_randomize for details.</para><para>Do not create a new context object for each operation, as construction and randomization can take non-negligible time.</para></param>
     /// <returns>pointer to a newly created context object.</returns>
-    public delegate IntPtr secp256k1_context_create(uint flags);
+    internal delegate IntPtr secp256k1_context_create(uint flags);
 
     /// <summary>Copy a secp256k1 context object (into dynamically allocated memory).<para>This function uses malloc to allocate memory. It is guaranteed that malloc is called at most once for every call of this function. If you need to avoid dynamic memory allocation entirely, see the functions in secp256k1_preallocated.h.</para><para>Cloning secp256k1_context_static is not possible, and should not be emulated by the caller (e.g., using memcpy). Create a new context instead.</para></summary>
     /// <param name="ctx">pointer to a context to copy (not secp256k1_context_static).</param>
     /// <returns>pointer to a newly created context object.</returns>
-    public unsafe delegate IntPtr secp256k1_context_clone(IntPtr ctx);
+    internal unsafe delegate IntPtr secp256k1_context_clone(IntPtr ctx);
 
     /// <summary>Destroy a secp256k1 context object (created in dynamically allocated memory).<para>The context pointer may not be used afterwards.</para><para>The context to destroy must have been created using secp256k1_context_create or secp256k1_context_clone. If the context has instead been created using secp256k1_context_preallocated_create or secp256k1_context_preallocated_clone, the behaviour is undefined. In that case, secp256k1_context_preallocated_destroy must be used instead.</para></summary>
     /// <param name="ctx">pointer to a context to destroy, constructed using secp256k1_context_create or secp256k1_context_clone (i.e., not secp256k1_context_static).</param>
-    public unsafe delegate void secp256k1_context_destroy(IntPtr ctx);
+    internal unsafe delegate void secp256k1_context_destroy(IntPtr ctx);
 
     /// <summary>Set a callback function to be called when an illegal argument is passed to an API call. It will only trigger for violations that are mentioned explicitly in the header.<para>The philosophy is that these shouldn&apos;t be dealt with through a specific return value, as calling code should not have branches to deal with the case that this code itself is broken.</para><para>On the other hand, during debug stage, one would want to be informed about such mistakes, and the default (crashing) may be inadvisable. Should this callback return instead of crashing, the return value and output arguments of the API function call are undefined. Moreover, the same API call may trigger the callback again in this case.</para><para>When this function has not been called (or called with fun==NULL), then the default callback will be used. The library provides a default callback which writes the message to stderr and calls abort. This default callback can be replaced at link time if the preprocessor macro USE_EXTERNAL_DEFAULT_CALLBACKS is defined, which is the case if the build has been configured with --enable-external-default-callbacks (GNU Autotools) or -DSECP256K1_USE_EXTERNAL_DEFAULT_CALLBACKS=ON (CMake). Then the following two symbols must be provided to link against: - void secp256k1_default_illegal_callback_fn(const char *message, void *data); - void secp256k1_default_error_callback_fn(const char *message, void *data); The library may call a default callback even before a proper callback data pointer could have been set using secp256k1_context_set_illegal_callback or secp256k1_context_set_error_callback, e.g., when the creation of a context fails. In this case, the corresponding default callback will be called with the data pointer argument set to NULL.</para></summary>
     /// <param name="ctx">pointer to a context object.</param>
     /// <param name="fun">pointer to a function to call when an illegal argument is passed to the API, taking a message and an opaque pointer. (NULL restores the default callback.)</param>
     /// <param name="data">the opaque pointer to pass to fun above, must be NULL for the default callback.<para>See also secp256k1_context_set_error_callback.</para></param>
-    public unsafe delegate void secp256k1_context_set_illegal_callback(IntPtr ctx, IntPtr fun, void* data);
+    internal unsafe delegate void secp256k1_context_set_illegal_callback(IntPtr ctx, IntPtr fun, void* data);
 
     /// <summary>Set a callback function to be called when an internal consistency check fails.<para>The default callback writes an error message to stderr and calls abort to abort the program.</para><para>This can only trigger in case of a hardware failure, miscompilation, memory corruption, serious bug in the library, or other error that would result in undefined behaviour. It will not trigger due to mere incorrect usage of the API (see secp256k1_context_set_illegal_callback for that). After this callback returns, anything may happen, including crashing.</para></summary>
     /// <param name="ctx">pointer to a context object.</param>
     /// <param name="fun">pointer to a function to call when an internal error occurs, taking a message and an opaque pointer (NULL restores the default callback, see secp256k1_context_set_illegal_callback for details).</param>
     /// <param name="data">the opaque pointer to pass to fun above, must be NULL for the default callback.<para>See also secp256k1_context_set_illegal_callback.</para></param>
-    public unsafe delegate void secp256k1_context_set_error_callback(IntPtr ctx, IntPtr fun, void* data);
+    internal unsafe delegate void secp256k1_context_set_error_callback(IntPtr ctx, IntPtr fun, void* data);
 
     /// <summary>Parse a variable-length public key into the pubkey object.</summary>
     /// <param name="ctx">pointer to a context object.</param>
@@ -96,7 +96,7 @@ namespace Secp256k1Net
     /// <param name="input">pointer to a serialized public key</param>
     /// <param name="inputlen">length of the array pointed to by input<para>This function supports parsing compressed (33 bytes, header byte 0x02 or 0x03), uncompressed (65 bytes, header byte 0x04), or hybrid (65 bytes, header byte 0x06 or 0x07) format public keys.</para></param>
     /// <returns>1 if the public key was fully valid. 0 if the public key could not be parsed or is invalid.</returns>
-    public unsafe delegate int secp256k1_ec_pubkey_parse(IntPtr ctx, void* pubkey, void* input, nuint inputlen);
+    internal unsafe delegate int secp256k1_ec_pubkey_parse(IntPtr ctx, void* pubkey, void* input, nuint inputlen);
 
     /// <summary>Serialize a pubkey object into a serialized byte sequence.</summary>
     /// <param name="ctx">pointer to a context object.</param>
@@ -105,28 +105,28 @@ namespace Secp256k1Net
     /// <param name="pubkey">pointer to a secp256k1_pubkey containing an initialized public key.</param>
     /// <param name="flags">SECP256K1_EC_COMPRESSED if serialization should be in compressed format, otherwise SECP256K1_EC_UNCOMPRESSED.</param>
     /// <returns>1 always.</returns>
-    public unsafe delegate int secp256k1_ec_pubkey_serialize(IntPtr ctx, void* output, nuint* outputlen, void* pubkey, uint flags);
+    internal unsafe delegate int secp256k1_ec_pubkey_serialize(IntPtr ctx, void* output, nuint* outputlen, void* pubkey, uint flags);
 
     /// <summary>Compare two public keys using lexicographic (of compressed serialization) order</summary>
     /// <param name="ctx">pointer to a context object</param>
     /// <param name="pubkey1">first public key to compare</param>
     /// <param name="pubkey2">second public key to compare</param>
     /// <returns>&lt;0 if the first public key is less than the second &gt;0 if the first public key is greater than the second 0 if the two public keys are equal</returns>
-    public unsafe delegate int secp256k1_ec_pubkey_cmp(IntPtr ctx, void* pubkey1, void* pubkey2);
+    internal unsafe delegate int secp256k1_ec_pubkey_cmp(IntPtr ctx, void* pubkey1, void* pubkey2);
 
     /// <summary>Sort public keys using lexicographic (of compressed serialization) order</summary>
     /// <param name="ctx">pointer to a context object</param>
     /// <param name="pubkeys">array of pointers to pubkeys to sort</param>
     /// <param name="n_pubkeys">number of elements in the pubkeys array</param>
     /// <returns>0 if the arguments are invalid. 1 otherwise.</returns>
-    public unsafe delegate int secp256k1_ec_pubkey_sort(IntPtr ctx, IntPtr pubkeys, nuint n_pubkeys);
+    internal unsafe delegate int secp256k1_ec_pubkey_sort(IntPtr ctx, IntPtr pubkeys, nuint n_pubkeys);
 
     /// <summary>Parse an ECDSA signature in compact (64 bytes) format.</summary>
     /// <param name="ctx">pointer to a context object</param>
     /// <param name="sig">pointer to a signature object</param>
     /// <param name="input64">pointer to the 64-byte array to parse<para>The signature must consist of a 32-byte big endian R value, followed by a 32-byte big endian S value. If R or S fall outside of [0..order-1], the encoding is invalid. R and S with value 0 are allowed in the encoding.</para><para>After the call, sig will always be initialized. If parsing failed or R or S are zero, the resulting sig value is guaranteed to fail verification for any message and public key.</para></param>
     /// <returns>1 when the signature could be parsed, 0 otherwise.</returns>
-    public unsafe delegate int secp256k1_ecdsa_signature_parse_compact(IntPtr ctx, void* sig, void* input64);
+    internal unsafe delegate int secp256k1_ecdsa_signature_parse_compact(IntPtr ctx, void* sig, void* input64);
 
     /// <summary>Parse a DER ECDSA signature.</summary>
     /// <param name="ctx">pointer to a context object</param>
@@ -134,7 +134,7 @@ namespace Secp256k1Net
     /// <param name="input">pointer to the signature to be parsed</param>
     /// <param name="inputlen">the length of the array pointed to be input<para>This function will accept any valid DER encoded signature, even if the encoded numbers are out of range.</para><para>After the call, sig will always be initialized. If parsing failed or the encoded numbers are out of range, signature verification with it is guaranteed to fail for every message and public key.</para></param>
     /// <returns>1 when the signature could be parsed, 0 otherwise.</returns>
-    public unsafe delegate int secp256k1_ecdsa_signature_parse_der(IntPtr ctx, void* sig, void* input, nuint inputlen);
+    internal unsafe delegate int secp256k1_ecdsa_signature_parse_der(IntPtr ctx, void* sig, void* input, nuint inputlen);
 
     /// <summary>Serialize an ECDSA signature in DER format.</summary>
     /// <param name="ctx">pointer to a context object</param>
@@ -142,14 +142,14 @@ namespace Secp256k1Net
     /// <param name="outputlen">pointer to a length integer. Initially, this integer should be set to the length of output. After the call it will be set to the length of the serialization (even if 0 was returned).</param>
     /// <param name="sig">pointer to an initialized signature object</param>
     /// <returns>1 if enough space was available to serialize, 0 otherwise</returns>
-    public unsafe delegate int secp256k1_ecdsa_signature_serialize_der(IntPtr ctx, void* output, nuint* outputlen, void* sig);
+    internal unsafe delegate int secp256k1_ecdsa_signature_serialize_der(IntPtr ctx, void* output, nuint* outputlen, void* sig);
 
     /// <summary>Serialize an ECDSA signature in compact (64 byte) format.</summary>
     /// <param name="ctx">pointer to a context object</param>
     /// <param name="output64">pointer to a 64-byte array to store the compact serialization</param>
     /// <param name="sig">pointer to an initialized signature object<para>See secp256k1_ecdsa_signature_parse_compact for details about the encoding.</para></param>
     /// <returns>1</returns>
-    public unsafe delegate int secp256k1_ecdsa_signature_serialize_compact(IntPtr ctx, void* output64, void* sig);
+    internal unsafe delegate int secp256k1_ecdsa_signature_serialize_compact(IntPtr ctx, void* output64, void* sig);
 
     /// <summary>Verify an ECDSA signature.</summary>
     /// <param name="ctx">pointer to a context object</param>
@@ -157,14 +157,14 @@ namespace Secp256k1Net
     /// <param name="msghash32">the 32-byte message hash being verified. The verifier must make sure to apply a cryptographic hash function to the message by itself and not accept an msghash32 value directly. Otherwise, it would be easy to create a &quot;valid&quot; signature without knowledge of the secret key. See also https://bitcoin.stackexchange.com/a/81116/35586 for more background on this topic.</param>
     /// <param name="pubkey">pointer to an initialized public key to verify with.<para>To avoid accepting malleable signatures, only ECDSA signatures in lower-S form are accepted.</para><para>If you need to accept ECDSA signatures from sources that do not obey this rule, apply secp256k1_ecdsa_signature_normalize to the signature prior to verification, but be aware that doing so results in malleable signatures.</para><para>For details, see the comments for that function.</para></param>
     /// <returns>1: correct signature 0: incorrect or unparseable signature</returns>
-    public unsafe delegate int secp256k1_ecdsa_verify(IntPtr ctx, void* sig, void* msghash32, void* pubkey);
+    internal unsafe delegate int secp256k1_ecdsa_verify(IntPtr ctx, void* sig, void* msghash32, void* pubkey);
 
     /// <summary>Convert a signature to a normalized lower-S form.</summary>
     /// <param name="ctx">pointer to a context object</param>
     /// <param name="sigout">pointer to a signature to fill with the normalized form, or copy if the input was already normalized. (can be NULL if you&apos;re only interested in whether the input was already normalized).</param>
     /// <param name="sigin">pointer to a signature to check/normalize (can be identical to sigout)<para>With ECDSA a third-party can forge a second distinct signature of the same message, given a single initial signature, but without knowing the key. This is done by negating the S value modulo the order of the curve, &apos;flipping&apos; the sign of the random point R which is not included in the signature.</para><para>Forgery of the same message isn&apos;t universally problematic, but in systems where message malleability or uniqueness of signatures is important this can cause issues. This forgery can be blocked by all verifiers forcing signers to use a normalized form.</para><para>The lower-S form reduces the size of signatures slightly on average when variable length encodings (such as DER) are used and is cheap to verify, making it a good choice. Security of always using lower-S is assured because anyone can trivially modify a signature after the fact to enforce this property anyway.</para><para>The lower S value is always between 0x1 and 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0, inclusive.</para><para>No other forms of ECDSA malleability are known and none seem likely, but there is no formal proof that ECDSA, even with this additional restriction, is free of other malleability. Commonly used serialization schemes will also accept various non-unique encodings, so care should be taken when this property is required for an application.</para><para>The secp256k1_ecdsa_sign function will by default create signatures in the lower-S form, and secp256k1_ecdsa_verify will not accept others. In case signatures come from a system that cannot enforce this property, secp256k1_ecdsa_signature_normalize must be called before verification.</para></param>
     /// <returns>1 if sigin was not normalized, 0 if it already was.</returns>
-    public unsafe delegate int secp256k1_ecdsa_signature_normalize(IntPtr ctx, void* sigout, void* sigin);
+    internal unsafe delegate int secp256k1_ecdsa_signature_normalize(IntPtr ctx, void* sigout, void* sigin);
 
     /// <summary>Create an ECDSA signature.</summary>
     /// <param name="ctx">pointer to a context object (not secp256k1_context_static).</param>
@@ -174,66 +174,66 @@ namespace Secp256k1Net
     /// <param name="noncefp">pointer to a nonce generation function. If NULL, secp256k1_nonce_function_default is used.</param>
     /// <param name="ndata">pointer to arbitrary data used by the nonce generation function (can be NULL). If it is non-NULL and secp256k1_nonce_function_default is used, then ndata must be a pointer to 32-bytes of additional data.<para>The created signature is always in lower-S form. See secp256k1_ecdsa_signature_normalize for more details.</para></param>
     /// <returns>1: signature created 0: the nonce generation function failed, or the secret key was invalid.</returns>
-    public unsafe delegate int secp256k1_ecdsa_sign(IntPtr ctx, void* sig, void* msghash32, void* seckey, IntPtr noncefp, void* ndata);
+    internal unsafe delegate int secp256k1_ecdsa_sign(IntPtr ctx, void* sig, void* msghash32, void* seckey, IntPtr noncefp, void* ndata);
 
     /// <summary>Verify an elliptic curve secret key.<para>A secret key is valid if it is not 0 and less than the secp256k1 curve order when interpreted as an integer (most significant byte first). The probability of choosing a 32-byte string uniformly at random which is an invalid secret key is negligible. However, if it does happen it should be assumed that the randomness source is severely broken and there should be no retry.</para></summary>
     /// <param name="ctx">pointer to a context object.</param>
     /// <param name="seckey">pointer to a 32-byte secret key.</param>
     /// <returns>1: secret key is valid 0: secret key is invalid</returns>
-    public unsafe delegate int secp256k1_ec_seckey_verify(IntPtr ctx, void* seckey);
+    internal unsafe delegate int secp256k1_ec_seckey_verify(IntPtr ctx, void* seckey);
 
     /// <summary>Compute the public key for a secret key.</summary>
     /// <param name="ctx">pointer to a context object (not secp256k1_context_static).</param>
     /// <param name="pubkey">pointer to the created public key.</param>
     /// <param name="seckey">pointer to a 32-byte secret key.</param>
     /// <returns>1: secret was valid, public key stores. 0: secret was invalid, try again.</returns>
-    public unsafe delegate int secp256k1_ec_pubkey_create(IntPtr ctx, void* pubkey, void* seckey);
+    internal unsafe delegate int secp256k1_ec_pubkey_create(IntPtr ctx, void* pubkey, void* seckey);
 
     /// <summary>Negates a secret key in place.</summary>
     /// <param name="ctx">pointer to a context object</param>
     /// <param name="seckey">pointer to the 32-byte secret key to be negated. If the secret key is invalid according to secp256k1_ec_seckey_verify, this function returns 0 and seckey will be set to some unspecified value.</param>
     /// <returns>0 if the given secret key is invalid according to secp256k1_ec_seckey_verify. 1 otherwise</returns>
-    public unsafe delegate int secp256k1_ec_seckey_negate(IntPtr ctx, void* seckey);
+    internal unsafe delegate int secp256k1_ec_seckey_negate(IntPtr ctx, void* seckey);
 
     /// <summary>Negates a public key in place.</summary>
     /// <param name="ctx">pointer to a context object</param>
     /// <param name="pubkey">pointer to the public key to be negated.</param>
     /// <returns>1 always</returns>
-    public unsafe delegate int secp256k1_ec_pubkey_negate(IntPtr ctx, void* pubkey);
+    internal unsafe delegate int secp256k1_ec_pubkey_negate(IntPtr ctx, void* pubkey);
 
     /// <summary>Tweak a secret key by adding tweak to it.</summary>
     /// <param name="ctx">pointer to a context object.</param>
     /// <param name="seckey">pointer to a 32-byte secret key. If the secret key is invalid according to secp256k1_ec_seckey_verify, this function returns 0. seckey will be set to some unspecified value if this function returns 0.</param>
     /// <param name="tweak32">pointer to a 32-byte tweak, which must be valid according to secp256k1_ec_seckey_verify or 32 zero bytes. For uniformly random 32-byte tweaks, the chance of being invalid is negligible (around 1 in 2^128).</param>
     /// <returns>0 if the arguments are invalid or the resulting secret key would be invalid (only when the tweak is the negation of the secret key). 1 otherwise.</returns>
-    public unsafe delegate int secp256k1_ec_seckey_tweak_add(IntPtr ctx, void* seckey, void* tweak32);
+    internal unsafe delegate int secp256k1_ec_seckey_tweak_add(IntPtr ctx, void* seckey, void* tweak32);
 
     /// <summary>Tweak a public key by adding tweak times the generator to it.</summary>
     /// <param name="ctx">pointer to a context object.</param>
     /// <param name="pubkey">pointer to a public key object. pubkey will be set to an invalid value if this function returns 0.</param>
     /// <param name="tweak32">pointer to a 32-byte tweak, which must be valid according to secp256k1_ec_seckey_verify or 32 zero bytes. For uniformly random 32-byte tweaks, the chance of being invalid is negligible (around 1 in 2^128).</param>
     /// <returns>0 if the arguments are invalid or the resulting public key would be invalid (only when the tweak is the negation of the corresponding secret key). 1 otherwise.</returns>
-    public unsafe delegate int secp256k1_ec_pubkey_tweak_add(IntPtr ctx, void* pubkey, void* tweak32);
+    internal unsafe delegate int secp256k1_ec_pubkey_tweak_add(IntPtr ctx, void* pubkey, void* tweak32);
 
     /// <summary>Tweak a secret key by multiplying it by a tweak.</summary>
     /// <param name="ctx">pointer to a context object.</param>
     /// <param name="seckey">pointer to a 32-byte secret key. If the secret key is invalid according to secp256k1_ec_seckey_verify, this function returns 0. seckey will be set to some unspecified value if this function returns 0.</param>
     /// <param name="tweak32">pointer to a 32-byte tweak. If the tweak is invalid according to secp256k1_ec_seckey_verify, this function returns 0. For uniformly random 32-byte arrays the chance of being invalid is negligible (around 1 in 2^128).</param>
     /// <returns>0 if the arguments are invalid. 1 otherwise.</returns>
-    public unsafe delegate int secp256k1_ec_seckey_tweak_mul(IntPtr ctx, void* seckey, void* tweak32);
+    internal unsafe delegate int secp256k1_ec_seckey_tweak_mul(IntPtr ctx, void* seckey, void* tweak32);
 
     /// <summary>Tweak a public key by multiplying it by a tweak value.</summary>
     /// <param name="ctx">pointer to a context object.</param>
     /// <param name="pubkey">pointer to a public key object. pubkey will be set to an invalid value if this function returns 0.</param>
     /// <param name="tweak32">pointer to a 32-byte tweak. If the tweak is invalid according to secp256k1_ec_seckey_verify, this function returns 0. For uniformly random 32-byte arrays the chance of being invalid is negligible (around 1 in 2^128).</param>
     /// <returns>0 if the arguments are invalid. 1 otherwise.</returns>
-    public unsafe delegate int secp256k1_ec_pubkey_tweak_mul(IntPtr ctx, void* pubkey, void* tweak32);
+    internal unsafe delegate int secp256k1_ec_pubkey_tweak_mul(IntPtr ctx, void* pubkey, void* tweak32);
 
     /// <summary>Randomizes the context to provide enhanced protection against side-channel leakage.</summary>
     /// <param name="ctx">pointer to a context object (not secp256k1_context_static).</param>
     /// <param name="seed32">pointer to a 32-byte random seed (NULL resets to initial state).<para>While secp256k1 code is written and tested to be constant-time no matter what secret values are, it is possible that a compiler may output code which is not, and also that the CPU may not emit the same radio frequencies or draw the same amount of power for all values. Randomization of the context shields against side-channel observations which aim to exploit secret-dependent behaviour in certain computations which involve secret keys.</para><para>It is highly recommended to call this function on contexts returned from secp256k1_context_create or secp256k1_context_clone (or from the corresponding functions in secp256k1_preallocated.h) before using these contexts to call API functions that perform computations involving secret keys, e.g., signing and public key generation. It is possible to call this function more than once on the same context, and doing so before every few computations involving secret keys is recommended as a defense-in-depth measure. Randomization of the static context secp256k1_context_static is not supported.</para><para>Currently, the random seed is mainly used for blinding multiplications of a secret scalar with the elliptic curve base point. Multiplications of this kind are performed by exactly those API functions which are documented to require a context that is not secp256k1_context_static. As a rule of thumb, these are all functions which take a secret key (or a keypair) as an input. A notable exception to that rule is the ECDH module, which relies on a different kind of elliptic curve point multiplication and thus does not benefit from enhanced protection against side-channel leakage currently.</para></param>
     /// <returns>1: randomization successful 0: error</returns>
-    public unsafe delegate int secp256k1_context_randomize(IntPtr ctx, void* seed32);
+    internal unsafe delegate int secp256k1_context_randomize(IntPtr ctx, void* seed32);
 
     /// <summary>Add a number of public keys together.</summary>
     /// <param name="ctx">pointer to a context object.</param>
@@ -241,7 +241,7 @@ namespace Secp256k1Net
     /// <param name="ins">pointer to array of pointers to public keys.</param>
     /// <param name="n">the number of public keys to add together (must be at least 1).</param>
     /// <returns>1: the sum of the public keys is valid. 0: the sum of the public keys is not valid.</returns>
-    public unsafe delegate int secp256k1_ec_pubkey_combine(IntPtr ctx, void* @out, IntPtr ins, nuint n);
+    internal unsafe delegate int secp256k1_ec_pubkey_combine(IntPtr ctx, void* @out, IntPtr ins, nuint n);
 
     /// <summary>Compute a tagged hash as defined in BIP-340.<para>This is useful for creating a message hash and achieving domain separation through an application-specific tag. This function returns SHA256(SHA256(tag)||SHA256(tag)||msg). Therefore, tagged hash implementations optimized for a specific tag can precompute the SHA256 state after hashing the tag hashes.</para></summary>
     /// <param name="ctx">pointer to a context object</param>
@@ -251,33 +251,33 @@ namespace Secp256k1Net
     /// <param name="msg">pointer to an array containing the message</param>
     /// <param name="msglen">length of the message array</param>
     /// <returns>1 always.</returns>
-    public unsafe delegate int secp256k1_tagged_sha256(IntPtr ctx, void* hash32, void* tag, nuint taglen, void* msg, nuint msglen);
+    internal unsafe delegate int secp256k1_tagged_sha256(IntPtr ctx, void* hash32, void* tag, nuint taglen, void* msg, nuint msglen);
 
     /// <summary>Determine the memory size of a secp256k1 context object to be created in caller-provided memory.<para>The purpose of this function is to determine how much memory must be provided to secp256k1_context_preallocated_create.</para></summary>
     /// <param name="flags">which parts of the context to initialize.</param>
     /// <returns>the required size of the caller-provided memory block</returns>
-    public delegate nuint secp256k1_context_preallocated_size(uint flags);
+    internal delegate nuint secp256k1_context_preallocated_size(uint flags);
 
     /// <summary>Create a secp256k1 context object in caller-provided memory.<para>The caller must provide a pointer to a rewritable contiguous block of memory of size at least secp256k1_context_preallocated_size(flags) bytes, suitably aligned to hold an object of any type.</para><para>The block of memory is exclusively owned by the created context object during the lifetime of this context object, which begins with the call to this function and ends when a call to secp256k1_context_preallocated_destroy (which destroys the context object again) returns. During the lifetime of the context object, the caller is obligated not to access this block of memory, i.e., the caller may not read or write the memory, e.g., by copying the memory contents to a different location or trying to create a second context object in the memory. In simpler words, the prealloc pointer (or any pointer derived from it) should not be used during the lifetime of the context object.</para></summary>
     /// <param name="prealloc">pointer to a rewritable contiguous block of memory of size at least secp256k1_context_preallocated_size(flags) bytes, as detailed above.</param>
     /// <param name="flags">which parts of the context to initialize.<para>See secp256k1_context_create (in secp256k1.h) for further details.</para><para>See also secp256k1_context_randomize (in secp256k1.h) and secp256k1_context_preallocated_destroy.</para></param>
     /// <returns>pointer to newly created context object.</returns>
-    public unsafe delegate IntPtr secp256k1_context_preallocated_create(void* prealloc, uint flags);
+    internal unsafe delegate IntPtr secp256k1_context_preallocated_create(void* prealloc, uint flags);
 
     /// <summary>Determine the memory size of a secp256k1 context object to be copied into caller-provided memory.</summary>
     /// <param name="ctx">pointer to a context to copy.</param>
     /// <returns>the required size of the caller-provided memory block.</returns>
-    public unsafe delegate nuint secp256k1_context_preallocated_clone_size(IntPtr ctx);
+    internal unsafe delegate nuint secp256k1_context_preallocated_clone_size(IntPtr ctx);
 
     /// <summary>Copy a secp256k1 context object into caller-provided memory.<para>The caller must provide a pointer to a rewritable contiguous block of memory of size at least secp256k1_context_preallocated_size(flags) bytes, suitably aligned to hold an object of any type.</para><para>The block of memory is exclusively owned by the created context object during the lifetime of this context object, see the description of secp256k1_context_preallocated_create for details.</para><para>Cloning secp256k1_context_static is not possible, and should not be emulated by the caller (e.g., using memcpy). Create a new context instead.</para></summary>
     /// <param name="ctx">pointer to a context to copy (not secp256k1_context_static).</param>
     /// <param name="prealloc">pointer to a rewritable contiguous block of memory of size at least secp256k1_context_preallocated_size(flags) bytes, as detailed above.</param>
     /// <returns>pointer to a newly created context object.</returns>
-    public unsafe delegate IntPtr secp256k1_context_preallocated_clone(IntPtr ctx, void* prealloc);
+    internal unsafe delegate IntPtr secp256k1_context_preallocated_clone(IntPtr ctx, void* prealloc);
 
     /// <summary>Destroy a secp256k1 context object that has been created in caller-provided memory.<para>The context pointer may not be used afterwards.</para><para>The context to destroy must have been created using secp256k1_context_preallocated_create or secp256k1_context_preallocated_clone. If the context has instead been created using secp256k1_context_create or secp256k1_context_clone, the behaviour is undefined. In that case, secp256k1_context_destroy must be used instead.</para><para>If required, it is the responsibility of the caller to deallocate the block of memory properly after this function returns, e.g., by calling free on the preallocated pointer given to secp256k1_context_preallocated_create or secp256k1_context_preallocated_clone.</para></summary>
     /// <param name="ctx">pointer to a context to destroy, constructed using secp256k1_context_preallocated_create or secp256k1_context_preallocated_clone (i.e., not secp256k1_context_static).</param>
-    public unsafe delegate void secp256k1_context_preallocated_destroy(IntPtr ctx);
+    internal unsafe delegate void secp256k1_context_preallocated_destroy(IntPtr ctx);
 
     /// <summary>Parse a compact ECDSA signature (64 bytes + recovery id).</summary>
     /// <param name="ctx">pointer to a context object</param>
@@ -285,14 +285,14 @@ namespace Secp256k1Net
     /// <param name="input64">pointer to a 64-byte compact signature</param>
     /// <param name="recid">the recovery id (0, 1, 2 or 3)</param>
     /// <returns>1 when the signature could be parsed, 0 otherwise</returns>
-    public unsafe delegate int secp256k1_ecdsa_recoverable_signature_parse_compact(IntPtr ctx, void* sig, void* input64, int recid);
+    internal unsafe delegate int secp256k1_ecdsa_recoverable_signature_parse_compact(IntPtr ctx, void* sig, void* input64, int recid);
 
     /// <summary>Convert a recoverable signature into a normal signature.</summary>
     /// <param name="ctx">pointer to a context object.</param>
     /// <param name="sig">pointer to a normal signature.</param>
     /// <param name="sigin">pointer to a recoverable signature.</param>
     /// <returns>1</returns>
-    public unsafe delegate int secp256k1_ecdsa_recoverable_signature_convert(IntPtr ctx, void* sig, void* sigin);
+    internal unsafe delegate int secp256k1_ecdsa_recoverable_signature_convert(IntPtr ctx, void* sig, void* sigin);
 
     /// <summary>Serialize an ECDSA signature in compact format (64 bytes + recovery id).</summary>
     /// <param name="ctx">pointer to a context object.</param>
@@ -300,7 +300,7 @@ namespace Secp256k1Net
     /// <param name="recid">pointer to an integer to hold the recovery id.</param>
     /// <param name="sig">pointer to an initialized signature object.</param>
     /// <returns>1</returns>
-    public unsafe delegate int secp256k1_ecdsa_recoverable_signature_serialize_compact(IntPtr ctx, void* output64, int* recid, void* sig);
+    internal unsafe delegate int secp256k1_ecdsa_recoverable_signature_serialize_compact(IntPtr ctx, void* output64, int* recid, void* sig);
 
     /// <summary>Create a recoverable ECDSA signature.</summary>
     /// <param name="ctx">pointer to a context object (not secp256k1_context_static).</param>
@@ -310,7 +310,7 @@ namespace Secp256k1Net
     /// <param name="noncefp">pointer to a nonce generation function. If NULL, secp256k1_nonce_function_default is used.</param>
     /// <param name="ndata">pointer to arbitrary data used by the nonce generation function (can be NULL for secp256k1_nonce_function_default).</param>
     /// <returns>1: signature created 0: the nonce generation function failed, or the secret key was invalid.</returns>
-    public unsafe delegate int secp256k1_ecdsa_sign_recoverable(IntPtr ctx, void* sig, void* msghash32, void* seckey, IntPtr noncefp, void* ndata);
+    internal unsafe delegate int secp256k1_ecdsa_sign_recoverable(IntPtr ctx, void* sig, void* msghash32, void* seckey, IntPtr noncefp, void* ndata);
 
     /// <summary>Recover an ECDSA public key from a signature.<para>Successful public key recovery guarantees that the signature, after normalization, passes `secp256k1_ecdsa_verify`. Thus, explicit verification is not necessary.</para><para>However, a recoverable signature that successfully passes `secp256k1_ecdsa_recover`, when converted to a non-recoverable signature (using `secp256k1_ecdsa_recoverable_signature_convert`), is not guaranteed to be normalized and thus not guaranteed to pass `secp256k1_ecdsa_verify`. If a normalized signature is required, call `secp256k1_ecdsa_signature_normalize` after `secp256k1_ecdsa_recoverable_signature_convert`.</para></summary>
     /// <param name="ctx">pointer to a context object.</param>
@@ -318,7 +318,7 @@ namespace Secp256k1Net
     /// <param name="sig">pointer to initialized signature that supports pubkey recovery.</param>
     /// <param name="msghash32">the 32-byte message hash assumed to be signed.</param>
     /// <returns>1: public key successfully recovered 0: otherwise.</returns>
-    public unsafe delegate int secp256k1_ecdsa_recover(IntPtr ctx, void* pubkey, void* sig, void* msghash32);
+    internal unsafe delegate int secp256k1_ecdsa_recover(IntPtr ctx, void* pubkey, void* sig, void* msghash32);
 
     /// <summary>Compute an EC Diffie-Hellman secret in constant time</summary>
     /// <param name="ctx">pointer to a context object.</param>
@@ -328,28 +328,28 @@ namespace Secp256k1Net
     /// <param name="hashfp">pointer to a hash function. If NULL, secp256k1_ecdh_hash_function_sha256 is used (in which case, 32 bytes will be written to output).</param>
     /// <param name="data">arbitrary data pointer that is passed through to hashfp (can be NULL for secp256k1_ecdh_hash_function_sha256).</param>
     /// <returns>1: exponentiation was successful 0: scalar was invalid (zero or overflow) or hashfp returned 0</returns>
-    public unsafe delegate int secp256k1_ecdh(IntPtr ctx, void* output, void* pubkey, void* seckey, IntPtr hashfp, void* data);
+    internal unsafe delegate int secp256k1_ecdh(IntPtr ctx, void* output, void* pubkey, void* seckey, IntPtr hashfp, void* data);
 
     /// <summary>Parse a 32-byte sequence into a xonly_pubkey object.</summary>
     /// <param name="ctx">pointer to a context object.</param>
     /// <param name="pubkey">pointer to a pubkey object. If 1 is returned, it is set to a parsed version of input. If not, it&apos;s set to an invalid value.</param>
     /// <param name="input32">pointer to a serialized xonly_pubkey.</param>
     /// <returns>1 if the public key was fully valid. 0 if the public key could not be parsed or is invalid.</returns>
-    public unsafe delegate int secp256k1_xonly_pubkey_parse(IntPtr ctx, void* pubkey, void* input32);
+    internal unsafe delegate int secp256k1_xonly_pubkey_parse(IntPtr ctx, void* pubkey, void* input32);
 
     /// <summary>Serialize an xonly_pubkey object into a 32-byte sequence.</summary>
     /// <param name="ctx">pointer to a context object.</param>
     /// <param name="output32">pointer to a 32-byte array to place the serialized key in.</param>
     /// <param name="pubkey">pointer to a secp256k1_xonly_pubkey containing an initialized public key.</param>
     /// <returns>1 always.</returns>
-    public unsafe delegate int secp256k1_xonly_pubkey_serialize(IntPtr ctx, void* output32, void* pubkey);
+    internal unsafe delegate int secp256k1_xonly_pubkey_serialize(IntPtr ctx, void* output32, void* pubkey);
 
     /// <summary>Compare two x-only public keys using lexicographic order</summary>
     /// <param name="ctx">pointer to a context object.</param>
     /// <param name="pk1"></param>
     /// <param name="pk2"></param>
     /// <returns>&lt;0 if the first public key is less than the second &gt;0 if the first public key is greater than the second 0 if the two public keys are equal</returns>
-    public unsafe delegate int secp256k1_xonly_pubkey_cmp(IntPtr ctx, void* pk1, void* pk2);
+    internal unsafe delegate int secp256k1_xonly_pubkey_cmp(IntPtr ctx, void* pk1, void* pk2);
 
     /// <summary>Converts a secp256k1_pubkey into a secp256k1_xonly_pubkey.</summary>
     /// <param name="ctx">pointer to a context object.</param>
@@ -357,7 +357,7 @@ namespace Secp256k1Net
     /// <param name="pk_parity">Ignored if NULL. Otherwise, pointer to an integer that will be set to 1 if the point encoded by xonly_pubkey is the negation of the pubkey and set to 0 otherwise.</param>
     /// <param name="pubkey">pointer to a public key that is converted.</param>
     /// <returns>1 always.</returns>
-    public unsafe delegate int secp256k1_xonly_pubkey_from_pubkey(IntPtr ctx, void* xonly_pubkey, int* pk_parity, void* pubkey);
+    internal unsafe delegate int secp256k1_xonly_pubkey_from_pubkey(IntPtr ctx, void* xonly_pubkey, int* pk_parity, void* pubkey);
 
     /// <summary>Tweak an x-only public key by adding the generator multiplied with tweak32 to it.<para>Note that the resulting point can not in general be represented by an x-only pubkey because it may have an odd Y coordinate. Instead, the output_pubkey is a normal secp256k1_pubkey.</para></summary>
     /// <param name="ctx">pointer to a context object.</param>
@@ -365,7 +365,7 @@ namespace Secp256k1Net
     /// <param name="internal_pubkey">pointer to an x-only pubkey to apply the tweak to.</param>
     /// <param name="tweak32">pointer to a 32-byte tweak, which must be valid according to secp256k1_ec_seckey_verify or 32 zero bytes. For uniformly random 32-byte tweaks, the chance of being invalid is negligible (around 1 in 2^128).</param>
     /// <returns>0 if the arguments are invalid or the resulting public key would be invalid (only when the tweak is the negation of the corresponding secret key). 1 otherwise.</returns>
-    public unsafe delegate int secp256k1_xonly_pubkey_tweak_add(IntPtr ctx, void* output_pubkey, void* internal_pubkey, void* tweak32);
+    internal unsafe delegate int secp256k1_xonly_pubkey_tweak_add(IntPtr ctx, void* output_pubkey, void* internal_pubkey, void* tweak32);
 
     /// <summary>Checks that a tweaked pubkey is the result of calling secp256k1_xonly_pubkey_tweak_add with internal_pubkey and tweak32.<para>The tweaked pubkey is represented by its 32-byte x-only serialization and its pk_parity, which can both be obtained by converting the result of tweak_add to a secp256k1_xonly_pubkey.</para><para>Note that this alone does _not_ verify that the tweaked pubkey is a commitment. If the tweak is not chosen in a specific way, the tweaked pubkey can easily be the result of a different internal_pubkey and tweak.</para></summary>
     /// <param name="ctx">pointer to a context object.</param>
@@ -374,28 +374,28 @@ namespace Secp256k1Net
     /// <param name="internal_pubkey">pointer to an x-only public key object to apply the tweak to.</param>
     /// <param name="tweak32">pointer to a 32-byte tweak.</param>
     /// <returns>0 if the arguments are invalid or the tweaked pubkey is not the result of tweaking the internal_pubkey with tweak32. 1 otherwise.</returns>
-    public unsafe delegate int secp256k1_xonly_pubkey_tweak_add_check(IntPtr ctx, void* tweaked_pubkey32, int tweaked_pk_parity, void* internal_pubkey, void* tweak32);
+    internal unsafe delegate int secp256k1_xonly_pubkey_tweak_add_check(IntPtr ctx, void* tweaked_pubkey32, int tweaked_pk_parity, void* internal_pubkey, void* tweak32);
 
     /// <summary>Compute the keypair for a valid secret key.<para>See the documentation of `secp256k1_ec_seckey_verify` for more information about the validity of secret keys.</para></summary>
     /// <param name="ctx">pointer to a context object (not secp256k1_context_static).</param>
     /// <param name="keypair">pointer to the created keypair.</param>
     /// <param name="seckey">pointer to a 32-byte secret key.</param>
     /// <returns>1: secret key is valid 0: secret key is invalid</returns>
-    public unsafe delegate int secp256k1_keypair_create(IntPtr ctx, void* keypair, void* seckey);
+    internal unsafe delegate int secp256k1_keypair_create(IntPtr ctx, void* keypair, void* seckey);
 
     /// <summary>Get the secret key from a keypair.</summary>
     /// <param name="ctx">pointer to a context object.</param>
     /// <param name="seckey">pointer to a 32-byte buffer for the secret key.</param>
     /// <param name="keypair">pointer to a keypair.</param>
     /// <returns>1 always.</returns>
-    public unsafe delegate int secp256k1_keypair_sec(IntPtr ctx, void* seckey, void* keypair);
+    internal unsafe delegate int secp256k1_keypair_sec(IntPtr ctx, void* seckey, void* keypair);
 
     /// <summary>Get the public key from a keypair.</summary>
     /// <param name="ctx">pointer to a context object.</param>
     /// <param name="pubkey">pointer to a pubkey object, set to the keypair public key.</param>
     /// <param name="keypair">pointer to a keypair.</param>
     /// <returns>1 always.</returns>
-    public unsafe delegate int secp256k1_keypair_pub(IntPtr ctx, void* pubkey, void* keypair);
+    internal unsafe delegate int secp256k1_keypair_pub(IntPtr ctx, void* pubkey, void* keypair);
 
     /// <summary>Get the x-only public key from a keypair.<para>This is the same as calling secp256k1_keypair_pub and then secp256k1_xonly_pubkey_from_pubkey.</para></summary>
     /// <param name="ctx">pointer to a context object.</param>
@@ -403,14 +403,14 @@ namespace Secp256k1Net
     /// <param name="pk_parity">Ignored if NULL. Otherwise, pointer to an integer that will be set to the pk_parity argument of secp256k1_xonly_pubkey_from_pubkey.</param>
     /// <param name="keypair">pointer to a keypair.</param>
     /// <returns>1 always.</returns>
-    public unsafe delegate int secp256k1_keypair_xonly_pub(IntPtr ctx, void* pubkey, int* pk_parity, void* keypair);
+    internal unsafe delegate int secp256k1_keypair_xonly_pub(IntPtr ctx, void* pubkey, int* pk_parity, void* keypair);
 
     /// <summary>Tweak a keypair by adding tweak32 to the secret key and updating the public key accordingly.<para>Calling this function and then secp256k1_keypair_pub results in the same public key as calling secp256k1_keypair_xonly_pub and then secp256k1_xonly_pubkey_tweak_add.</para></summary>
     /// <param name="ctx">pointer to a context object.</param>
     /// <param name="keypair">pointer to a keypair to apply the tweak to. Will be set to an invalid value if this function returns 0.</param>
     /// <param name="tweak32">pointer to a 32-byte tweak, which must be valid according to secp256k1_ec_seckey_verify or 32 zero bytes. For uniformly random 32-byte tweaks, the chance of being invalid is negligible (around 1 in 2^128).</param>
     /// <returns>0 if the arguments are invalid or the resulting keypair would be invalid (only when the tweak is the negation of the keypair&apos;s secret key). 1 otherwise.</returns>
-    public unsafe delegate int secp256k1_keypair_xonly_tweak_add(IntPtr ctx, void* keypair, void* tweak32);
+    internal unsafe delegate int secp256k1_keypair_xonly_tweak_add(IntPtr ctx, void* keypair, void* tweak32);
 
     /// <summary>Create a Schnorr signature.<para>Does _not_ strictly follow BIP-340 because it does not verify the resulting signature. Instead, you can manually use secp256k1_schnorrsig_verify and abort if it fails.</para><para>This function only signs 32-byte messages. If you have messages of a different size (or the same size but without a context-specific tag prefix), it is recommended to create a 32-byte message hash with secp256k1_tagged_sha256 and then sign the hash. Tagged hashing allows providing an context-specific tag for domain separation. This prevents signatures from being valid in multiple contexts by accident.</para><para>Returns 1 on success, 0 on failure.</para></summary>
     /// <param name="ctx">pointer to a context object (not secp256k1_context_static).</param>
@@ -418,7 +418,7 @@ namespace Secp256k1Net
     /// <param name="msg32">the 32-byte message being signed.</param>
     /// <param name="keypair">pointer to an initialized keypair.</param>
     /// <param name="aux_rand32">32 bytes of fresh randomness. While recommended to provide this, it is only supplemental to security and can be NULL. A NULL argument is treated the same as an all-zero one. See BIP-340 &quot;Default Signing&quot; for a full explanation of this argument and for guidance if randomness is expensive.</param>
-    public unsafe delegate int secp256k1_schnorrsig_sign32(IntPtr ctx, void* sig64, void* msg32, void* keypair, void* aux_rand32);
+    internal unsafe delegate int secp256k1_schnorrsig_sign32(IntPtr ctx, void* sig64, void* msg32, void* keypair, void* aux_rand32);
 
     /// <summary>Same as secp256k1_schnorrsig_sign32, but DEPRECATED. Will be removed in future versions.</summary>
     /// <param name="ctx"></param>
@@ -426,7 +426,7 @@ namespace Secp256k1Net
     /// <param name="msg32"></param>
     /// <param name="keypair"></param>
     /// <param name="aux_rand32"></param>
-    public unsafe delegate int secp256k1_schnorrsig_sign(IntPtr ctx, void* sig64, void* msg32, void* keypair, void* aux_rand32);
+    internal unsafe delegate int secp256k1_schnorrsig_sign(IntPtr ctx, void* sig64, void* msg32, void* keypair, void* aux_rand32);
 
     /// <summary>Create a Schnorr signature with a more flexible API.<para>Same arguments as secp256k1_schnorrsig_sign except that it allows signing variable length messages and accepts a pointer to an extraparams object that allows customizing signing by passing additional arguments.</para><para>Equivalent to secp256k1_schnorrsig_sign32(..., aux_rand32) if msglen is 32 and extraparams is initialized as follows: ``` secp256k1_schnorrsig_extraparams extraparams = SECP256K1_SCHNORRSIG_EXTRAPARAMS_INIT; extraparams.ndata = (unsigned char*)aux_rand32; ```</para><para>Returns 1 on success, 0 on failure.</para></summary>
     /// <param name="ctx">pointer to a context object (not secp256k1_context_static).</param>
@@ -435,7 +435,7 @@ namespace Secp256k1Net
     /// <param name="msglen">length of the message.</param>
     /// <param name="keypair">pointer to an initialized keypair.</param>
     /// <param name="extraparams">pointer to an extraparams object (can be NULL).</param>
-    public unsafe delegate int secp256k1_schnorrsig_sign_custom(IntPtr ctx, void* sig64, void* msg, nuint msglen, void* keypair, void* extraparams);
+    internal unsafe delegate int secp256k1_schnorrsig_sign_custom(IntPtr ctx, void* sig64, void* msg, nuint msglen, void* keypair, void* extraparams);
 
     /// <summary>Verify a Schnorr signature.</summary>
     /// <param name="ctx">pointer to a context object.</param>
@@ -444,7 +444,7 @@ namespace Secp256k1Net
     /// <param name="msglen">length of the message</param>
     /// <param name="pubkey">pointer to an x-only public key to verify with</param>
     /// <returns>1: correct signature 0: incorrect signature</returns>
-    public unsafe delegate int secp256k1_schnorrsig_verify(IntPtr ctx, void* sig64, void* msg, nuint msglen, void* pubkey);
+    internal unsafe delegate int secp256k1_schnorrsig_verify(IntPtr ctx, void* sig64, void* msg, nuint msglen, void* pubkey);
 
     /// <summary>Construct a 64-byte ElligatorSwift encoding of a given pubkey.</summary>
     /// <param name="ctx">pointer to a context object</param>
@@ -452,14 +452,14 @@ namespace Secp256k1Net
     /// <param name="pubkey">pointer to a secp256k1_pubkey containing an initialized public key</param>
     /// <param name="rnd32">pointer to 32 bytes of randomness<para>It is recommended that rnd32 consists of 32 uniformly random bytes, not known to any adversary trying to detect whether public keys are being encoded, though 16 bytes of randomness (padded to an array of 32 bytes, e.g., with zeros) suffice to make the result indistinguishable from uniform. The randomness in rnd32 must not be a deterministic function of the pubkey (it can be derived from the private key, though).</para><para>It is not guaranteed that the computed encoding is stable across versions of the library, even if all arguments to this function (including rnd32) are the same.</para><para>This function runs in variable time.</para></param>
     /// <returns>1 always.</returns>
-    public unsafe delegate int secp256k1_ellswift_encode(IntPtr ctx, void* ell64, void* pubkey, void* rnd32);
+    internal unsafe delegate int secp256k1_ellswift_encode(IntPtr ctx, void* ell64, void* pubkey, void* rnd32);
 
     /// <summary>Decode a 64-bytes ElligatorSwift encoded public key.</summary>
     /// <param name="ctx">pointer to a context object</param>
     /// <param name="pubkey">pointer to a secp256k1_pubkey that will be filled</param>
     /// <param name="ell64">pointer to a 64-byte array to decode<para>This function runs in variable time.</para></param>
     /// <returns>always 1</returns>
-    public unsafe delegate int secp256k1_ellswift_decode(IntPtr ctx, void* pubkey, void* ell64);
+    internal unsafe delegate int secp256k1_ellswift_decode(IntPtr ctx, void* pubkey, void* ell64);
 
     /// <summary>Compute an ElligatorSwift public key for a secret key.</summary>
     /// <param name="ctx">pointer to a context object (not secp256k1_context_static)</param>
@@ -467,7 +467,7 @@ namespace Secp256k1Net
     /// <param name="seckey32">pointer to a 32-byte secret key</param>
     /// <param name="auxrnd32">(optional) pointer to 32 bytes of randomness<para>Constant time in seckey and auxrnd32, but not in the resulting public key.</para><para>It is recommended that auxrnd32 contains 32 uniformly random bytes, though it is optional (and does result in encodings that are indistinguishable from uniform even without any auxrnd32). It differs from the (mandatory) rnd32 argument to secp256k1_ellswift_encode in this regard.</para><para>This function can be used instead of calling secp256k1_ec_pubkey_create followed by secp256k1_ellswift_encode. It is safer, as it uses the secret key as entropy for the encoding (supplemented with auxrnd32, if provided).</para><para>Like secp256k1_ellswift_encode, this function does not guarantee that the computed encoding is stable across versions of the library, even if all arguments (including auxrnd32) are the same.</para></param>
     /// <returns>1: secret was valid, public key was stored. 0: secret was invalid, try again.</returns>
-    public unsafe delegate int secp256k1_ellswift_create(IntPtr ctx, void* ell64, void* seckey32, void* auxrnd32);
+    internal unsafe delegate int secp256k1_ellswift_create(IntPtr ctx, void* ell64, void* seckey32, void* auxrnd32);
 
     /// <summary>Given a private key, and ElligatorSwift public keys sent in both directions, compute a shared secret using x-only Elliptic Curve Diffie-Hellman (ECDH).</summary>
     /// <param name="ctx">pointer to a context object.</param>
@@ -479,49 +479,49 @@ namespace Secp256k1Net
     /// <param name="hashfp">pointer to a hash function.</param>
     /// <param name="data">arbitrary data pointer passed through to hashfp.<para>Constant time in seckey32.</para><para>This function is more efficient than decoding the public keys, and performing ECDH on them.</para></param>
     /// <returns>1: shared secret was successfully computed 0: secret was invalid or hashfp returned 0</returns>
-    public unsafe delegate int secp256k1_ellswift_xdh(IntPtr ctx, void* output, void* ell_a64, void* ell_b64, void* seckey32, int party, IntPtr hashfp, void* data);
+    internal unsafe delegate int secp256k1_ellswift_xdh(IntPtr ctx, void* output, void* ell_a64, void* ell_b64, void* seckey32, int party, IntPtr hashfp, void* data);
 
     /// <summary>Parse a signer&apos;s public nonce.</summary>
     /// <param name="ctx">pointer to a context object</param>
     /// <param name="nonce">pointer to a nonce object</param>
     /// <param name="in66">pointer to the 66-byte nonce to be parsed</param>
     /// <returns>1 when the nonce could be parsed, 0 otherwise.</returns>
-    public unsafe delegate int secp256k1_musig_pubnonce_parse(IntPtr ctx, void* nonce, void* in66);
+    internal unsafe delegate int secp256k1_musig_pubnonce_parse(IntPtr ctx, void* nonce, void* in66);
 
     /// <summary>Serialize a signer&apos;s public nonce</summary>
     /// <param name="ctx">pointer to a context object</param>
     /// <param name="out66">pointer to a 66-byte array to store the serialized nonce</param>
     /// <param name="nonce">pointer to the nonce</param>
     /// <returns>1 always</returns>
-    public unsafe delegate int secp256k1_musig_pubnonce_serialize(IntPtr ctx, void* out66, void* nonce);
+    internal unsafe delegate int secp256k1_musig_pubnonce_serialize(IntPtr ctx, void* out66, void* nonce);
 
     /// <summary>Parse an aggregate public nonce.</summary>
     /// <param name="ctx">pointer to a context object</param>
     /// <param name="nonce">pointer to a nonce object</param>
     /// <param name="in66">pointer to the 66-byte nonce to be parsed</param>
     /// <returns>1 when the nonce could be parsed, 0 otherwise.</returns>
-    public unsafe delegate int secp256k1_musig_aggnonce_parse(IntPtr ctx, void* nonce, void* in66);
+    internal unsafe delegate int secp256k1_musig_aggnonce_parse(IntPtr ctx, void* nonce, void* in66);
 
     /// <summary>Serialize an aggregate public nonce</summary>
     /// <param name="ctx">pointer to a context object</param>
     /// <param name="out66">pointer to a 66-byte array to store the serialized nonce</param>
     /// <param name="nonce">pointer to the nonce</param>
     /// <returns>1 always</returns>
-    public unsafe delegate int secp256k1_musig_aggnonce_serialize(IntPtr ctx, void* out66, void* nonce);
+    internal unsafe delegate int secp256k1_musig_aggnonce_serialize(IntPtr ctx, void* out66, void* nonce);
 
     /// <summary>Parse a MuSig partial signature.</summary>
     /// <param name="ctx">pointer to a context object</param>
     /// <param name="sig">pointer to a signature object</param>
     /// <param name="in32">pointer to the 32-byte signature to be parsed</param>
     /// <returns>1 when the signature could be parsed, 0 otherwise.</returns>
-    public unsafe delegate int secp256k1_musig_partial_sig_parse(IntPtr ctx, void* sig, void* in32);
+    internal unsafe delegate int secp256k1_musig_partial_sig_parse(IntPtr ctx, void* sig, void* in32);
 
     /// <summary>Serialize a MuSig partial signature</summary>
     /// <param name="ctx">pointer to a context object</param>
     /// <param name="out32">pointer to a 32-byte array to store the serialized signature</param>
     /// <param name="sig">pointer to the signature</param>
     /// <returns>1 always</returns>
-    public unsafe delegate int secp256k1_musig_partial_sig_serialize(IntPtr ctx, void* out32, void* sig);
+    internal unsafe delegate int secp256k1_musig_partial_sig_serialize(IntPtr ctx, void* out32, void* sig);
 
     /// <summary>Computes an aggregate public key and uses it to initialize a keyagg_cache<para>Different orders of `pubkeys` result in different `agg_pk`s.</para><para>Before aggregating, the pubkeys can be sorted with `secp256k1_ec_pubkey_sort` which ensures the same `agg_pk` result for the same multiset of pubkeys. This is useful to do before `pubkey_agg`, such that the order of pubkeys does not affect the aggregate public key.</para></summary>
     /// <param name="ctx">pointer to a context object</param>
@@ -530,26 +530,26 @@ namespace Secp256k1Net
     /// <param name="pubkeys">input array of pointers to public keys to aggregate. The order is important; a different order will result in a different aggregate public key.</param>
     /// <param name="n_pubkeys">length of pubkeys array. Must be greater than 0.</param>
     /// <returns>0 if the arguments are invalid, 1 otherwise</returns>
-    public unsafe delegate int secp256k1_musig_pubkey_agg(IntPtr ctx, void* agg_pk, void* keyagg_cache, IntPtr pubkeys, nuint n_pubkeys);
+    internal unsafe delegate int secp256k1_musig_pubkey_agg(IntPtr ctx, void* agg_pk, void* keyagg_cache, IntPtr pubkeys, nuint n_pubkeys);
 
     /// <summary>Obtain the aggregate public key from a keyagg_cache.<para>This is only useful if you need the non-xonly public key, in particular for plain (non-xonly) tweaking or batch-verifying multiple key aggregations (not implemented).</para></summary>
     /// <param name="ctx">pointer to a context object</param>
     /// <param name="agg_pk">the MuSig-aggregated public key.</param>
     /// <param name="keyagg_cache">pointer to a `musig_keyagg_cache` struct initialized by `musig_pubkey_agg`</param>
     /// <returns>0 if the arguments are invalid, 1 otherwise</returns>
-    public unsafe delegate int secp256k1_musig_pubkey_get(IntPtr ctx, void* agg_pk, void* keyagg_cache);
+    internal unsafe delegate int secp256k1_musig_pubkey_get(IntPtr ctx, void* agg_pk, void* keyagg_cache);
 
     /// <param name="ctx"></param>
     /// <param name="output_pubkey"></param>
     /// <param name="keyagg_cache"></param>
     /// <param name="tweak32"></param>
-    public unsafe delegate int secp256k1_musig_pubkey_ec_tweak_add(IntPtr ctx, void* output_pubkey, void* keyagg_cache, void* tweak32);
+    internal unsafe delegate int secp256k1_musig_pubkey_ec_tweak_add(IntPtr ctx, void* output_pubkey, void* keyagg_cache, void* tweak32);
 
     /// <param name="ctx"></param>
     /// <param name="output_pubkey"></param>
     /// <param name="keyagg_cache"></param>
     /// <param name="tweak32"></param>
-    public unsafe delegate int secp256k1_musig_pubkey_xonly_tweak_add(IntPtr ctx, void* output_pubkey, void* keyagg_cache, void* tweak32);
+    internal unsafe delegate int secp256k1_musig_pubkey_xonly_tweak_add(IntPtr ctx, void* output_pubkey, void* keyagg_cache, void* tweak32);
 
     /// <summary>Starts a signing session by generating a nonce<para>This function outputs a secret nonce that will be required for signing and a corresponding public nonce that is intended to be sent to other signers.</para><para>MuSig differs from regular Schnorr signing in that implementers _must_ take special care to not reuse a nonce. This can be ensured by following these rules:</para><para>1. Each call to this function must have a UNIQUE session_secrand32 that must NOT BE REUSED in subsequent calls to this function and must be KEPT SECRET (even from other signers). 2. If you already know the seckey, message or aggregate public key cache, they can be optionally provided to derive the nonce and increase misuse-resistance. The extra_input32 argument can be used to provide additional data that does not repeat in normal scenarios, such as the current time. 3. Avoid copying (or serializing) the secnonce. This reduces the possibility that it is used more than once for signing.</para><para>If you don&apos;t have access to good randomness for session_secrand32, but you have access to a non-repeating counter, then see secp256k1_musig_nonce_gen_counter.</para><para>Remember that nonce reuse will leak the secret key! Note that using the same seckey for multiple MuSig sessions is fine.</para></summary>
     /// <param name="ctx">pointer to a context object (not secp256k1_context_static)</param>
@@ -562,7 +562,7 @@ namespace Secp256k1Net
     /// <param name="keyagg_cache">pointer to the keyagg_cache that was used to create the aggregate (and potentially tweaked) public key if already known (can be NULL)</param>
     /// <param name="extra_input32">an optional 32-byte array that is input to the nonce derivation function (can be NULL)</param>
     /// <returns>0 if the arguments are invalid and 1 otherwise</returns>
-    public unsafe delegate int secp256k1_musig_nonce_gen(IntPtr ctx, void* secnonce, void* pubnonce, void* session_secrand32, void* seckey, void* pubkey, void* msg32, void* keyagg_cache, void* extra_input32);
+    internal unsafe delegate int secp256k1_musig_nonce_gen(IntPtr ctx, void* secnonce, void* pubnonce, void* session_secrand32, void* seckey, void* pubkey, void* msg32, void* keyagg_cache, void* extra_input32);
 
     /// <summary>Alternative way to generate a nonce and start a signing session<para>This function outputs a secret nonce that will be required for signing and a corresponding public nonce that is intended to be sent to other signers.</para><para>This function differs from `secp256k1_musig_nonce_gen` by accepting a non-repeating counter value instead of a secret random value. This requires that a secret key is provided to `secp256k1_musig_nonce_gen_counter` (through the keypair argument), as opposed to `secp256k1_musig_nonce_gen` where the seckey argument is optional.</para><para>MuSig differs from regular Schnorr signing in that implementers _must_ take special care to not reuse a nonce. This can be ensured by following these rules:</para><para>1. The nonrepeating_cnt argument must be a counter value that never repeats, i.e., you must never call `secp256k1_musig_nonce_gen_counter` twice with the same keypair and nonrepeating_cnt value. For example, this implies that if the same keypair is used with `secp256k1_musig_nonce_gen_counter` on multiple devices, none of the devices should have the same counter value as any other device. 2. If the seckey, message or aggregate public key cache is already available at this stage, any of these can be optionally provided, in which case they will be used in the derivation of the nonce and increase misuse-resistance. The extra_input32 argument can be used to provide additional data that does not repeat in normal scenarios, such as the current time. 3. Avoid copying (or serializing) the secnonce. This reduces the possibility that it is used more than once for signing.</para><para>Remember that nonce reuse will leak the secret key! Note that using the same keypair for multiple MuSig sessions is fine.</para></summary>
     /// <param name="ctx">pointer to a context object (not secp256k1_context_static)</param>
@@ -574,7 +574,7 @@ namespace Secp256k1Net
     /// <param name="keyagg_cache">pointer to the keyagg_cache that was used to create the aggregate (and potentially tweaked) public key if already known (can be NULL)</param>
     /// <param name="extra_input32">an optional 32-byte array that is input to the nonce derivation function (can be NULL)</param>
     /// <returns>0 if the arguments are invalid and 1 otherwise</returns>
-    public unsafe delegate int secp256k1_musig_nonce_gen_counter(IntPtr ctx, void* secnonce, void* pubnonce, ulong nonrepeating_cnt, void* keypair, void* msg32, void* keyagg_cache, void* extra_input32);
+    internal unsafe delegate int secp256k1_musig_nonce_gen_counter(IntPtr ctx, void* secnonce, void* pubnonce, ulong nonrepeating_cnt, void* keypair, void* msg32, void* keyagg_cache, void* extra_input32);
 
     /// <summary>Aggregates the nonces of all signers into a single nonce<para>This can be done by an untrusted party to reduce the communication between signers. Instead of everyone sending nonces to everyone else, there can be one party receiving all nonces, aggregating the nonces with this function and then sending only the aggregate nonce back to the signers.</para><para>If the aggregator does not compute the aggregate nonce correctly, the final signature will be invalid.</para></summary>
     /// <param name="ctx">pointer to a context object</param>
@@ -582,7 +582,7 @@ namespace Secp256k1Net
     /// <param name="pubnonces">array of pointers to public nonces sent by the signers</param>
     /// <param name="n_pubnonces">number of elements in the pubnonces array. Must be greater than 0.</param>
     /// <returns>0 if the arguments are invalid, 1 otherwise</returns>
-    public unsafe delegate int secp256k1_musig_nonce_agg(IntPtr ctx, void* aggnonce, IntPtr pubnonces, nuint n_pubnonces);
+    internal unsafe delegate int secp256k1_musig_nonce_agg(IntPtr ctx, void* aggnonce, IntPtr pubnonces, nuint n_pubnonces);
 
     /// <summary>Takes the aggregate nonce and creates a session that is required for signing and verification of partial signatures.</summary>
     /// <param name="ctx">pointer to a context object</param>
@@ -591,7 +591,7 @@ namespace Secp256k1Net
     /// <param name="msg32">the 32-byte message to sign</param>
     /// <param name="keyagg_cache">pointer to the keyagg_cache that was used to create the aggregate (and potentially tweaked) pubkey</param>
     /// <returns>0 if the arguments are invalid, 1 otherwise</returns>
-    public unsafe delegate int secp256k1_musig_nonce_process(IntPtr ctx, void* session, void* aggnonce, void* msg32, void* keyagg_cache);
+    internal unsafe delegate int secp256k1_musig_nonce_process(IntPtr ctx, void* session, void* aggnonce, void* msg32, void* keyagg_cache);
 
     /// <summary>Produces a partial signature<para>This function overwrites the given secnonce with zeros and will abort if given a secnonce that is all zeros. This is a best effort attempt to protect against nonce reuse. However, this is of course easily defeated if the secnonce has been copied (or serialized). Remember that nonce reuse will leak the secret key!</para><para>For signing to succeed, the secnonce provided to this function must have been generated for the provided keypair. This means that when signing for a keypair consisting of a seckey and pubkey, the secnonce must have been created by calling musig_nonce_gen with that pubkey. Otherwise, the illegal_callback is called.</para><para>This function does not verify the output partial signature, deviating from the BIP 327 specification. It is recommended to verify the output partial signature with `secp256k1_musig_partial_sig_verify` to prevent random or adversarially provoked computation errors.</para></summary>
     /// <param name="ctx">pointer to a context object</param>
@@ -601,7 +601,7 @@ namespace Secp256k1Net
     /// <param name="keyagg_cache">pointer to the keyagg_cache that was output when the aggregate public key for this session</param>
     /// <param name="session">pointer to the session that was created with musig_nonce_process</param>
     /// <returns>0 if the arguments are invalid or the provided secnonce has already been used for signing, 1 otherwise</returns>
-    public unsafe delegate int secp256k1_musig_partial_sign(IntPtr ctx, void* partial_sig, void* secnonce, void* keypair, void* keyagg_cache, void* session);
+    internal unsafe delegate int secp256k1_musig_partial_sign(IntPtr ctx, void* partial_sig, void* secnonce, void* keypair, void* keyagg_cache, void* session);
 
     /// <summary>Verifies an individual signer&apos;s partial signature<para>The signature is verified for a specific signing session. In order to avoid accidentally verifying a signature from a different or non-existing signing session, you must ensure the following: 1. The `keyagg_cache` argument is identical to the one used to create the `session` with `musig_nonce_process`. 2. The `pubkey` argument must be identical to the one sent by the signer before aggregating it with `musig_pubkey_agg` to create the `keyagg_cache`. 3. The `pubnonce` argument must be identical to the one sent by the signer before aggregating it with `musig_nonce_agg` and using the result to create the `session` with `musig_nonce_process`.</para><para>It is not required to call this function in regular MuSig sessions, because if any partial signature does not verify, the final signature will not verify either, so the problem will be caught. However, this function provides the ability to identify which specific partial signature fails verification.</para></summary>
     /// <param name="ctx"></param>
@@ -611,7 +611,7 @@ namespace Secp256k1Net
     /// <param name="keyagg_cache">pointer to the keyagg_cache that was output when the aggregate public key for this signing session</param>
     /// <param name="session">pointer to the session that was created with `musig_nonce_process`</param>
     /// <returns>0 if the arguments are invalid or the partial signature does not verify, 1 otherwise</returns>
-    public unsafe delegate int secp256k1_musig_partial_sig_verify(IntPtr ctx, void* partial_sig, void* pubnonce, void* pubkey, void* keyagg_cache, void* session);
+    internal unsafe delegate int secp256k1_musig_partial_sig_verify(IntPtr ctx, void* partial_sig, void* pubnonce, void* pubkey, void* keyagg_cache, void* session);
 
     /// <summary>Aggregates partial signatures</summary>
     /// <param name="ctx">pointer to a context object</param>
@@ -620,10 +620,10 @@ namespace Secp256k1Net
     /// <param name="partial_sigs">array of pointers to partial signatures to aggregate</param>
     /// <param name="n_sigs">number of elements in the partial_sigs array. Must be greater than 0.</param>
     /// <returns>0 if the arguments are invalid, 1 otherwise (which does NOT mean the resulting signature verifies).</returns>
-    public unsafe delegate int secp256k1_musig_partial_sig_agg(IntPtr ctx, void* sig64, void* session, IntPtr partial_sigs, nuint n_sigs);
+    internal unsafe delegate int secp256k1_musig_partial_sig_agg(IntPtr ctx, void* sig64, void* session, IntPtr partial_sigs, nuint n_sigs);
 #endif
 
-    public unsafe partial class Secp256k1
+    internal static unsafe class Secp256k1Interop
     {
         // Native function symbol names
         private const string SYM_selftest = "secp256k1_selftest";
@@ -712,178 +712,178 @@ namespace Secp256k1Net
 #if NET8_0_OR_GREATER
         // Function pointer declarations (modern .NET 8+)
 #nullable disable
-        private static FnPtr00 _selftest;
-        private static FnPtr01 _context_create;
-        private static FnPtr02 _context_clone;
-        private static FnPtr03 _context_destroy;
-        private static FnPtr04 _context_set_illegal_callback;
-        private static FnPtr04 _context_set_error_callback;
-        private static FnPtr05 _ec_pubkey_parse;
-        private static FnPtr06 _ec_pubkey_serialize;
-        private static FnPtr07 _ec_pubkey_cmp;
-        private static FnPtr08 _ec_pubkey_sort;
-        private static FnPtr07 _ecdsa_signature_parse_compact;
-        private static FnPtr05 _ecdsa_signature_parse_der;
-        private static FnPtr09 _ecdsa_signature_serialize_der;
-        private static FnPtr07 _ecdsa_signature_serialize_compact;
-        private static FnPtr10 _ecdsa_verify;
-        private static FnPtr07 _ecdsa_signature_normalize;
-        private static FnPtr11 _ecdsa_sign;
-        private static FnPtr12 _ec_seckey_verify;
-        private static FnPtr07 _ec_pubkey_create;
-        private static FnPtr12 _ec_seckey_negate;
-        private static FnPtr12 _ec_pubkey_negate;
-        private static FnPtr07 _ec_seckey_tweak_add;
-        private static FnPtr07 _ec_pubkey_tweak_add;
-        private static FnPtr07 _ec_seckey_tweak_mul;
-        private static FnPtr07 _ec_pubkey_tweak_mul;
-        private static FnPtr12 _context_randomize;
-        private static FnPtr13 _ec_pubkey_combine;
-        private static FnPtr14 _tagged_sha256;
-        private static FnPtr15 _context_preallocated_size;
-        private static FnPtr16 _context_preallocated_create;
-        private static FnPtr17 _context_preallocated_clone_size;
-        private static FnPtr18 _context_preallocated_clone;
-        private static FnPtr03 _context_preallocated_destroy;
-        private static FnPtr19 _ecdsa_recoverable_signature_parse_compact;
-        private static FnPtr07 _ecdsa_recoverable_signature_convert;
-        private static FnPtr20 _ecdsa_recoverable_signature_serialize_compact;
-        private static FnPtr11 _ecdsa_sign_recoverable;
-        private static FnPtr10 _ecdsa_recover;
-        private static FnPtr11 _ecdh;
-        private static FnPtr07 _xonly_pubkey_parse;
-        private static FnPtr07 _xonly_pubkey_serialize;
-        private static FnPtr07 _xonly_pubkey_cmp;
-        private static FnPtr20 _xonly_pubkey_from_pubkey;
-        private static FnPtr10 _xonly_pubkey_tweak_add;
-        private static FnPtr21 _xonly_pubkey_tweak_add_check;
-        private static FnPtr07 _keypair_create;
-        private static FnPtr07 _keypair_sec;
-        private static FnPtr07 _keypair_pub;
-        private static FnPtr20 _keypair_xonly_pub;
-        private static FnPtr07 _keypair_xonly_tweak_add;
-        private static FnPtr22 _schnorrsig_sign32;
-        private static FnPtr22 _schnorrsig_sign;
-        private static FnPtr23 _schnorrsig_sign_custom;
-        private static FnPtr24 _schnorrsig_verify;
-        private static FnPtr10 _ellswift_encode;
-        private static FnPtr07 _ellswift_decode;
-        private static FnPtr10 _ellswift_create;
-        private static FnPtr25 _ellswift_xdh;
-        private static FnPtr07 _musig_pubnonce_parse;
-        private static FnPtr07 _musig_pubnonce_serialize;
-        private static FnPtr07 _musig_aggnonce_parse;
-        private static FnPtr07 _musig_aggnonce_serialize;
-        private static FnPtr07 _musig_partial_sig_parse;
-        private static FnPtr07 _musig_partial_sig_serialize;
-        private static FnPtr26 _musig_pubkey_agg;
-        private static FnPtr07 _musig_pubkey_get;
-        private static FnPtr10 _musig_pubkey_ec_tweak_add;
-        private static FnPtr10 _musig_pubkey_xonly_tweak_add;
-        private static FnPtr27 _musig_nonce_gen;
-        private static FnPtr28 _musig_nonce_gen_counter;
-        private static FnPtr13 _musig_nonce_agg;
-        private static FnPtr22 _musig_nonce_process;
-        private static FnPtr29 _musig_partial_sign;
-        private static FnPtr29 _musig_partial_sig_verify;
-        private static FnPtr26 _musig_partial_sig_agg;
-        private static FnPtr30 _nonce_function_rfc6979;
-        private static FnPtr30 _nonce_function_default;
-        private static FnPtr31 _ecdh_hash_function_sha256;
-        private static FnPtr31 _ecdh_hash_function_default;
-        private static FnPtr32 _nonce_function_bip340;
-        private static FnPtr33 _ellswift_xdh_hash_function_prefix;
-        private static FnPtr33 _ellswift_xdh_hash_function_bip324;
+        internal static FnPtr00 _selftest;
+        internal static FnPtr01 _context_create;
+        internal static FnPtr02 _context_clone;
+        internal static FnPtr03 _context_destroy;
+        internal static FnPtr04 _context_set_illegal_callback;
+        internal static FnPtr04 _context_set_error_callback;
+        internal static FnPtr05 _ec_pubkey_parse;
+        internal static FnPtr06 _ec_pubkey_serialize;
+        internal static FnPtr07 _ec_pubkey_cmp;
+        internal static FnPtr08 _ec_pubkey_sort;
+        internal static FnPtr07 _ecdsa_signature_parse_compact;
+        internal static FnPtr05 _ecdsa_signature_parse_der;
+        internal static FnPtr09 _ecdsa_signature_serialize_der;
+        internal static FnPtr07 _ecdsa_signature_serialize_compact;
+        internal static FnPtr10 _ecdsa_verify;
+        internal static FnPtr07 _ecdsa_signature_normalize;
+        internal static FnPtr11 _ecdsa_sign;
+        internal static FnPtr12 _ec_seckey_verify;
+        internal static FnPtr07 _ec_pubkey_create;
+        internal static FnPtr12 _ec_seckey_negate;
+        internal static FnPtr12 _ec_pubkey_negate;
+        internal static FnPtr07 _ec_seckey_tweak_add;
+        internal static FnPtr07 _ec_pubkey_tweak_add;
+        internal static FnPtr07 _ec_seckey_tweak_mul;
+        internal static FnPtr07 _ec_pubkey_tweak_mul;
+        internal static FnPtr12 _context_randomize;
+        internal static FnPtr13 _ec_pubkey_combine;
+        internal static FnPtr14 _tagged_sha256;
+        internal static FnPtr15 _context_preallocated_size;
+        internal static FnPtr16 _context_preallocated_create;
+        internal static FnPtr17 _context_preallocated_clone_size;
+        internal static FnPtr18 _context_preallocated_clone;
+        internal static FnPtr03 _context_preallocated_destroy;
+        internal static FnPtr19 _ecdsa_recoverable_signature_parse_compact;
+        internal static FnPtr07 _ecdsa_recoverable_signature_convert;
+        internal static FnPtr20 _ecdsa_recoverable_signature_serialize_compact;
+        internal static FnPtr11 _ecdsa_sign_recoverable;
+        internal static FnPtr10 _ecdsa_recover;
+        internal static FnPtr11 _ecdh;
+        internal static FnPtr07 _xonly_pubkey_parse;
+        internal static FnPtr07 _xonly_pubkey_serialize;
+        internal static FnPtr07 _xonly_pubkey_cmp;
+        internal static FnPtr20 _xonly_pubkey_from_pubkey;
+        internal static FnPtr10 _xonly_pubkey_tweak_add;
+        internal static FnPtr21 _xonly_pubkey_tweak_add_check;
+        internal static FnPtr07 _keypair_create;
+        internal static FnPtr07 _keypair_sec;
+        internal static FnPtr07 _keypair_pub;
+        internal static FnPtr20 _keypair_xonly_pub;
+        internal static FnPtr07 _keypair_xonly_tweak_add;
+        internal static FnPtr22 _schnorrsig_sign32;
+        internal static FnPtr22 _schnorrsig_sign;
+        internal static FnPtr23 _schnorrsig_sign_custom;
+        internal static FnPtr24 _schnorrsig_verify;
+        internal static FnPtr10 _ellswift_encode;
+        internal static FnPtr07 _ellswift_decode;
+        internal static FnPtr10 _ellswift_create;
+        internal static FnPtr25 _ellswift_xdh;
+        internal static FnPtr07 _musig_pubnonce_parse;
+        internal static FnPtr07 _musig_pubnonce_serialize;
+        internal static FnPtr07 _musig_aggnonce_parse;
+        internal static FnPtr07 _musig_aggnonce_serialize;
+        internal static FnPtr07 _musig_partial_sig_parse;
+        internal static FnPtr07 _musig_partial_sig_serialize;
+        internal static FnPtr26 _musig_pubkey_agg;
+        internal static FnPtr07 _musig_pubkey_get;
+        internal static FnPtr10 _musig_pubkey_ec_tweak_add;
+        internal static FnPtr10 _musig_pubkey_xonly_tweak_add;
+        internal static FnPtr27 _musig_nonce_gen;
+        internal static FnPtr28 _musig_nonce_gen_counter;
+        internal static FnPtr13 _musig_nonce_agg;
+        internal static FnPtr22 _musig_nonce_process;
+        internal static FnPtr29 _musig_partial_sign;
+        internal static FnPtr29 _musig_partial_sig_verify;
+        internal static FnPtr26 _musig_partial_sig_agg;
+        internal static FnPtr30 _nonce_function_rfc6979;
+        internal static FnPtr30 _nonce_function_default;
+        internal static FnPtr31 _ecdh_hash_function_sha256;
+        internal static FnPtr31 _ecdh_hash_function_default;
+        internal static FnPtr32 _nonce_function_bip340;
+        internal static FnPtr33 _ellswift_xdh_hash_function_prefix;
+        internal static FnPtr33 _ellswift_xdh_hash_function_bip324;
 #nullable restore
 #else
         // Delegate instance fields (legacy .NET)
 #nullable disable
-        private static secp256k1_selftest _selftest;
-        private static secp256k1_context_create _context_create;
-        private static secp256k1_context_clone _context_clone;
-        private static secp256k1_context_destroy _context_destroy;
-        private static secp256k1_context_set_illegal_callback _context_set_illegal_callback;
-        private static secp256k1_context_set_error_callback _context_set_error_callback;
-        private static secp256k1_ec_pubkey_parse _ec_pubkey_parse;
-        private static secp256k1_ec_pubkey_serialize _ec_pubkey_serialize;
-        private static secp256k1_ec_pubkey_cmp _ec_pubkey_cmp;
-        private static secp256k1_ec_pubkey_sort _ec_pubkey_sort;
-        private static secp256k1_ecdsa_signature_parse_compact _ecdsa_signature_parse_compact;
-        private static secp256k1_ecdsa_signature_parse_der _ecdsa_signature_parse_der;
-        private static secp256k1_ecdsa_signature_serialize_der _ecdsa_signature_serialize_der;
-        private static secp256k1_ecdsa_signature_serialize_compact _ecdsa_signature_serialize_compact;
-        private static secp256k1_ecdsa_verify _ecdsa_verify;
-        private static secp256k1_ecdsa_signature_normalize _ecdsa_signature_normalize;
-        private static secp256k1_ecdsa_sign _ecdsa_sign;
-        private static secp256k1_ec_seckey_verify _ec_seckey_verify;
-        private static secp256k1_ec_pubkey_create _ec_pubkey_create;
-        private static secp256k1_ec_seckey_negate _ec_seckey_negate;
-        private static secp256k1_ec_pubkey_negate _ec_pubkey_negate;
-        private static secp256k1_ec_seckey_tweak_add _ec_seckey_tweak_add;
-        private static secp256k1_ec_pubkey_tweak_add _ec_pubkey_tweak_add;
-        private static secp256k1_ec_seckey_tweak_mul _ec_seckey_tweak_mul;
-        private static secp256k1_ec_pubkey_tweak_mul _ec_pubkey_tweak_mul;
-        private static secp256k1_context_randomize _context_randomize;
-        private static secp256k1_ec_pubkey_combine _ec_pubkey_combine;
-        private static secp256k1_tagged_sha256 _tagged_sha256;
-        private static secp256k1_context_preallocated_size _context_preallocated_size;
-        private static secp256k1_context_preallocated_create _context_preallocated_create;
-        private static secp256k1_context_preallocated_clone_size _context_preallocated_clone_size;
-        private static secp256k1_context_preallocated_clone _context_preallocated_clone;
-        private static secp256k1_context_preallocated_destroy _context_preallocated_destroy;
-        private static secp256k1_ecdsa_recoverable_signature_parse_compact _ecdsa_recoverable_signature_parse_compact;
-        private static secp256k1_ecdsa_recoverable_signature_convert _ecdsa_recoverable_signature_convert;
-        private static secp256k1_ecdsa_recoverable_signature_serialize_compact _ecdsa_recoverable_signature_serialize_compact;
-        private static secp256k1_ecdsa_sign_recoverable _ecdsa_sign_recoverable;
-        private static secp256k1_ecdsa_recover _ecdsa_recover;
-        private static secp256k1_ecdh _ecdh;
-        private static secp256k1_xonly_pubkey_parse _xonly_pubkey_parse;
-        private static secp256k1_xonly_pubkey_serialize _xonly_pubkey_serialize;
-        private static secp256k1_xonly_pubkey_cmp _xonly_pubkey_cmp;
-        private static secp256k1_xonly_pubkey_from_pubkey _xonly_pubkey_from_pubkey;
-        private static secp256k1_xonly_pubkey_tweak_add _xonly_pubkey_tweak_add;
-        private static secp256k1_xonly_pubkey_tweak_add_check _xonly_pubkey_tweak_add_check;
-        private static secp256k1_keypair_create _keypair_create;
-        private static secp256k1_keypair_sec _keypair_sec;
-        private static secp256k1_keypair_pub _keypair_pub;
-        private static secp256k1_keypair_xonly_pub _keypair_xonly_pub;
-        private static secp256k1_keypair_xonly_tweak_add _keypair_xonly_tweak_add;
-        private static secp256k1_schnorrsig_sign32 _schnorrsig_sign32;
-        private static secp256k1_schnorrsig_sign _schnorrsig_sign;
-        private static secp256k1_schnorrsig_sign_custom _schnorrsig_sign_custom;
-        private static secp256k1_schnorrsig_verify _schnorrsig_verify;
-        private static secp256k1_ellswift_encode _ellswift_encode;
-        private static secp256k1_ellswift_decode _ellswift_decode;
-        private static secp256k1_ellswift_create _ellswift_create;
-        private static secp256k1_ellswift_xdh _ellswift_xdh;
-        private static secp256k1_musig_pubnonce_parse _musig_pubnonce_parse;
-        private static secp256k1_musig_pubnonce_serialize _musig_pubnonce_serialize;
-        private static secp256k1_musig_aggnonce_parse _musig_aggnonce_parse;
-        private static secp256k1_musig_aggnonce_serialize _musig_aggnonce_serialize;
-        private static secp256k1_musig_partial_sig_parse _musig_partial_sig_parse;
-        private static secp256k1_musig_partial_sig_serialize _musig_partial_sig_serialize;
-        private static secp256k1_musig_pubkey_agg _musig_pubkey_agg;
-        private static secp256k1_musig_pubkey_get _musig_pubkey_get;
-        private static secp256k1_musig_pubkey_ec_tweak_add _musig_pubkey_ec_tweak_add;
-        private static secp256k1_musig_pubkey_xonly_tweak_add _musig_pubkey_xonly_tweak_add;
-        private static secp256k1_musig_nonce_gen _musig_nonce_gen;
-        private static secp256k1_musig_nonce_gen_counter _musig_nonce_gen_counter;
-        private static secp256k1_musig_nonce_agg _musig_nonce_agg;
-        private static secp256k1_musig_nonce_process _musig_nonce_process;
-        private static secp256k1_musig_partial_sign _musig_partial_sign;
-        private static secp256k1_musig_partial_sig_verify _musig_partial_sig_verify;
-        private static secp256k1_musig_partial_sig_agg _musig_partial_sig_agg;
-        private static secp256k1_nonce_function _nonce_function_rfc6979;
-        private static secp256k1_nonce_function _nonce_function_default;
-        private static secp256k1_ecdh_hash_function _ecdh_hash_function_sha256;
-        private static secp256k1_ecdh_hash_function _ecdh_hash_function_default;
-        private static secp256k1_nonce_function_hardened _nonce_function_bip340;
-        private static secp256k1_ellswift_xdh_hash_function _ellswift_xdh_hash_function_prefix;
-        private static secp256k1_ellswift_xdh_hash_function _ellswift_xdh_hash_function_bip324;
+        internal static secp256k1_selftest _selftest;
+        internal static secp256k1_context_create _context_create;
+        internal static secp256k1_context_clone _context_clone;
+        internal static secp256k1_context_destroy _context_destroy;
+        internal static secp256k1_context_set_illegal_callback _context_set_illegal_callback;
+        internal static secp256k1_context_set_error_callback _context_set_error_callback;
+        internal static secp256k1_ec_pubkey_parse _ec_pubkey_parse;
+        internal static secp256k1_ec_pubkey_serialize _ec_pubkey_serialize;
+        internal static secp256k1_ec_pubkey_cmp _ec_pubkey_cmp;
+        internal static secp256k1_ec_pubkey_sort _ec_pubkey_sort;
+        internal static secp256k1_ecdsa_signature_parse_compact _ecdsa_signature_parse_compact;
+        internal static secp256k1_ecdsa_signature_parse_der _ecdsa_signature_parse_der;
+        internal static secp256k1_ecdsa_signature_serialize_der _ecdsa_signature_serialize_der;
+        internal static secp256k1_ecdsa_signature_serialize_compact _ecdsa_signature_serialize_compact;
+        internal static secp256k1_ecdsa_verify _ecdsa_verify;
+        internal static secp256k1_ecdsa_signature_normalize _ecdsa_signature_normalize;
+        internal static secp256k1_ecdsa_sign _ecdsa_sign;
+        internal static secp256k1_ec_seckey_verify _ec_seckey_verify;
+        internal static secp256k1_ec_pubkey_create _ec_pubkey_create;
+        internal static secp256k1_ec_seckey_negate _ec_seckey_negate;
+        internal static secp256k1_ec_pubkey_negate _ec_pubkey_negate;
+        internal static secp256k1_ec_seckey_tweak_add _ec_seckey_tweak_add;
+        internal static secp256k1_ec_pubkey_tweak_add _ec_pubkey_tweak_add;
+        internal static secp256k1_ec_seckey_tweak_mul _ec_seckey_tweak_mul;
+        internal static secp256k1_ec_pubkey_tweak_mul _ec_pubkey_tweak_mul;
+        internal static secp256k1_context_randomize _context_randomize;
+        internal static secp256k1_ec_pubkey_combine _ec_pubkey_combine;
+        internal static secp256k1_tagged_sha256 _tagged_sha256;
+        internal static secp256k1_context_preallocated_size _context_preallocated_size;
+        internal static secp256k1_context_preallocated_create _context_preallocated_create;
+        internal static secp256k1_context_preallocated_clone_size _context_preallocated_clone_size;
+        internal static secp256k1_context_preallocated_clone _context_preallocated_clone;
+        internal static secp256k1_context_preallocated_destroy _context_preallocated_destroy;
+        internal static secp256k1_ecdsa_recoverable_signature_parse_compact _ecdsa_recoverable_signature_parse_compact;
+        internal static secp256k1_ecdsa_recoverable_signature_convert _ecdsa_recoverable_signature_convert;
+        internal static secp256k1_ecdsa_recoverable_signature_serialize_compact _ecdsa_recoverable_signature_serialize_compact;
+        internal static secp256k1_ecdsa_sign_recoverable _ecdsa_sign_recoverable;
+        internal static secp256k1_ecdsa_recover _ecdsa_recover;
+        internal static secp256k1_ecdh _ecdh;
+        internal static secp256k1_xonly_pubkey_parse _xonly_pubkey_parse;
+        internal static secp256k1_xonly_pubkey_serialize _xonly_pubkey_serialize;
+        internal static secp256k1_xonly_pubkey_cmp _xonly_pubkey_cmp;
+        internal static secp256k1_xonly_pubkey_from_pubkey _xonly_pubkey_from_pubkey;
+        internal static secp256k1_xonly_pubkey_tweak_add _xonly_pubkey_tweak_add;
+        internal static secp256k1_xonly_pubkey_tweak_add_check _xonly_pubkey_tweak_add_check;
+        internal static secp256k1_keypair_create _keypair_create;
+        internal static secp256k1_keypair_sec _keypair_sec;
+        internal static secp256k1_keypair_pub _keypair_pub;
+        internal static secp256k1_keypair_xonly_pub _keypair_xonly_pub;
+        internal static secp256k1_keypair_xonly_tweak_add _keypair_xonly_tweak_add;
+        internal static secp256k1_schnorrsig_sign32 _schnorrsig_sign32;
+        internal static secp256k1_schnorrsig_sign _schnorrsig_sign;
+        internal static secp256k1_schnorrsig_sign_custom _schnorrsig_sign_custom;
+        internal static secp256k1_schnorrsig_verify _schnorrsig_verify;
+        internal static secp256k1_ellswift_encode _ellswift_encode;
+        internal static secp256k1_ellswift_decode _ellswift_decode;
+        internal static secp256k1_ellswift_create _ellswift_create;
+        internal static secp256k1_ellswift_xdh _ellswift_xdh;
+        internal static secp256k1_musig_pubnonce_parse _musig_pubnonce_parse;
+        internal static secp256k1_musig_pubnonce_serialize _musig_pubnonce_serialize;
+        internal static secp256k1_musig_aggnonce_parse _musig_aggnonce_parse;
+        internal static secp256k1_musig_aggnonce_serialize _musig_aggnonce_serialize;
+        internal static secp256k1_musig_partial_sig_parse _musig_partial_sig_parse;
+        internal static secp256k1_musig_partial_sig_serialize _musig_partial_sig_serialize;
+        internal static secp256k1_musig_pubkey_agg _musig_pubkey_agg;
+        internal static secp256k1_musig_pubkey_get _musig_pubkey_get;
+        internal static secp256k1_musig_pubkey_ec_tweak_add _musig_pubkey_ec_tweak_add;
+        internal static secp256k1_musig_pubkey_xonly_tweak_add _musig_pubkey_xonly_tweak_add;
+        internal static secp256k1_musig_nonce_gen _musig_nonce_gen;
+        internal static secp256k1_musig_nonce_gen_counter _musig_nonce_gen_counter;
+        internal static secp256k1_musig_nonce_agg _musig_nonce_agg;
+        internal static secp256k1_musig_nonce_process _musig_nonce_process;
+        internal static secp256k1_musig_partial_sign _musig_partial_sign;
+        internal static secp256k1_musig_partial_sig_verify _musig_partial_sig_verify;
+        internal static secp256k1_musig_partial_sig_agg _musig_partial_sig_agg;
+        internal static secp256k1_nonce_function _nonce_function_rfc6979;
+        internal static secp256k1_nonce_function _nonce_function_default;
+        internal static secp256k1_ecdh_hash_function _ecdh_hash_function_sha256;
+        internal static secp256k1_ecdh_hash_function _ecdh_hash_function_default;
+        internal static secp256k1_nonce_function_hardened _nonce_function_bip340;
+        internal static secp256k1_ellswift_xdh_hash_function _ellswift_xdh_hash_function_prefix;
+        internal static secp256k1_ellswift_xdh_hash_function _ellswift_xdh_hash_function_bip324;
 #nullable restore
 #endif
 
-        private static void LoadFunctions(IntPtr lib)
+        internal static void LoadFunctions(IntPtr lib)
         {
 #if NET8_0_OR_GREATER
             _selftest = (FnPtr00)NativeLibrary.GetExport(lib, SYM_selftest);

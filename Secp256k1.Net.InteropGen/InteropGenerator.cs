@@ -1028,7 +1028,7 @@ public class InteropGenerator
             if (spanParams.Count > 0)
             {
                 var fixedDeclarations = spanParams.Select(p =>
-                    $"{p.WrapperName}Ptr = &MemoryMarshal.GetReference({p.WrapperName})");
+                    $"{p.WrapperName}Ptr = {p.WrapperName}");
                 sb.AppendLine($"            fixed (byte* {string.Join(",\n                ", fixedDeclarations)})");
             }
 
@@ -1221,7 +1221,7 @@ public class InteropGenerator
             if (spanParams.Count > 0)
             {
                 var fixedDeclarations = spanParams.Select(p =>
-                    $"{p.name}Ptr = &MemoryMarshal.GetReference({p.name})");
+                    $"{p.name}Ptr = {p.name}");
                 sb.AppendLine($"            fixed (byte* {string.Join(",\n                ", fixedDeclarations)})");
             }
 
@@ -1696,12 +1696,9 @@ public class InteropGenerator
 
         sb.AppendLine();
 
-        // Allocate native pointer array
+        // Allocate native pointer array using stackalloc
         sb.AppendLine($"            var count = {arrayParamName}.Length;");
-        sb.AppendLine("            var ptrSize = IntPtr.Size;");
-        sb.AppendLine("            var nativePtrArray = Marshal.AllocHGlobal(ptrSize * count);");
-        sb.AppendLine("            try");
-        sb.AppendLine("            {");
+        sb.AppendLine("            Span<nint> nativePtrArray = stackalloc nint[count];");
 
         // Collect all span parameters (excluding the array-of-pointers)
         var otherSpanParams = wrapperParams
@@ -1709,16 +1706,16 @@ public class InteropGenerator
             .ToList();
 
         // Build fixed statements
-        var indent = "                ";
+        var indent = "            ";
         if (otherSpanParams.Count > 0)
         {
             var fixedDeclarations = otherSpanParams.Select(p =>
-                $"{p.name}Ptr = &MemoryMarshal.GetReference({p.name})");
-            sb.AppendLine($"{indent}fixed (byte* {string.Join(",\n                    ", fixedDeclarations)})");
-            indent = "                    ";
+                $"{p.name}Ptr = {p.name}");
+            sb.AppendLine($"{indent}fixed (byte* {string.Join(",\n                ", fixedDeclarations)})");
+            indent = "                ";
         }
 
-        // Generate pinning code using Span's Pin() method or stackalloc for GCHandles
+        // Generate pinning code
         sb.AppendLine($"{indent}{{");
 
         // Use GCHandle to pin the array elements
@@ -1728,7 +1725,7 @@ public class InteropGenerator
         sb.AppendLine($"{indent}        for (int i = 0; i < count; i++)");
         sb.AppendLine($"{indent}        {{");
         sb.AppendLine($"{indent}            handles[i] = GCHandle.Alloc({arrayParamName}[i], GCHandleType.Pinned);");
-        sb.AppendLine($"{indent}            Marshal.WriteIntPtr(nativePtrArray, i * ptrSize, handles[i].AddrOfPinnedObject());");
+        sb.AppendLine($"{indent}            nativePtrArray[i] = handles[i].AddrOfPinnedObject();");
         sb.AppendLine($"{indent}        }}");
         sb.AppendLine();
 
@@ -1744,7 +1741,7 @@ public class InteropGenerator
 
             if (param == arrayParam)
             {
-                nativeArgs.Add("nativePtrArray");
+                nativeArgs.Add("(IntPtr)nativePtrArrayPtr");
             }
             else if (param == countParam)
             {
@@ -1763,19 +1760,24 @@ public class InteropGenerator
         var fieldName = GetFieldName(func.Name);
         var argsStr = string.Join(", ", nativeArgs);
 
+        // Fixed statement to get pointer to stackalloc span
+        sb.AppendLine($"{indent}        fixed (nint* nativePtrArrayPtr = nativePtrArray)");
+        sb.AppendLine($"{indent}        {{");
+
         if (returnsBool)
         {
-            sb.AppendLine($"{indent}        return Secp256k1Interop.{fieldName}({argsStr}) == 1;");
+            sb.AppendLine($"{indent}            return Secp256k1Interop.{fieldName}({argsStr}) == 1;");
         }
         else if (func.ReturnType == "void")
         {
-            sb.AppendLine($"{indent}        Secp256k1Interop.{fieldName}({argsStr});");
+            sb.AppendLine($"{indent}            Secp256k1Interop.{fieldName}({argsStr});");
         }
         else
         {
-            sb.AppendLine($"{indent}        return Secp256k1Interop.{fieldName}({argsStr});");
+            sb.AppendLine($"{indent}            return Secp256k1Interop.{fieldName}({argsStr});");
         }
 
+        sb.AppendLine($"{indent}        }}");
         sb.AppendLine($"{indent}    }}");
         sb.AppendLine($"{indent}    finally");
         sb.AppendLine($"{indent}    {{");
@@ -1786,12 +1788,6 @@ public class InteropGenerator
         sb.AppendLine($"{indent}        }}");
         sb.AppendLine($"{indent}    }}");
         sb.AppendLine($"{indent}}}");
-
-        sb.AppendLine("            }");
-        sb.AppendLine("            finally");
-        sb.AppendLine("            {");
-        sb.AppendLine("                Marshal.FreeHGlobal(nativePtrArray);");
-        sb.AppendLine("            }");
 
         sb.AppendLine("        }");
     }
@@ -1921,7 +1917,7 @@ public class InteropGenerator
         if (spanParams.Count > 0)
         {
             var fixedDeclarations = spanParams.Select(p =>
-                $"{p.name}Ptr = &MemoryMarshal.GetReference({p.name})");
+                $"{p.name}Ptr = {p.name}");
             sb.AppendLine($"            fixed (byte* {string.Join(",\n                ", fixedDeclarations)})");
             sb.AppendLine("            {");
 
@@ -2220,7 +2216,7 @@ public class InteropGenerator
         if (spanParams.Count > 0)
         {
             var fixedDeclarations = spanParams.Select(p =>
-                $"{p.name}Ptr = &MemoryMarshal.GetReference({p.name})");
+                $"{p.name}Ptr = {p.name}");
             sb.AppendLine($"            fixed (byte* {string.Join(",\n                ", fixedDeclarations)})");
             sb.AppendLine("            {");
 

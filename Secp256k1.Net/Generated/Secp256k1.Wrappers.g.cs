@@ -80,8 +80,8 @@ namespace Secp256k1Net
             if (pubkey.Length < 64)
                 throw new ArgumentException($"{nameof(pubkey)} must be at least 64 bytes");
 
-            fixed (byte* pubkeyPtr = &MemoryMarshal.GetReference(pubkey),
-                inputPtr = &MemoryMarshal.GetReference(input))
+            fixed (byte* pubkeyPtr = pubkey,
+                inputPtr = input)
             {
                 return Secp256k1Interop._ec_pubkey_parse(_ctx, pubkeyPtr, inputPtr, (nuint)input.Length) == 1;
             }
@@ -101,8 +101,8 @@ namespace Secp256k1Net
             if (output.Length < requiredOutputSize)
                 throw new ArgumentException($"{nameof(output)} must be at least {requiredOutputSize} bytes for the specified flags");
 
-            fixed (byte* outputPtr = &MemoryMarshal.GetReference(output),
-                pubkeyPtr = &MemoryMarshal.GetReference(pubkey))
+            fixed (byte* outputPtr = output,
+                pubkeyPtr = pubkey)
             fixed (nuint* outputlenPtr = &outputlen)
             {
                 return Secp256k1Interop._ec_pubkey_serialize(_ctx, outputPtr, outputlenPtr, pubkeyPtr, (uint)flags) == 1;
@@ -120,8 +120,8 @@ namespace Secp256k1Net
             if (pubkey2.Length < 64)
                 throw new ArgumentException($"{nameof(pubkey2)} must be at least 64 bytes");
 
-            fixed (byte* pubkey1Ptr = &MemoryMarshal.GetReference(pubkey1),
-                pubkey2Ptr = &MemoryMarshal.GetReference(pubkey2))
+            fixed (byte* pubkey1Ptr = pubkey1,
+                pubkey2Ptr = pubkey2)
             {
                 return Secp256k1Interop._ec_pubkey_cmp(_ctx, pubkey1Ptr, pubkey2Ptr);
             }
@@ -138,8 +138,8 @@ namespace Secp256k1Net
             if (input64.Length < 64)
                 throw new ArgumentException($"{nameof(input64)} must be at least 64 bytes");
 
-            fixed (byte* sigPtr = &MemoryMarshal.GetReference(sig),
-                input64Ptr = &MemoryMarshal.GetReference(input64))
+            fixed (byte* sigPtr = sig,
+                input64Ptr = input64)
             {
                 return Secp256k1Interop._ecdsa_signature_parse_compact(_ctx, sigPtr, input64Ptr) == 1;
             }
@@ -154,8 +154,8 @@ namespace Secp256k1Net
             if (sig.Length < 64)
                 throw new ArgumentException($"{nameof(sig)} must be at least 64 bytes");
 
-            fixed (byte* sigPtr = &MemoryMarshal.GetReference(sig),
-                inputPtr = &MemoryMarshal.GetReference(input))
+            fixed (byte* sigPtr = sig,
+                inputPtr = input)
             {
                 return Secp256k1Interop._ecdsa_signature_parse_der(_ctx, sigPtr, inputPtr, (nuint)input.Length) == 1;
             }
@@ -171,8 +171,8 @@ namespace Secp256k1Net
             if (sig.Length < 64)
                 throw new ArgumentException($"{nameof(sig)} must be at least 64 bytes");
 
-            fixed (byte* outputPtr = &MemoryMarshal.GetReference(output),
-                sigPtr = &MemoryMarshal.GetReference(sig))
+            fixed (byte* outputPtr = output,
+                sigPtr = sig)
             fixed (nuint* outputlenPtr = &outputlen)
             {
                 return Secp256k1Interop._ecdsa_signature_serialize_der(_ctx, outputPtr, outputlenPtr, sigPtr) == 1;
@@ -190,8 +190,8 @@ namespace Secp256k1Net
             if (sig.Length < 64)
                 throw new ArgumentException($"{nameof(sig)} must be at least 64 bytes");
 
-            fixed (byte* output64Ptr = &MemoryMarshal.GetReference(output64),
-                sigPtr = &MemoryMarshal.GetReference(sig))
+            fixed (byte* output64Ptr = output64,
+                sigPtr = sig)
             {
                 return Secp256k1Interop._ecdsa_signature_serialize_compact(_ctx, output64Ptr, sigPtr) == 1;
             }
@@ -211,9 +211,9 @@ namespace Secp256k1Net
             if (pubkey.Length < 64)
                 throw new ArgumentException($"{nameof(pubkey)} must be at least 64 bytes");
 
-            fixed (byte* sigPtr = &MemoryMarshal.GetReference(sig),
-                msghash32Ptr = &MemoryMarshal.GetReference(msghash32),
-                pubkeyPtr = &MemoryMarshal.GetReference(pubkey))
+            fixed (byte* sigPtr = sig,
+                msghash32Ptr = msghash32,
+                pubkeyPtr = pubkey)
             {
                 return Secp256k1Interop._ecdsa_verify(_ctx, sigPtr, msghash32Ptr, pubkeyPtr) == 1;
             }
@@ -230,8 +230,8 @@ namespace Secp256k1Net
             if (sigin.Length < 64)
                 throw new ArgumentException($"{nameof(sigin)} must be at least 64 bytes");
 
-            fixed (byte* sigoutPtr = &MemoryMarshal.GetReference(sigout),
-                siginPtr = &MemoryMarshal.GetReference(sigin))
+            fixed (byte* sigoutPtr = sigout,
+                siginPtr = sigin)
             {
                 return Secp256k1Interop._ecdsa_signature_normalize(_ctx, sigoutPtr, siginPtr) == 1;
             }
@@ -251,9 +251,9 @@ namespace Secp256k1Net
             if (seckey.Length < 32)
                 throw new ArgumentException($"{nameof(seckey)} must be at least 32 bytes");
 
-            fixed (byte* sigPtr = &MemoryMarshal.GetReference(sig),
-                msghash32Ptr = &MemoryMarshal.GetReference(msghash32),
-                seckeyPtr = &MemoryMarshal.GetReference(seckey))
+            fixed (byte* sigPtr = sig,
+                msghash32Ptr = msghash32,
+                seckeyPtr = seckey)
             {
                 return Secp256k1Interop._ecdsa_sign(_ctx, sigPtr, msghash32Ptr, seckeyPtr, IntPtr.Zero, IntPtr.Zero.ToPointer()) == 1;
             }
@@ -286,9 +286,9 @@ namespace Secp256k1Net
 
             var callbackPtr = Marshal.GetFunctionPointerForDelegate(nativeCallback);
 
-            fixed (byte* sigPtr = &MemoryMarshal.GetReference(sig),
-                msghash32Ptr = &MemoryMarshal.GetReference(msghash32),
-                seckeyPtr = &MemoryMarshal.GetReference(seckey))
+            fixed (byte* sigPtr = sig,
+                msghash32Ptr = msghash32,
+                seckeyPtr = seckey)
             {
                 return Secp256k1Interop._ecdsa_sign(_ctx, sigPtr, msghash32Ptr, seckeyPtr, callbackPtr, ndata.ToPointer()) == 1;
             }
@@ -302,7 +302,7 @@ namespace Secp256k1Net
             if (seckey.Length < 32)
                 throw new ArgumentException($"{nameof(seckey)} must be at least 32 bytes");
 
-            fixed (byte* seckeyPtr = &MemoryMarshal.GetReference(seckey))
+            fixed (byte* seckeyPtr = seckey)
             {
                 return Secp256k1Interop._ec_seckey_verify(_ctx, seckeyPtr) == 1;
             }
@@ -319,8 +319,8 @@ namespace Secp256k1Net
             if (seckey.Length < 32)
                 throw new ArgumentException($"{nameof(seckey)} must be at least 32 bytes");
 
-            fixed (byte* pubkeyPtr = &MemoryMarshal.GetReference(pubkey),
-                seckeyPtr = &MemoryMarshal.GetReference(seckey))
+            fixed (byte* pubkeyPtr = pubkey,
+                seckeyPtr = seckey)
             {
                 return Secp256k1Interop._ec_pubkey_create(_ctx, pubkeyPtr, seckeyPtr) == 1;
             }
@@ -334,7 +334,7 @@ namespace Secp256k1Net
             if (seckey.Length < 32)
                 throw new ArgumentException($"{nameof(seckey)} must be at least 32 bytes");
 
-            fixed (byte* seckeyPtr = &MemoryMarshal.GetReference(seckey))
+            fixed (byte* seckeyPtr = seckey)
             {
                 return Secp256k1Interop._ec_seckey_negate(_ctx, seckeyPtr) == 1;
             }
@@ -348,7 +348,7 @@ namespace Secp256k1Net
             if (pubkey.Length < 64)
                 throw new ArgumentException($"{nameof(pubkey)} must be at least 64 bytes");
 
-            fixed (byte* pubkeyPtr = &MemoryMarshal.GetReference(pubkey))
+            fixed (byte* pubkeyPtr = pubkey)
             {
                 return Secp256k1Interop._ec_pubkey_negate(_ctx, pubkeyPtr) == 1;
             }
@@ -365,8 +365,8 @@ namespace Secp256k1Net
             if (tweak32.Length < 32)
                 throw new ArgumentException($"{nameof(tweak32)} must be at least 32 bytes");
 
-            fixed (byte* seckeyPtr = &MemoryMarshal.GetReference(seckey),
-                tweak32Ptr = &MemoryMarshal.GetReference(tweak32))
+            fixed (byte* seckeyPtr = seckey,
+                tweak32Ptr = tweak32)
             {
                 return Secp256k1Interop._ec_seckey_tweak_add(_ctx, seckeyPtr, tweak32Ptr) == 1;
             }
@@ -383,8 +383,8 @@ namespace Secp256k1Net
             if (tweak32.Length < 32)
                 throw new ArgumentException($"{nameof(tweak32)} must be at least 32 bytes");
 
-            fixed (byte* pubkeyPtr = &MemoryMarshal.GetReference(pubkey),
-                tweak32Ptr = &MemoryMarshal.GetReference(tweak32))
+            fixed (byte* pubkeyPtr = pubkey,
+                tweak32Ptr = tweak32)
             {
                 return Secp256k1Interop._ec_pubkey_tweak_add(_ctx, pubkeyPtr, tweak32Ptr) == 1;
             }
@@ -401,8 +401,8 @@ namespace Secp256k1Net
             if (tweak32.Length < 32)
                 throw new ArgumentException($"{nameof(tweak32)} must be at least 32 bytes");
 
-            fixed (byte* seckeyPtr = &MemoryMarshal.GetReference(seckey),
-                tweak32Ptr = &MemoryMarshal.GetReference(tweak32))
+            fixed (byte* seckeyPtr = seckey,
+                tweak32Ptr = tweak32)
             {
                 return Secp256k1Interop._ec_seckey_tweak_mul(_ctx, seckeyPtr, tweak32Ptr) == 1;
             }
@@ -419,8 +419,8 @@ namespace Secp256k1Net
             if (tweak32.Length < 32)
                 throw new ArgumentException($"{nameof(tweak32)} must be at least 32 bytes");
 
-            fixed (byte* pubkeyPtr = &MemoryMarshal.GetReference(pubkey),
-                tweak32Ptr = &MemoryMarshal.GetReference(tweak32))
+            fixed (byte* pubkeyPtr = pubkey,
+                tweak32Ptr = tweak32)
             {
                 return Secp256k1Interop._ec_pubkey_tweak_mul(_ctx, pubkeyPtr, tweak32Ptr) == 1;
             }
@@ -443,37 +443,32 @@ namespace Secp256k1Net
                 throw new ArgumentException($"{nameof(@out)} must be at least 64 bytes");
 
             var count = ins.Length;
-            var ptrSize = IntPtr.Size;
-            var nativePtrArray = Marshal.AllocHGlobal(ptrSize * count);
-            try
-            {
-                fixed (byte* @outPtr = &MemoryMarshal.GetReference(@out))
+            Span<nint> nativePtrArray = stackalloc nint[count];
+            fixed (byte* @outPtr = @out)
+                {
+                    var handles = new GCHandle[count];
+                    try
                     {
-                        var handles = new GCHandle[count];
-                        try
+                        for (int i = 0; i < count; i++)
                         {
-                            for (int i = 0; i < count; i++)
-                            {
-                                handles[i] = GCHandle.Alloc(ins[i], GCHandleType.Pinned);
-                                Marshal.WriteIntPtr(nativePtrArray, i * ptrSize, handles[i].AddrOfPinnedObject());
-                            }
-
-                            return Secp256k1Interop._ec_pubkey_combine(_ctx, @outPtr, nativePtrArray, (nuint)count) == 1;
+                            handles[i] = GCHandle.Alloc(ins[i], GCHandleType.Pinned);
+                            nativePtrArray[i] = handles[i].AddrOfPinnedObject();
                         }
-                        finally
+
+                        fixed (nint* nativePtrArrayPtr = nativePtrArray)
                         {
-                            for (int i = 0; i < count; i++)
-                            {
-                                if (handles[i].IsAllocated)
-                                    handles[i].Free();
-                            }
+                            return Secp256k1Interop._ec_pubkey_combine(_ctx, @outPtr, (IntPtr)nativePtrArrayPtr, (nuint)count) == 1;
                         }
                     }
-            }
-            finally
-            {
-                Marshal.FreeHGlobal(nativePtrArray);
-            }
+                    finally
+                    {
+                        for (int i = 0; i < count; i++)
+                        {
+                            if (handles[i].IsAllocated)
+                                handles[i].Free();
+                        }
+                    }
+                }
         }
 
         /// <summary>Compute a tagged hash as defined in BIP-340.<para>This is useful for creating a message hash and achieving domain separation through an application-specific tag. This function returns SHA256(SHA256(tag)||SHA256(tag)||msg). Therefore, tagged hash implementations optimized for a specific tag can precompute the SHA256 state after hashing the tag hashes.</para></summary>
@@ -486,9 +481,9 @@ namespace Secp256k1Net
             if (hash32.Length < 32)
                 throw new ArgumentException($"{nameof(hash32)} must be at least 32 bytes");
 
-            fixed (byte* hash32Ptr = &MemoryMarshal.GetReference(hash32),
-                tagPtr = &MemoryMarshal.GetReference(tag),
-                msgPtr = &MemoryMarshal.GetReference(msg))
+            fixed (byte* hash32Ptr = hash32,
+                tagPtr = tag,
+                msgPtr = msg)
             {
                 return Secp256k1Interop._tagged_sha256(_ctx, hash32Ptr, tagPtr, (nuint)tag.Length, msgPtr, (nuint)msg.Length) == 1;
             }
@@ -506,8 +501,8 @@ namespace Secp256k1Net
             if (input64.Length < 64)
                 throw new ArgumentException($"{nameof(input64)} must be at least 64 bytes");
 
-            fixed (byte* sigPtr = &MemoryMarshal.GetReference(sig),
-                input64Ptr = &MemoryMarshal.GetReference(input64))
+            fixed (byte* sigPtr = sig,
+                input64Ptr = input64)
             {
                 return Secp256k1Interop._ecdsa_recoverable_signature_parse_compact(_ctx, sigPtr, input64Ptr, recid) == 1;
             }
@@ -524,8 +519,8 @@ namespace Secp256k1Net
             if (sigin.Length < 65)
                 throw new ArgumentException($"{nameof(sigin)} must be at least 65 bytes");
 
-            fixed (byte* sigPtr = &MemoryMarshal.GetReference(sig),
-                siginPtr = &MemoryMarshal.GetReference(sigin))
+            fixed (byte* sigPtr = sig,
+                siginPtr = sigin)
             {
                 return Secp256k1Interop._ecdsa_recoverable_signature_convert(_ctx, sigPtr, siginPtr) == 1;
             }
@@ -543,8 +538,8 @@ namespace Secp256k1Net
             if (sig.Length < 65)
                 throw new ArgumentException($"{nameof(sig)} must be at least 65 bytes");
 
-            fixed (byte* output64Ptr = &MemoryMarshal.GetReference(output64),
-                sigPtr = &MemoryMarshal.GetReference(sig))
+            fixed (byte* output64Ptr = output64,
+                sigPtr = sig)
             fixed (int* recidPtr = &recid)
             {
                 return Secp256k1Interop._ecdsa_recoverable_signature_serialize_compact(_ctx, output64Ptr, recidPtr, sigPtr) == 1;
@@ -565,9 +560,9 @@ namespace Secp256k1Net
             if (seckey.Length < 32)
                 throw new ArgumentException($"{nameof(seckey)} must be at least 32 bytes");
 
-            fixed (byte* sigPtr = &MemoryMarshal.GetReference(sig),
-                msghash32Ptr = &MemoryMarshal.GetReference(msghash32),
-                seckeyPtr = &MemoryMarshal.GetReference(seckey))
+            fixed (byte* sigPtr = sig,
+                msghash32Ptr = msghash32,
+                seckeyPtr = seckey)
             {
                 return Secp256k1Interop._ecdsa_sign_recoverable(_ctx, sigPtr, msghash32Ptr, seckeyPtr, IntPtr.Zero, IntPtr.Zero.ToPointer()) == 1;
             }
@@ -600,9 +595,9 @@ namespace Secp256k1Net
 
             var callbackPtr = Marshal.GetFunctionPointerForDelegate(nativeCallback);
 
-            fixed (byte* sigPtr = &MemoryMarshal.GetReference(sig),
-                msghash32Ptr = &MemoryMarshal.GetReference(msghash32),
-                seckeyPtr = &MemoryMarshal.GetReference(seckey))
+            fixed (byte* sigPtr = sig,
+                msghash32Ptr = msghash32,
+                seckeyPtr = seckey)
             {
                 return Secp256k1Interop._ecdsa_sign_recoverable(_ctx, sigPtr, msghash32Ptr, seckeyPtr, callbackPtr, ndata.ToPointer()) == 1;
             }
@@ -622,9 +617,9 @@ namespace Secp256k1Net
             if (msghash32.Length < 32)
                 throw new ArgumentException($"{nameof(msghash32)} must be at least 32 bytes");
 
-            fixed (byte* pubkeyPtr = &MemoryMarshal.GetReference(pubkey),
-                sigPtr = &MemoryMarshal.GetReference(sig),
-                msghash32Ptr = &MemoryMarshal.GetReference(msghash32))
+            fixed (byte* pubkeyPtr = pubkey,
+                sigPtr = sig,
+                msghash32Ptr = msghash32)
             {
                 return Secp256k1Interop._ecdsa_recover(_ctx, pubkeyPtr, sigPtr, msghash32Ptr) == 1;
             }
@@ -644,9 +639,9 @@ namespace Secp256k1Net
             if (seckey.Length < 32)
                 throw new ArgumentException($"{nameof(seckey)} must be at least 32 bytes");
 
-            fixed (byte* outputPtr = &MemoryMarshal.GetReference(output),
-                pubkeyPtr = &MemoryMarshal.GetReference(pubkey),
-                seckeyPtr = &MemoryMarshal.GetReference(seckey))
+            fixed (byte* outputPtr = output,
+                pubkeyPtr = pubkey,
+                seckeyPtr = seckey)
             {
                 return Secp256k1Interop._ecdh(_ctx, outputPtr, pubkeyPtr, seckeyPtr, IntPtr.Zero, IntPtr.Zero.ToPointer()) == 1;
             }
@@ -678,9 +673,9 @@ namespace Secp256k1Net
 
             var callbackPtr = Marshal.GetFunctionPointerForDelegate(nativeCallback);
 
-            fixed (byte* outputPtr = &MemoryMarshal.GetReference(output),
-                pubkeyPtr = &MemoryMarshal.GetReference(pubkey),
-                seckeyPtr = &MemoryMarshal.GetReference(seckey))
+            fixed (byte* outputPtr = output,
+                pubkeyPtr = pubkey,
+                seckeyPtr = seckey)
             {
                 return Secp256k1Interop._ecdh(_ctx, outputPtr, pubkeyPtr, seckeyPtr, callbackPtr, data.ToPointer()) == 1;
             }
@@ -697,8 +692,8 @@ namespace Secp256k1Net
             if (input32.Length < 32)
                 throw new ArgumentException($"{nameof(input32)} must be at least 32 bytes");
 
-            fixed (byte* pubkeyPtr = &MemoryMarshal.GetReference(pubkey),
-                input32Ptr = &MemoryMarshal.GetReference(input32))
+            fixed (byte* pubkeyPtr = pubkey,
+                input32Ptr = input32)
             {
                 return Secp256k1Interop._xonly_pubkey_parse(_ctx, pubkeyPtr, input32Ptr) == 1;
             }
@@ -715,8 +710,8 @@ namespace Secp256k1Net
             if (pubkey.Length < 64)
                 throw new ArgumentException($"{nameof(pubkey)} must be at least 64 bytes");
 
-            fixed (byte* output32Ptr = &MemoryMarshal.GetReference(output32),
-                pubkeyPtr = &MemoryMarshal.GetReference(pubkey))
+            fixed (byte* output32Ptr = output32,
+                pubkeyPtr = pubkey)
             {
                 return Secp256k1Interop._xonly_pubkey_serialize(_ctx, output32Ptr, pubkeyPtr) == 1;
             }
@@ -731,8 +726,8 @@ namespace Secp256k1Net
             if (pk2.Length < 64)
                 throw new ArgumentException($"{nameof(pk2)} must be at least 64 bytes");
 
-            fixed (byte* pk1Ptr = &MemoryMarshal.GetReference(pk1),
-                pk2Ptr = &MemoryMarshal.GetReference(pk2))
+            fixed (byte* pk1Ptr = pk1,
+                pk2Ptr = pk2)
             {
                 return Secp256k1Interop._xonly_pubkey_cmp(_ctx, pk1Ptr, pk2Ptr);
             }
@@ -750,8 +745,8 @@ namespace Secp256k1Net
             if (pubkey.Length < 64)
                 throw new ArgumentException($"{nameof(pubkey)} must be at least 64 bytes");
 
-            fixed (byte* xonly_pubkeyPtr = &MemoryMarshal.GetReference(xonly_pubkey),
-                pubkeyPtr = &MemoryMarshal.GetReference(pubkey))
+            fixed (byte* xonly_pubkeyPtr = xonly_pubkey,
+                pubkeyPtr = pubkey)
             fixed (int* pk_parityPtr = &pk_parity)
             {
                 return Secp256k1Interop._xonly_pubkey_from_pubkey(_ctx, xonly_pubkeyPtr, pk_parityPtr, pubkeyPtr) == 1;
@@ -772,9 +767,9 @@ namespace Secp256k1Net
             if (tweak32.Length < 32)
                 throw new ArgumentException($"{nameof(tweak32)} must be at least 32 bytes");
 
-            fixed (byte* output_pubkeyPtr = &MemoryMarshal.GetReference(output_pubkey),
-                internal_pubkeyPtr = &MemoryMarshal.GetReference(internal_pubkey),
-                tweak32Ptr = &MemoryMarshal.GetReference(tweak32))
+            fixed (byte* output_pubkeyPtr = output_pubkey,
+                internal_pubkeyPtr = internal_pubkey,
+                tweak32Ptr = tweak32)
             {
                 return Secp256k1Interop._xonly_pubkey_tweak_add(_ctx, output_pubkeyPtr, internal_pubkeyPtr, tweak32Ptr) == 1;
             }
@@ -795,9 +790,9 @@ namespace Secp256k1Net
             if (tweak32.Length < 32)
                 throw new ArgumentException($"{nameof(tweak32)} must be at least 32 bytes");
 
-            fixed (byte* tweaked_pubkey32Ptr = &MemoryMarshal.GetReference(tweaked_pubkey32),
-                internal_pubkeyPtr = &MemoryMarshal.GetReference(internal_pubkey),
-                tweak32Ptr = &MemoryMarshal.GetReference(tweak32))
+            fixed (byte* tweaked_pubkey32Ptr = tweaked_pubkey32,
+                internal_pubkeyPtr = internal_pubkey,
+                tweak32Ptr = tweak32)
             {
                 return Secp256k1Interop._xonly_pubkey_tweak_add_check(_ctx, tweaked_pubkey32Ptr, tweaked_pk_parity, internal_pubkeyPtr, tweak32Ptr) == 1;
             }
@@ -814,8 +809,8 @@ namespace Secp256k1Net
             if (seckey.Length < 32)
                 throw new ArgumentException($"{nameof(seckey)} must be at least 32 bytes");
 
-            fixed (byte* keypairPtr = &MemoryMarshal.GetReference(keypair),
-                seckeyPtr = &MemoryMarshal.GetReference(seckey))
+            fixed (byte* keypairPtr = keypair,
+                seckeyPtr = seckey)
             {
                 return Secp256k1Interop._keypair_create(_ctx, keypairPtr, seckeyPtr) == 1;
             }
@@ -832,8 +827,8 @@ namespace Secp256k1Net
             if (keypair.Length < 96)
                 throw new ArgumentException($"{nameof(keypair)} must be at least 96 bytes");
 
-            fixed (byte* seckeyPtr = &MemoryMarshal.GetReference(seckey),
-                keypairPtr = &MemoryMarshal.GetReference(keypair))
+            fixed (byte* seckeyPtr = seckey,
+                keypairPtr = keypair)
             {
                 return Secp256k1Interop._keypair_sec(_ctx, seckeyPtr, keypairPtr) == 1;
             }
@@ -850,8 +845,8 @@ namespace Secp256k1Net
             if (keypair.Length < 96)
                 throw new ArgumentException($"{nameof(keypair)} must be at least 96 bytes");
 
-            fixed (byte* pubkeyPtr = &MemoryMarshal.GetReference(pubkey),
-                keypairPtr = &MemoryMarshal.GetReference(keypair))
+            fixed (byte* pubkeyPtr = pubkey,
+                keypairPtr = keypair)
             {
                 return Secp256k1Interop._keypair_pub(_ctx, pubkeyPtr, keypairPtr) == 1;
             }
@@ -869,8 +864,8 @@ namespace Secp256k1Net
             if (keypair.Length < 96)
                 throw new ArgumentException($"{nameof(keypair)} must be at least 96 bytes");
 
-            fixed (byte* pubkeyPtr = &MemoryMarshal.GetReference(pubkey),
-                keypairPtr = &MemoryMarshal.GetReference(keypair))
+            fixed (byte* pubkeyPtr = pubkey,
+                keypairPtr = keypair)
             fixed (int* pk_parityPtr = &pk_parity)
             {
                 return Secp256k1Interop._keypair_xonly_pub(_ctx, pubkeyPtr, pk_parityPtr, keypairPtr) == 1;
@@ -888,8 +883,8 @@ namespace Secp256k1Net
             if (tweak32.Length < 32)
                 throw new ArgumentException($"{nameof(tweak32)} must be at least 32 bytes");
 
-            fixed (byte* keypairPtr = &MemoryMarshal.GetReference(keypair),
-                tweak32Ptr = &MemoryMarshal.GetReference(tweak32))
+            fixed (byte* keypairPtr = keypair,
+                tweak32Ptr = tweak32)
             {
                 return Secp256k1Interop._keypair_xonly_tweak_add(_ctx, keypairPtr, tweak32Ptr) == 1;
             }
@@ -911,10 +906,10 @@ namespace Secp256k1Net
             if (aux_rand32.Length < 32)
                 throw new ArgumentException($"{nameof(aux_rand32)} must be at least 32 bytes");
 
-            fixed (byte* sig64Ptr = &MemoryMarshal.GetReference(sig64),
-                msg32Ptr = &MemoryMarshal.GetReference(msg32),
-                keypairPtr = &MemoryMarshal.GetReference(keypair),
-                aux_rand32Ptr = &MemoryMarshal.GetReference(aux_rand32))
+            fixed (byte* sig64Ptr = sig64,
+                msg32Ptr = msg32,
+                keypairPtr = keypair,
+                aux_rand32Ptr = aux_rand32)
             {
                 return Secp256k1Interop._schnorrsig_sign32(_ctx, sig64Ptr, msg32Ptr, keypairPtr, aux_rand32Ptr) == 1;
             }
@@ -932,10 +927,10 @@ namespace Secp256k1Net
             if (keypair.Length < 96)
                 throw new ArgumentException($"{nameof(keypair)} must be at least 96 bytes");
 
-            fixed (byte* sig64Ptr = &MemoryMarshal.GetReference(sig64),
-                msgPtr = &MemoryMarshal.GetReference(msg),
-                keypairPtr = &MemoryMarshal.GetReference(keypair),
-                extraparamsPtr = &MemoryMarshal.GetReference(extraparams))
+            fixed (byte* sig64Ptr = sig64,
+                msgPtr = msg,
+                keypairPtr = keypair,
+                extraparamsPtr = extraparams)
             {
                 return Secp256k1Interop._schnorrsig_sign_custom(_ctx, sig64Ptr, msgPtr, (nuint)msg.Length, keypairPtr, extraparamsPtr) == 1;
             }
@@ -953,9 +948,9 @@ namespace Secp256k1Net
             if (pubkey.Length < 64)
                 throw new ArgumentException($"{nameof(pubkey)} must be at least 64 bytes");
 
-            fixed (byte* sig64Ptr = &MemoryMarshal.GetReference(sig64),
-                msgPtr = &MemoryMarshal.GetReference(msg),
-                pubkeyPtr = &MemoryMarshal.GetReference(pubkey))
+            fixed (byte* sig64Ptr = sig64,
+                msgPtr = msg,
+                pubkeyPtr = pubkey)
             {
                 return Secp256k1Interop._schnorrsig_verify(_ctx, sig64Ptr, msgPtr, (nuint)msg.Length, pubkeyPtr) == 1;
             }
@@ -975,9 +970,9 @@ namespace Secp256k1Net
             if (rnd32.Length < 32)
                 throw new ArgumentException($"{nameof(rnd32)} must be at least 32 bytes");
 
-            fixed (byte* ell64Ptr = &MemoryMarshal.GetReference(ell64),
-                pubkeyPtr = &MemoryMarshal.GetReference(pubkey),
-                rnd32Ptr = &MemoryMarshal.GetReference(rnd32))
+            fixed (byte* ell64Ptr = ell64,
+                pubkeyPtr = pubkey,
+                rnd32Ptr = rnd32)
             {
                 return Secp256k1Interop._ellswift_encode(_ctx, ell64Ptr, pubkeyPtr, rnd32Ptr) == 1;
             }
@@ -994,8 +989,8 @@ namespace Secp256k1Net
             if (ell64.Length < 64)
                 throw new ArgumentException($"{nameof(ell64)} must be at least 64 bytes");
 
-            fixed (byte* pubkeyPtr = &MemoryMarshal.GetReference(pubkey),
-                ell64Ptr = &MemoryMarshal.GetReference(ell64))
+            fixed (byte* pubkeyPtr = pubkey,
+                ell64Ptr = ell64)
             {
                 return Secp256k1Interop._ellswift_decode(_ctx, pubkeyPtr, ell64Ptr) == 1;
             }
@@ -1015,9 +1010,9 @@ namespace Secp256k1Net
             if (auxrnd32.Length < 32)
                 throw new ArgumentException($"{nameof(auxrnd32)} must be at least 32 bytes");
 
-            fixed (byte* ell64Ptr = &MemoryMarshal.GetReference(ell64),
-                seckey32Ptr = &MemoryMarshal.GetReference(seckey32),
-                auxrnd32Ptr = &MemoryMarshal.GetReference(auxrnd32))
+            fixed (byte* ell64Ptr = ell64,
+                seckey32Ptr = seckey32,
+                auxrnd32Ptr = auxrnd32)
             {
                 return Secp256k1Interop._ellswift_create(_ctx, ell64Ptr, seckey32Ptr, auxrnd32Ptr) == 1;
             }
@@ -1054,10 +1049,10 @@ namespace Secp256k1Net
 
             var callbackPtr = Marshal.GetFunctionPointerForDelegate(nativeCallback);
 
-            fixed (byte* outputPtr = &MemoryMarshal.GetReference(output),
-                ell_a64Ptr = &MemoryMarshal.GetReference(ell_a64),
-                ell_b64Ptr = &MemoryMarshal.GetReference(ell_b64),
-                seckey32Ptr = &MemoryMarshal.GetReference(seckey32))
+            fixed (byte* outputPtr = output,
+                ell_a64Ptr = ell_a64,
+                ell_b64Ptr = ell_b64,
+                seckey32Ptr = seckey32)
             {
                 return Secp256k1Interop._ellswift_xdh(_ctx, outputPtr, ell_a64Ptr, ell_b64Ptr, seckey32Ptr, party, callbackPtr, data.ToPointer()) == 1;
             }
@@ -1074,8 +1069,8 @@ namespace Secp256k1Net
             if (in66.Length < 66)
                 throw new ArgumentException($"{nameof(in66)} must be at least 66 bytes");
 
-            fixed (byte* noncePtr = &MemoryMarshal.GetReference(nonce),
-                in66Ptr = &MemoryMarshal.GetReference(in66))
+            fixed (byte* noncePtr = nonce,
+                in66Ptr = in66)
             {
                 return Secp256k1Interop._musig_pubnonce_parse(_ctx, noncePtr, in66Ptr) == 1;
             }
@@ -1092,8 +1087,8 @@ namespace Secp256k1Net
             if (nonce.Length < 132)
                 throw new ArgumentException($"{nameof(nonce)} must be at least 132 bytes");
 
-            fixed (byte* out66Ptr = &MemoryMarshal.GetReference(out66),
-                noncePtr = &MemoryMarshal.GetReference(nonce))
+            fixed (byte* out66Ptr = out66,
+                noncePtr = nonce)
             {
                 return Secp256k1Interop._musig_pubnonce_serialize(_ctx, out66Ptr, noncePtr) == 1;
             }
@@ -1110,8 +1105,8 @@ namespace Secp256k1Net
             if (in66.Length < 66)
                 throw new ArgumentException($"{nameof(in66)} must be at least 66 bytes");
 
-            fixed (byte* noncePtr = &MemoryMarshal.GetReference(nonce),
-                in66Ptr = &MemoryMarshal.GetReference(in66))
+            fixed (byte* noncePtr = nonce,
+                in66Ptr = in66)
             {
                 return Secp256k1Interop._musig_aggnonce_parse(_ctx, noncePtr, in66Ptr) == 1;
             }
@@ -1128,8 +1123,8 @@ namespace Secp256k1Net
             if (nonce.Length < 132)
                 throw new ArgumentException($"{nameof(nonce)} must be at least 132 bytes");
 
-            fixed (byte* out66Ptr = &MemoryMarshal.GetReference(out66),
-                noncePtr = &MemoryMarshal.GetReference(nonce))
+            fixed (byte* out66Ptr = out66,
+                noncePtr = nonce)
             {
                 return Secp256k1Interop._musig_aggnonce_serialize(_ctx, out66Ptr, noncePtr) == 1;
             }
@@ -1146,8 +1141,8 @@ namespace Secp256k1Net
             if (in32.Length < 32)
                 throw new ArgumentException($"{nameof(in32)} must be at least 32 bytes");
 
-            fixed (byte* sigPtr = &MemoryMarshal.GetReference(sig),
-                in32Ptr = &MemoryMarshal.GetReference(in32))
+            fixed (byte* sigPtr = sig,
+                in32Ptr = in32)
             {
                 return Secp256k1Interop._musig_partial_sig_parse(_ctx, sigPtr, in32Ptr) == 1;
             }
@@ -1164,8 +1159,8 @@ namespace Secp256k1Net
             if (sig.Length < 36)
                 throw new ArgumentException($"{nameof(sig)} must be at least 36 bytes");
 
-            fixed (byte* out32Ptr = &MemoryMarshal.GetReference(out32),
-                sigPtr = &MemoryMarshal.GetReference(sig))
+            fixed (byte* out32Ptr = out32,
+                sigPtr = sig)
             {
                 return Secp256k1Interop._musig_partial_sig_serialize(_ctx, out32Ptr, sigPtr) == 1;
             }
@@ -1191,38 +1186,33 @@ namespace Secp256k1Net
                 throw new ArgumentException($"{nameof(keyagg_cache)} must be at least 197 bytes");
 
             var count = pubkeys.Length;
-            var ptrSize = IntPtr.Size;
-            var nativePtrArray = Marshal.AllocHGlobal(ptrSize * count);
-            try
-            {
-                fixed (byte* agg_pkPtr = &MemoryMarshal.GetReference(agg_pk),
-                    keyagg_cachePtr = &MemoryMarshal.GetReference(keyagg_cache))
+            Span<nint> nativePtrArray = stackalloc nint[count];
+            fixed (byte* agg_pkPtr = agg_pk,
+                keyagg_cachePtr = keyagg_cache)
+                {
+                    var handles = new GCHandle[count];
+                    try
                     {
-                        var handles = new GCHandle[count];
-                        try
+                        for (int i = 0; i < count; i++)
                         {
-                            for (int i = 0; i < count; i++)
-                            {
-                                handles[i] = GCHandle.Alloc(pubkeys[i], GCHandleType.Pinned);
-                                Marshal.WriteIntPtr(nativePtrArray, i * ptrSize, handles[i].AddrOfPinnedObject());
-                            }
-
-                            return Secp256k1Interop._musig_pubkey_agg(_ctx, agg_pkPtr, keyagg_cachePtr, nativePtrArray, (nuint)count) == 1;
+                            handles[i] = GCHandle.Alloc(pubkeys[i], GCHandleType.Pinned);
+                            nativePtrArray[i] = handles[i].AddrOfPinnedObject();
                         }
-                        finally
+
+                        fixed (nint* nativePtrArrayPtr = nativePtrArray)
                         {
-                            for (int i = 0; i < count; i++)
-                            {
-                                if (handles[i].IsAllocated)
-                                    handles[i].Free();
-                            }
+                            return Secp256k1Interop._musig_pubkey_agg(_ctx, agg_pkPtr, keyagg_cachePtr, (IntPtr)nativePtrArrayPtr, (nuint)count) == 1;
                         }
                     }
-            }
-            finally
-            {
-                Marshal.FreeHGlobal(nativePtrArray);
-            }
+                    finally
+                    {
+                        for (int i = 0; i < count; i++)
+                        {
+                            if (handles[i].IsAllocated)
+                                handles[i].Free();
+                        }
+                    }
+                }
         }
 
         /// <summary>Obtain the aggregate public key from a keyagg_cache.<para>This is only useful if you need the non-xonly public key, in particular for plain (non-xonly) tweaking or batch-verifying multiple key aggregations (not implemented).</para></summary>
@@ -1236,8 +1226,8 @@ namespace Secp256k1Net
             if (keyagg_cache.Length < 197)
                 throw new ArgumentException($"{nameof(keyagg_cache)} must be at least 197 bytes");
 
-            fixed (byte* agg_pkPtr = &MemoryMarshal.GetReference(agg_pk),
-                keyagg_cachePtr = &MemoryMarshal.GetReference(keyagg_cache))
+            fixed (byte* agg_pkPtr = agg_pk,
+                keyagg_cachePtr = keyagg_cache)
             {
                 return Secp256k1Interop._musig_pubkey_get(_ctx, agg_pkPtr, keyagg_cachePtr) == 1;
             }
@@ -1252,9 +1242,9 @@ namespace Secp256k1Net
             if (tweak32.Length < 32)
                 throw new ArgumentException($"{nameof(tweak32)} must be at least 32 bytes");
 
-            fixed (byte* output_pubkeyPtr = &MemoryMarshal.GetReference(output_pubkey),
-                keyagg_cachePtr = &MemoryMarshal.GetReference(keyagg_cache),
-                tweak32Ptr = &MemoryMarshal.GetReference(tweak32))
+            fixed (byte* output_pubkeyPtr = output_pubkey,
+                keyagg_cachePtr = keyagg_cache,
+                tweak32Ptr = tweak32)
             {
                 return Secp256k1Interop._musig_pubkey_ec_tweak_add(_ctx, output_pubkeyPtr, keyagg_cachePtr, tweak32Ptr) == 1;
             }
@@ -1269,9 +1259,9 @@ namespace Secp256k1Net
             if (tweak32.Length < 32)
                 throw new ArgumentException($"{nameof(tweak32)} must be at least 32 bytes");
 
-            fixed (byte* output_pubkeyPtr = &MemoryMarshal.GetReference(output_pubkey),
-                keyagg_cachePtr = &MemoryMarshal.GetReference(keyagg_cache),
-                tweak32Ptr = &MemoryMarshal.GetReference(tweak32))
+            fixed (byte* output_pubkeyPtr = output_pubkey,
+                keyagg_cachePtr = keyagg_cache,
+                tweak32Ptr = tweak32)
             {
                 return Secp256k1Interop._musig_pubkey_xonly_tweak_add(_ctx, output_pubkeyPtr, keyagg_cachePtr, tweak32Ptr) == 1;
             }
@@ -1306,14 +1296,14 @@ namespace Secp256k1Net
             if (extra_input32.Length < 32)
                 throw new ArgumentException($"{nameof(extra_input32)} must be at least 32 bytes");
 
-            fixed (byte* secnoncePtr = &MemoryMarshal.GetReference(secnonce),
-                pubnoncePtr = &MemoryMarshal.GetReference(pubnonce),
-                session_secrand32Ptr = &MemoryMarshal.GetReference(session_secrand32),
-                seckeyPtr = &MemoryMarshal.GetReference(seckey),
-                pubkeyPtr = &MemoryMarshal.GetReference(pubkey),
-                msg32Ptr = &MemoryMarshal.GetReference(msg32),
-                keyagg_cachePtr = &MemoryMarshal.GetReference(keyagg_cache),
-                extra_input32Ptr = &MemoryMarshal.GetReference(extra_input32))
+            fixed (byte* secnoncePtr = secnonce,
+                pubnoncePtr = pubnonce,
+                session_secrand32Ptr = session_secrand32,
+                seckeyPtr = seckey,
+                pubkeyPtr = pubkey,
+                msg32Ptr = msg32,
+                keyagg_cachePtr = keyagg_cache,
+                extra_input32Ptr = extra_input32)
             {
                 return Secp256k1Interop._musig_nonce_gen(_ctx, secnoncePtr, pubnoncePtr, session_secrand32Ptr, seckeyPtr, pubkeyPtr, msg32Ptr, keyagg_cachePtr, extra_input32Ptr) == 1;
             }
@@ -1343,12 +1333,12 @@ namespace Secp256k1Net
             if (extra_input32.Length < 32)
                 throw new ArgumentException($"{nameof(extra_input32)} must be at least 32 bytes");
 
-            fixed (byte* secnoncePtr = &MemoryMarshal.GetReference(secnonce),
-                pubnoncePtr = &MemoryMarshal.GetReference(pubnonce),
-                keypairPtr = &MemoryMarshal.GetReference(keypair),
-                msg32Ptr = &MemoryMarshal.GetReference(msg32),
-                keyagg_cachePtr = &MemoryMarshal.GetReference(keyagg_cache),
-                extra_input32Ptr = &MemoryMarshal.GetReference(extra_input32))
+            fixed (byte* secnoncePtr = secnonce,
+                pubnoncePtr = pubnonce,
+                keypairPtr = keypair,
+                msg32Ptr = msg32,
+                keyagg_cachePtr = keyagg_cache,
+                extra_input32Ptr = extra_input32)
             {
                 return Secp256k1Interop._musig_nonce_gen_counter(_ctx, secnoncePtr, pubnoncePtr, nonrepeating_cnt, keypairPtr, msg32Ptr, keyagg_cachePtr, extra_input32Ptr) == 1;
             }
@@ -1371,37 +1361,32 @@ namespace Secp256k1Net
                 throw new ArgumentException($"{nameof(aggnonce)} must be at least 132 bytes");
 
             var count = pubnonces.Length;
-            var ptrSize = IntPtr.Size;
-            var nativePtrArray = Marshal.AllocHGlobal(ptrSize * count);
-            try
-            {
-                fixed (byte* aggnoncePtr = &MemoryMarshal.GetReference(aggnonce))
+            Span<nint> nativePtrArray = stackalloc nint[count];
+            fixed (byte* aggnoncePtr = aggnonce)
+                {
+                    var handles = new GCHandle[count];
+                    try
                     {
-                        var handles = new GCHandle[count];
-                        try
+                        for (int i = 0; i < count; i++)
                         {
-                            for (int i = 0; i < count; i++)
-                            {
-                                handles[i] = GCHandle.Alloc(pubnonces[i], GCHandleType.Pinned);
-                                Marshal.WriteIntPtr(nativePtrArray, i * ptrSize, handles[i].AddrOfPinnedObject());
-                            }
-
-                            return Secp256k1Interop._musig_nonce_agg(_ctx, aggnoncePtr, nativePtrArray, (nuint)count) == 1;
+                            handles[i] = GCHandle.Alloc(pubnonces[i], GCHandleType.Pinned);
+                            nativePtrArray[i] = handles[i].AddrOfPinnedObject();
                         }
-                        finally
+
+                        fixed (nint* nativePtrArrayPtr = nativePtrArray)
                         {
-                            for (int i = 0; i < count; i++)
-                            {
-                                if (handles[i].IsAllocated)
-                                    handles[i].Free();
-                            }
+                            return Secp256k1Interop._musig_nonce_agg(_ctx, aggnoncePtr, (IntPtr)nativePtrArrayPtr, (nuint)count) == 1;
                         }
                     }
-            }
-            finally
-            {
-                Marshal.FreeHGlobal(nativePtrArray);
-            }
+                    finally
+                    {
+                        for (int i = 0; i < count; i++)
+                        {
+                            if (handles[i].IsAllocated)
+                                handles[i].Free();
+                        }
+                    }
+                }
         }
 
         /// <summary>Takes the aggregate nonce and creates a session that is required for signing and verification of partial signatures.</summary>
@@ -1421,10 +1406,10 @@ namespace Secp256k1Net
             if (keyagg_cache.Length < 197)
                 throw new ArgumentException($"{nameof(keyagg_cache)} must be at least 197 bytes");
 
-            fixed (byte* sessionPtr = &MemoryMarshal.GetReference(session),
-                aggnoncePtr = &MemoryMarshal.GetReference(aggnonce),
-                msg32Ptr = &MemoryMarshal.GetReference(msg32),
-                keyagg_cachePtr = &MemoryMarshal.GetReference(keyagg_cache))
+            fixed (byte* sessionPtr = session,
+                aggnoncePtr = aggnonce,
+                msg32Ptr = msg32,
+                keyagg_cachePtr = keyagg_cache)
             {
                 return Secp256k1Interop._musig_nonce_process(_ctx, sessionPtr, aggnoncePtr, msg32Ptr, keyagg_cachePtr) == 1;
             }
@@ -1450,11 +1435,11 @@ namespace Secp256k1Net
             if (session.Length < 133)
                 throw new ArgumentException($"{nameof(session)} must be at least 133 bytes");
 
-            fixed (byte* partial_sigPtr = &MemoryMarshal.GetReference(partial_sig),
-                secnoncePtr = &MemoryMarshal.GetReference(secnonce),
-                keypairPtr = &MemoryMarshal.GetReference(keypair),
-                keyagg_cachePtr = &MemoryMarshal.GetReference(keyagg_cache),
-                sessionPtr = &MemoryMarshal.GetReference(session))
+            fixed (byte* partial_sigPtr = partial_sig,
+                secnoncePtr = secnonce,
+                keypairPtr = keypair,
+                keyagg_cachePtr = keyagg_cache,
+                sessionPtr = session)
             {
                 return Secp256k1Interop._musig_partial_sign(_ctx, partial_sigPtr, secnoncePtr, keypairPtr, keyagg_cachePtr, sessionPtr) == 1;
             }
@@ -1480,11 +1465,11 @@ namespace Secp256k1Net
             if (session.Length < 133)
                 throw new ArgumentException($"{nameof(session)} must be at least 133 bytes");
 
-            fixed (byte* partial_sigPtr = &MemoryMarshal.GetReference(partial_sig),
-                pubnoncePtr = &MemoryMarshal.GetReference(pubnonce),
-                pubkeyPtr = &MemoryMarshal.GetReference(pubkey),
-                keyagg_cachePtr = &MemoryMarshal.GetReference(keyagg_cache),
-                sessionPtr = &MemoryMarshal.GetReference(session))
+            fixed (byte* partial_sigPtr = partial_sig,
+                pubnoncePtr = pubnonce,
+                pubkeyPtr = pubkey,
+                keyagg_cachePtr = keyagg_cache,
+                sessionPtr = session)
             {
                 return Secp256k1Interop._musig_partial_sig_verify(_ctx, partial_sigPtr, pubnoncePtr, pubkeyPtr, keyagg_cachePtr, sessionPtr) == 1;
             }
@@ -1510,38 +1495,33 @@ namespace Secp256k1Net
                 throw new ArgumentException($"{nameof(session)} must be at least 133 bytes");
 
             var count = partial_sigs.Length;
-            var ptrSize = IntPtr.Size;
-            var nativePtrArray = Marshal.AllocHGlobal(ptrSize * count);
-            try
-            {
-                fixed (byte* sig64Ptr = &MemoryMarshal.GetReference(sig64),
-                    sessionPtr = &MemoryMarshal.GetReference(session))
+            Span<nint> nativePtrArray = stackalloc nint[count];
+            fixed (byte* sig64Ptr = sig64,
+                sessionPtr = session)
+                {
+                    var handles = new GCHandle[count];
+                    try
                     {
-                        var handles = new GCHandle[count];
-                        try
+                        for (int i = 0; i < count; i++)
                         {
-                            for (int i = 0; i < count; i++)
-                            {
-                                handles[i] = GCHandle.Alloc(partial_sigs[i], GCHandleType.Pinned);
-                                Marshal.WriteIntPtr(nativePtrArray, i * ptrSize, handles[i].AddrOfPinnedObject());
-                            }
-
-                            return Secp256k1Interop._musig_partial_sig_agg(_ctx, sig64Ptr, sessionPtr, nativePtrArray, (nuint)count) == 1;
+                            handles[i] = GCHandle.Alloc(partial_sigs[i], GCHandleType.Pinned);
+                            nativePtrArray[i] = handles[i].AddrOfPinnedObject();
                         }
-                        finally
+
+                        fixed (nint* nativePtrArrayPtr = nativePtrArray)
                         {
-                            for (int i = 0; i < count; i++)
-                            {
-                                if (handles[i].IsAllocated)
-                                    handles[i].Free();
-                            }
+                            return Secp256k1Interop._musig_partial_sig_agg(_ctx, sig64Ptr, sessionPtr, (IntPtr)nativePtrArrayPtr, (nuint)count) == 1;
                         }
                     }
-            }
-            finally
-            {
-                Marshal.FreeHGlobal(nativePtrArray);
-            }
+                    finally
+                    {
+                        for (int i = 0; i < count; i++)
+                        {
+                            if (handles[i].IsAllocated)
+                                handles[i].Free();
+                        }
+                    }
+                }
         }
 
         /// <summary>An implementation of RFC6979 (using HMAC-SHA256) as nonce generation function. If a data pointer is passed, it is assumed to be a pointer to 32 bytes of extra entropy.</summary>
@@ -1560,11 +1540,11 @@ namespace Secp256k1Net
                 throw new ArgumentException($"{nameof(msg32)} must be at least 32 bytes");
             if (key32.Length < 32)
                 throw new ArgumentException($"{nameof(key32)} must be at least 32 bytes");
-            fixed (byte* nonce32Ptr = &MemoryMarshal.GetReference(nonce32),
-                msg32Ptr = &MemoryMarshal.GetReference(msg32),
-                key32Ptr = &MemoryMarshal.GetReference(key32),
-                algo16Ptr = &MemoryMarshal.GetReference(algo16),
-                dataPtr = &MemoryMarshal.GetReference(data))
+            fixed (byte* nonce32Ptr = nonce32,
+                msg32Ptr = msg32,
+                key32Ptr = key32,
+                algo16Ptr = algo16,
+                dataPtr = data)
             {
                 return Secp256k1Interop._nonce_function_rfc6979(nonce32Ptr, msg32Ptr, key32Ptr, algo16Ptr, dataPtr, attempt) == 1;
             }
@@ -1586,11 +1566,11 @@ namespace Secp256k1Net
                 throw new ArgumentException($"{nameof(msg32)} must be at least 32 bytes");
             if (key32.Length < 32)
                 throw new ArgumentException($"{nameof(key32)} must be at least 32 bytes");
-            fixed (byte* nonce32Ptr = &MemoryMarshal.GetReference(nonce32),
-                msg32Ptr = &MemoryMarshal.GetReference(msg32),
-                key32Ptr = &MemoryMarshal.GetReference(key32),
-                algo16Ptr = &MemoryMarshal.GetReference(algo16),
-                dataPtr = &MemoryMarshal.GetReference(data))
+            fixed (byte* nonce32Ptr = nonce32,
+                msg32Ptr = msg32,
+                key32Ptr = key32,
+                algo16Ptr = algo16,
+                dataPtr = data)
             {
                 return Secp256k1Interop._nonce_function_default(nonce32Ptr, msg32Ptr, key32Ptr, algo16Ptr, dataPtr, attempt) == 1;
             }
@@ -1610,10 +1590,10 @@ namespace Secp256k1Net
                 throw new ArgumentException($"{nameof(x32)} must be at least 32 bytes");
             if (y32.Length < 32)
                 throw new ArgumentException($"{nameof(y32)} must be at least 32 bytes");
-            fixed (byte* outputPtr = &MemoryMarshal.GetReference(output),
-                x32Ptr = &MemoryMarshal.GetReference(x32),
-                y32Ptr = &MemoryMarshal.GetReference(y32),
-                dataPtr = &MemoryMarshal.GetReference(data))
+            fixed (byte* outputPtr = output,
+                x32Ptr = x32,
+                y32Ptr = y32,
+                dataPtr = data)
             {
                 return Secp256k1Interop._ecdh_hash_function_sha256(outputPtr, x32Ptr, y32Ptr, dataPtr) == 1;
             }
@@ -1633,10 +1613,10 @@ namespace Secp256k1Net
                 throw new ArgumentException($"{nameof(x32)} must be at least 32 bytes");
             if (y32.Length < 32)
                 throw new ArgumentException($"{nameof(y32)} must be at least 32 bytes");
-            fixed (byte* outputPtr = &MemoryMarshal.GetReference(output),
-                x32Ptr = &MemoryMarshal.GetReference(x32),
-                y32Ptr = &MemoryMarshal.GetReference(y32),
-                dataPtr = &MemoryMarshal.GetReference(data))
+            fixed (byte* outputPtr = output,
+                x32Ptr = x32,
+                y32Ptr = y32,
+                dataPtr = data)
             {
                 return Secp256k1Interop._ecdh_hash_function_default(outputPtr, x32Ptr, y32Ptr, dataPtr) == 1;
             }
@@ -1660,12 +1640,12 @@ namespace Secp256k1Net
                 throw new ArgumentException($"{nameof(key32)} must be at least 32 bytes");
             if (xonly_pk32.Length < 32)
                 throw new ArgumentException($"{nameof(xonly_pk32)} must be at least 32 bytes");
-            fixed (byte* nonce32Ptr = &MemoryMarshal.GetReference(nonce32),
-                msgPtr = &MemoryMarshal.GetReference(msg),
-                key32Ptr = &MemoryMarshal.GetReference(key32),
-                xonly_pk32Ptr = &MemoryMarshal.GetReference(xonly_pk32),
-                algoPtr = &MemoryMarshal.GetReference(algo),
-                dataPtr = &MemoryMarshal.GetReference(data))
+            fixed (byte* nonce32Ptr = nonce32,
+                msgPtr = msg,
+                key32Ptr = key32,
+                xonly_pk32Ptr = xonly_pk32,
+                algoPtr = algo,
+                dataPtr = data)
             {
                 return Secp256k1Interop._nonce_function_bip340(nonce32Ptr, msgPtr, msglen, key32Ptr, xonly_pk32Ptr, algoPtr, algolen, dataPtr) == 1;
             }
@@ -1688,11 +1668,11 @@ namespace Secp256k1Net
                 throw new ArgumentException($"{nameof(ell_a64)} must be at least 64 bytes");
             if (ell_b64.Length < 64)
                 throw new ArgumentException($"{nameof(ell_b64)} must be at least 64 bytes");
-            fixed (byte* outputPtr = &MemoryMarshal.GetReference(output),
-                x32Ptr = &MemoryMarshal.GetReference(x32),
-                ell_a64Ptr = &MemoryMarshal.GetReference(ell_a64),
-                ell_b64Ptr = &MemoryMarshal.GetReference(ell_b64),
-                dataPtr = &MemoryMarshal.GetReference(data))
+            fixed (byte* outputPtr = output,
+                x32Ptr = x32,
+                ell_a64Ptr = ell_a64,
+                ell_b64Ptr = ell_b64,
+                dataPtr = data)
             {
                 return Secp256k1Interop._ellswift_xdh_hash_function_prefix(outputPtr, x32Ptr, ell_a64Ptr, ell_b64Ptr, dataPtr) == 1;
             }
@@ -1715,11 +1695,11 @@ namespace Secp256k1Net
                 throw new ArgumentException($"{nameof(ell_a64)} must be at least 64 bytes");
             if (ell_b64.Length < 64)
                 throw new ArgumentException($"{nameof(ell_b64)} must be at least 64 bytes");
-            fixed (byte* outputPtr = &MemoryMarshal.GetReference(output),
-                x32Ptr = &MemoryMarshal.GetReference(x32),
-                ell_a64Ptr = &MemoryMarshal.GetReference(ell_a64),
-                ell_b64Ptr = &MemoryMarshal.GetReference(ell_b64),
-                dataPtr = &MemoryMarshal.GetReference(data))
+            fixed (byte* outputPtr = output,
+                x32Ptr = x32,
+                ell_a64Ptr = ell_a64,
+                ell_b64Ptr = ell_b64,
+                dataPtr = data)
             {
                 return Secp256k1Interop._ellswift_xdh_hash_function_bip324(outputPtr, x32Ptr, ell_a64Ptr, ell_b64Ptr, dataPtr) == 1;
             }

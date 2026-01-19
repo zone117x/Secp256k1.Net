@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -63,7 +64,7 @@ namespace Secp256k1Net
 
         public static IntPtr LoadLibrary(string libName, out string libPath)
         {
-            libPath = LibPathResolver.Resolve(libName);
+            libPath = File.Exists(libName) ? libName : LibPathResolver.Resolve(libName);
             IntPtr libPtr;
 
             if (IsWindows)

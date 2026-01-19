@@ -18,11 +18,13 @@
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <RootNamespace>Secp256k1Net</RootNamespace>
-        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-        <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
         <Version Condition="'$(VersionSuffix)' != ''">$(VersionSuffix)</Version>
         <Version Condition="'$(VersionSuffix)' == ''">0.0.1-local.1</Version>
     </PropertyGroup>
+    <!-- Run the interop code generator before compile -->
+    <Target Name="RunInteropGenerator" BeforeTargets="CoreCompile" Inputs="$(MSBuildProjectDirectory)/secp256k1-api.json" Outputs="$(MSBuildProjectDirectory)/Generated/Secp256k1.Native.g.cs;$(MSBuildProjectDirectory)/Generated/Secp256k1.Wrappers.g.cs">
+        <Exec Command="dotnet run --project &quot;$(MSBuildProjectDirectory)/../Secp256k1.Net.InteropGen/Secp256k1.Net.InteropGen.csproj&quot; -- &quot;$(MSBuildProjectDirectory)/secp256k1-api.json&quot; &quot;$(MSBuildProjectDirectory)/Generated&quot;" />
+    </Target>
     <ItemGroup>
         <None Include="../README.md" Pack="true" PackagePath="/" />
     </ItemGroup>
@@ -35,13 +37,6 @@
     </ItemGroup>
     <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
         <PackageReference Include="System.Memory" Version="4.6.3" />
-    </ItemGroup>
-    <!-- Source generator for interop code -->
-    <ItemGroup>
-        <ProjectReference Include="../Secp256k1.Net.SourceGenerator/Secp256k1.Net.SourceGenerator.csproj"
-                          OutputItemType="Analyzer"
-                          ReferenceOutputAssembly="false" />
-        <AdditionalFiles Include="Generated/secp256k1-api.json" />
     </ItemGroup>
     <!--
       Include native libraries from Secp256k1.Native package.

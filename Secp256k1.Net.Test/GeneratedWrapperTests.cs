@@ -131,7 +131,7 @@ namespace Secp256k1Net.Test
         }
 
         [TestMethod]
-        public void EcPubkeyCmp_SameKeys_ReturnsTrue()
+        public void EcPubkeyCmp_SameKeys_ReturnsZero()
         {
             using var secp256k1 = new Secp256k1();
 
@@ -140,16 +140,13 @@ namespace Secp256k1Net.Test
             Assert.IsTrue(secp256k1.EcPubkeyCreate(pubkey1, TestPrivateKey));
             Assert.IsTrue(secp256k1.EcPubkeyCreate(pubkey2, TestPrivateKey));
 
-            // Same keys should return true (comparison returns 0 for equal, so result == 1 means not equal)
-            // Actually EcPubkeyCmp returns <0, 0, >0 for comparison, and wrapper converts to bool
-            // Let me check the actual return - it returns int-based comparison result converted to bool
+            // Same keys should return 0 (equal)
             var result = secp256k1.EcPubkeyCmp(pubkey1, pubkey2);
-            // For equal keys, comparison returns 0, which != 1, so returns false
-            Assert.IsFalse(result);
+            Assert.AreEqual(0, result);
         }
 
         [TestMethod]
-        public void EcPubkeyCmp_DifferentKeys_ReturnsNotEqual()
+        public void EcPubkeyCmp_DifferentKeys_ReturnsNonZero()
         {
             using var secp256k1 = new Secp256k1();
 
@@ -160,9 +157,9 @@ namespace Secp256k1Net.Test
             Assert.IsTrue(secp256k1.EcPubkeyCreate(pubkey1, TestPrivateKey));
             Assert.IsTrue(secp256k1.EcPubkeyCreate(pubkey2, privkey2));
 
-            // Different keys should return non-zero comparison
+            // Different keys should return non-zero comparison (<0 or >0)
             var result = secp256k1.EcPubkeyCmp(pubkey1, pubkey2);
-            Assert.IsTrue(result); // Non-zero comparison means != 1
+            Assert.AreNotEqual(0, result);
         }
 
         [TestMethod]
@@ -454,7 +451,7 @@ namespace Secp256k1Net.Test
         }
 
         [TestMethod]
-        public void XonlyPubkeyCmp_SameKeys_ReturnsFalse()
+        public void XonlyPubkeyCmp_SameKeys_ReturnsZero()
         {
             using var secp256k1 = new Secp256k1();
 
@@ -464,8 +461,8 @@ namespace Secp256k1Net.Test
             var xonlyPubkey = new byte[64];
             Assert.IsTrue(secp256k1.KeypairXonlyPub(xonlyPubkey, out _, keypair));
 
-            // Same key comparison returns 0 (equal), which becomes false in bool conversion
-            Assert.IsFalse(secp256k1.XonlyPubkeyCmp(xonlyPubkey, xonlyPubkey));
+            // Same key comparison returns 0 (equal)
+            Assert.AreEqual(0, secp256k1.XonlyPubkeyCmp(xonlyPubkey, xonlyPubkey));
         }
 
         [TestMethod]

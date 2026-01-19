@@ -3,6 +3,46 @@ using System.Runtime.InteropServices;
 
 namespace Secp256k1Net
 {
+    /// <summary>
+    /// Type for error and illegal callback functions.
+    /// </summary>
+    /// <param name="message">Error message.</param>
+    /// <param name="data">Callback marker, set by user together with callback.</param>
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public unsafe delegate void ErrorCallbackDelegate(string message, void* data);
+
+    /// <summary>
+    /// Flags for secp256k1 context creation and serialization.
+    /// </summary>
+    [Flags]
+    public enum Flags : uint
+    {
+        /// <summary>All flags' lower 8 bits indicate what they're for. Do not use directly.</summary>
+        SECP256K1_FLAGS_TYPE_MASK = ((1 << 8) - 1),
+        /// <summary>Context flag type.</summary>
+        SECP256K1_FLAGS_TYPE_CONTEXT = (1 << 0),
+        /// <summary>Compression flag type.</summary>
+        SECP256K1_FLAGS_TYPE_COMPRESSION = (1 << 1),
+
+        /// <summary>The higher bits contain the actual data. Do not use directly.</summary>
+        SECP256K1_FLAGS_BIT_CONTEXT_VERIFY = (1 << 8),
+        /// <summary>Context sign bit.</summary>
+        SECP256K1_FLAGS_BIT_CONTEXT_SIGN = (1 << 9),
+        /// <summary>Compression bit.</summary>
+        SECP256K1_FLAGS_BIT_COMPRESSION = (1 << 8),
+
+        /// <summary>Flag to pass to secp256k1_context_create for verification.</summary>
+        SECP256K1_CONTEXT_VERIFY = (SECP256K1_FLAGS_TYPE_CONTEXT | SECP256K1_FLAGS_BIT_CONTEXT_VERIFY),
+        /// <summary>Flag to pass to secp256k1_context_create for signing.</summary>
+        SECP256K1_CONTEXT_SIGN = (SECP256K1_FLAGS_TYPE_CONTEXT | SECP256K1_FLAGS_BIT_CONTEXT_SIGN),
+        /// <summary>Flag to pass to secp256k1_context_create for no specific context.</summary>
+        SECP256K1_CONTEXT_NONE = (SECP256K1_FLAGS_TYPE_CONTEXT),
+
+        /// <summary>Flag to pass to secp256k1_ec_pubkey_serialize for compressed format.</summary>
+        SECP256K1_EC_COMPRESSED = (SECP256K1_FLAGS_TYPE_COMPRESSION | SECP256K1_FLAGS_BIT_COMPRESSION),
+        /// <summary>Flag to pass to secp256k1_ec_pubkey_serialize for uncompressed format.</summary>
+        SECP256K1_EC_UNCOMPRESSED = (SECP256K1_FLAGS_TYPE_COMPRESSION)
+    }
 
     /// <summary>
     /// A pointer to a function that applies hash function to a point.
@@ -33,31 +73,29 @@ namespace Secp256k1Net
 
         internal const string LIB = "secp256k1";
 
-        // Native function symbol names
-        private const string SYM_context_create = "secp256k1_context_create";
-        private const string SYM_context_destroy = "secp256k1_context_destroy";
-        private const string SYM_context_set_illegal_callback = "secp256k1_context_set_illegal_callback";
-        private const string SYM_context_set_error_callback = "secp256k1_context_set_error_callback";
-        private const string SYM_ec_pubkey_create = "secp256k1_ec_pubkey_create";
-        private const string SYM_ec_seckey_verify = "secp256k1_ec_seckey_verify";
-        private const string SYM_ec_pubkey_serialize = "secp256k1_ec_pubkey_serialize";
-        private const string SYM_ec_pubkey_parse = "secp256k1_ec_pubkey_parse";
-        private const string SYM_ecdsa_sign_recoverable = "secp256k1_ecdsa_sign_recoverable";
-        private const string SYM_ecdsa_sign = "secp256k1_ecdsa_sign";
-        private const string SYM_ecdsa_recoverable_signature_parse_compact = "secp256k1_ecdsa_recoverable_signature_parse_compact";
-        private const string SYM_ecdsa_recoverable_signature_serialize_compact = "secp256k1_ecdsa_recoverable_signature_serialize_compact";
-        private const string SYM_ecdsa_recover = "secp256k1_ecdsa_recover";
-        private const string SYM_ecdsa_signature_normalize = "secp256k1_ecdsa_signature_normalize";
-        private const string SYM_ecdsa_signature_parse_der = "secp256k1_ecdsa_signature_parse_der";
-        private const string SYM_ecdsa_signature_parse_compact = "secp256k1_ecdsa_signature_parse_compact";
-        private const string SYM_ecdsa_signature_serialize_der = "secp256k1_ecdsa_signature_serialize_der";
-        private const string SYM_ecdsa_signature_serialize_compact = "secp256k1_ecdsa_signature_serialize_compact";
-        private const string SYM_ecdsa_verify = "secp256k1_ecdsa_verify";
-        private const string SYM_ecdh = "secp256k1_ecdh";
-        private const string SYM_ec_pubkey_tweak_mul = "secp256k1_ec_pubkey_tweak_mul";
-        private const string SYM_ec_pubkey_negate = "secp256k1_ec_pubkey_negate";
-        private const string SYM_ec_pubkey_combine = "secp256k1_ec_pubkey_combine";
-        private const string SYM_nonce_function_rfc6979 = "secp256k1_nonce_function_rfc6979";
+        // Initialization infrastructure
+        private static readonly object _initLock = new();
+        private static volatile bool _initialized;
+        private static IntPtr _libHandle;
+        private static string _libPath;
+
+        /// <summary>Gets the path to the loaded native library.</summary>
+        public static string LibPath => _libPath ?? throw new InvalidOperationException("Library not loaded");
+
+        private static void EnsureInitialized()
+        {
+            if (_initialized) return;
+            lock (_initLock)
+            {
+                if (_initialized) return;
+
+                _libHandle = LoadLibNative.LoadLibrary(LIB, out var path);
+                _libPath = path;
+
+                LoadFunctions(_libHandle);
+                _initialized = true;
+            }
+        }
 
         IntPtr _ctx;
 
@@ -227,7 +265,7 @@ namespace Secp256k1Net
                 secPtr = &MemoryMarshal.GetReference(secretKey.Slice(secretKey.Length - 32)))
             {
 
-                return _ecdsa_sign_recoverable(_ctx, sigPtr, msgPtr, secPtr, IntPtr.Zero, IntPtr.Zero) == 1;
+                return _ecdsa_sign_recoverable(_ctx, sigPtr, msgPtr, secPtr, IntPtr.Zero, IntPtr.Zero.ToPointer()) == 1;
             }
         }
 
@@ -253,11 +291,7 @@ namespace Secp256k1Net
             fixed (byte* compactSigPtr = &MemoryMarshal.GetReference(compactSignatureOutput),
                 sigPtr = &MemoryMarshal.GetReference(signature))
             {
-#if NET8_0_OR_GREATER
                 var result = _ecdsa_recoverable_signature_serialize_compact(_ctx, compactSigPtr, &recID, sigPtr);
-#else
-                var result = _ecdsa_recoverable_signature_serialize_compact(_ctx, compactSigPtr, ref recID, sigPtr);
-#endif
                 recoveryID = recID;
 
                 return result == 1;
@@ -551,7 +585,7 @@ namespace Secp256k1Net
                 pubPtr = &MemoryMarshal.GetReference(publicKey),
                 privPtr = &MemoryMarshal.GetReference(privateKey))
             {
-                return _ecdh(_ctx, resPtr, pubPtr, privPtr, IntPtr.Zero, IntPtr.Zero) == 1;
+                return _ecdh(_ctx, resPtr, pubPtr, privPtr, IntPtr.Zero, IntPtr.Zero.ToPointer()) == 1;
             }
         }
 
@@ -581,12 +615,12 @@ namespace Secp256k1Net
 
             int outputLength = resultOutput.Length;
 
-            secp256k1_ecdh_hash_function hashFunctionPtr = (void* output, void* x, void* y, IntPtr d) =>
+            secp256k1_ecdh_hash_function hashFunctionPtr = (void* output, void* x, void* y, void* d) =>
             {
                 var outputSpan = new Span<byte>(output, outputLength);
                 var xSpan = new Span<byte>(x, 32);
                 var ySpan = new Span<byte>(y, 32);
-                return hashFunction(outputSpan, xSpan, ySpan, d);
+                return hashFunction(outputSpan, xSpan, ySpan, (IntPtr)d);
             };
 
             var hashFuncPtr = Marshal.GetFunctionPointerForDelegate(hashFunctionPtr);
@@ -595,7 +629,7 @@ namespace Secp256k1Net
                 pubPtr = &MemoryMarshal.GetReference(publicKey),
                 privPtr = &MemoryMarshal.GetReference(privateKey))
             {
-                return _ecdh(_ctx, resPtr, pubPtr, privPtr, hashFuncPtr, data) == 1;
+                return _ecdh(_ctx, resPtr, pubPtr, privPtr, hashFuncPtr, data.ToPointer()) == 1;
             }
         }
 

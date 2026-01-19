@@ -18,6 +18,8 @@
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <RootNamespace>Secp256k1Net</RootNamespace>
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
         <Version Condition="'$(VersionSuffix)' != ''">$(VersionSuffix)</Version>
         <Version Condition="'$(VersionSuffix)' == ''">0.0.1-local.1</Version>
     </PropertyGroup>
@@ -33,6 +35,13 @@
     </ItemGroup>
     <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
         <PackageReference Include="System.Memory" Version="4.6.3" />
+    </ItemGroup>
+    <!-- Source generator for interop code -->
+    <ItemGroup>
+        <ProjectReference Include="../Secp256k1.Net.SourceGenerator/Secp256k1.Net.SourceGenerator.csproj"
+                          OutputItemType="Analyzer"
+                          ReferenceOutputAssembly="false" />
+        <AdditionalFiles Include="Generated/secp256k1-api.json" />
     </ItemGroup>
     <!--
       Include native libraries from Secp256k1.Native package.

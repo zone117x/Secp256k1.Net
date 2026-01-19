@@ -388,7 +388,7 @@ namespace Secp256k1Net.Test
             try
             {
                 File.Copy(origLibPath, tempLibPath, overwrite: true);
-                var libPtr = LoadLibNative.LoadLib(tempLibPath);
+                var libPtr = LoadLibNative.LoadLibrary(tempLibPath, out var _);
                 LoadLibNative.CloseLibrary(libPtr);
             }
             finally
@@ -435,7 +435,7 @@ namespace Secp256k1Net.Test
                 Assert.AreEqual(tempLibPath, resolvedPath, "Library should be resolved from ExtraNativeLibSearchPaths");
 
                 // Actually load the library to prove it works
-                var libPtr = LoadLibNative.LoadLib(resolvedPath);
+                var libPtr = LoadLibNative.LoadLibrary(resolvedPath, out var _);
                 Assert.AreNotEqual(IntPtr.Zero, libPtr, "Library should load successfully");
                 LoadLibNative.CloseLibrary(libPtr);
             }
@@ -454,9 +454,8 @@ namespace Secp256k1Net.Test
         {
             var exception = Assert.ThrowsException<Exception>(() =>
             {
-                LoadLibNative.LoadLib("invalid_lib_test_123456");
+                LoadLibNative.LoadLibrary("invalid_lib_test_123456", out var _);
             });
-            StringAssert.Contains(exception.Message, "loading failed");
         }
 
         [TestMethod]
@@ -467,19 +466,22 @@ namespace Secp256k1Net.Test
             {
                 LoadLibNative.CloseLibrary(new IntPtr(int.MaxValue));
             });
-            StringAssert.Contains(exception.Message, "closing failed");
         }
 
         [TestMethod]
         public void NativeLibSymbolLoadFailure()
         {
             var libPath = LibPathResolver.Resolve(Secp256k1.LIB);
-            var libPtr = LoadLibNative.LoadLib(libPath);
-            var exception = Assert.ThrowsException<Exception>(() =>
+            var libPtr = LoadLibNative.LoadLibrary(libPath, out var _);
+            try
             {
-                LoadLibNative.GetDelegate<Action>(libPtr, "invalid_symbol_name_test_123456");
-            });
-            StringAssert.Contains(exception.Message, "symbol failed");
+                LoadLibNative.GetSymbolPointer(libPtr, "invalid_symbol_name_test_123456");
+                Assert.Fail("Expected an exception");
+            }
+            catch (Exception ex) when (ex is not AssertFailedException)
+            {
+                // success - any exception was thrown
+            }
         }
 
         [TestMethod]

@@ -43,6 +43,10 @@ public class InteropGenerator : IIncrementalGenerator
             // Generate all interop code in a single file
             var nativeSource = GenerateNative(api);
             context.AddSource("Secp256k1.Native.g.cs", SourceText.From(nativeSource, Encoding.UTF8));
+
+            // Generate safe wrapper methods
+            var wrappersSource = GenerateWrappers(api);
+            context.AddSource("Secp256k1.Wrappers.g.cs", SourceText.From(wrappersSource, Encoding.UTF8));
         }
         catch (Exception ex)
         {
@@ -57,7 +61,7 @@ public class InteropGenerator : IIncrementalGenerator
         sb.AppendLine();
         if (!string.IsNullOrEmpty(fpType.Description))
         {
-            sb.AppendLine($"    /// <summary>{EscapeXml(fpType.Description)}</summary>");
+            sb.AppendLine($"    /// <summary>{FormatXmlDescription(fpType.Description)}</summary>");
         }
         sb.AppendLine("    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]");
 
@@ -81,20 +85,19 @@ public class InteropGenerator : IIncrementalGenerator
         sb.AppendLine();
         if (!string.IsNullOrEmpty(func.Description))
         {
-            sb.AppendLine($"    /// <summary>{EscapeXml(CleanDescription(func.Description))}</summary>");
+            sb.AppendLine($"    /// <summary>{FormatXmlDescription(func.Description)}</summary>");
         }
 
         foreach (var param in func.Parameters)
         {
-            if (!string.IsNullOrEmpty(param.Description))
-            {
-                sb.AppendLine($"    /// <param name=\"{SanitizeParamName(param.Name)}\">{EscapeXml(CleanDescription(param.Description))}</param>");
-            }
+            // Always generate param tags to avoid CS1573 warnings
+            var description = FormatXmlDescription(param.Description);
+            sb.AppendLine($"    /// <param name=\"{param.Name}\">{description}</param>");
         }
 
         if (!string.IsNullOrEmpty(func.ReturnDescription))
         {
-            sb.AppendLine($"    /// <returns>{EscapeXml(CleanDescription(func.ReturnDescription))}</returns>");
+            sb.AppendLine($"    /// <returns>{FormatXmlDescription(func.ReturnDescription)}</returns>");
         }
 
         var returnType = MapCTypeToCSharp(func.ReturnType);
@@ -237,6 +240,7 @@ public class InteropGenerator : IIncrementalGenerator
     private void GenerateModernFunctionPointers(StringBuilder sb, Secp256k1Api api, Dictionary<string, string> signatureToAlias)
     {
         sb.AppendLine("        // Function pointer declarations (modern .NET 8+)");
+        sb.AppendLine("#nullable disable");
 
         foreach (var func in api.Functions)
         {
@@ -254,11 +258,14 @@ public class InteropGenerator : IIncrementalGenerator
             var alias = signatureToAlias[funcPtrType];
             sb.AppendLine($"        private static {alias} {fieldName};");
         }
+
+        sb.AppendLine("#nullable restore");
     }
 
     private void GenerateLegacyDelegates(StringBuilder sb, Secp256k1Api api)
     {
         sb.AppendLine("        // Delegate instance fields (legacy .NET)");
+        sb.AppendLine("#nullable disable");
 
         foreach (var func in api.Functions)
         {
@@ -273,6 +280,8 @@ public class InteropGenerator : IIncrementalGenerator
             var fieldName = GetFieldName(global.Name);
             sb.AppendLine($"        private static {global.Type} {fieldName};");
         }
+
+        sb.AppendLine("#nullable restore");
     }
 
     private void GenerateModernLoadFunctions(StringBuilder sb, Secp256k1Api api, Dictionary<string, string> signatureToAlias)
@@ -520,11 +529,86 @@ public class InteropGenerator : IIncrementalGenerator
 
     private static string CleanDescription(string? text)
     {
-        if (string.IsNullOrEmpty(text))
+        if (text is null || text.Length == 0)
             return "";
 
-        // Remove newlines
-        return text.Replace("\n", " ").Replace("\r", "");
+        // Remove C comment markers and clean up
+        var result = text
+            .Replace("\r", "")
+            .Replace("/**", "")
+            .Replace("*/", "")
+            .Replace("\n * ", "\n")  // Convert " * " line prefix to just newline
+            .Replace("\n *", "\n");  // Handle " *" without trailing space
+
+        // Clean up multiple consecutive newlines
+        while (result.Contains("\n\n\n"))
+            result = result.Replace("\n\n\n", "\n\n");
+
+        return result.Trim();
+    }
+
+    /// <summary>
+    /// Formats a description for XML documentation, handling multi-line text.
+    /// Uses para tags to create proper paragraph breaks that IntelliSense will render.
+    /// </summary>
+    private static string FormatXmlDescription(string? text)
+    {
+        if (text is null || text.Length == 0)
+            return "";
+
+        var cleaned = CleanDescription(text);
+        var escaped = EscapeXml(cleaned);
+
+        // If single line, return as-is
+        if (!escaped.Contains('\n'))
+            return escaped;
+
+        // Split into paragraphs (separated by blank lines) and lines within paragraphs
+        var paragraphs = new List<string>();
+        var currentParagraph = new List<string>();
+
+        foreach (var line in escaped.Split('\n'))
+        {
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                if (currentParagraph.Count > 0)
+                {
+                    paragraphs.Add(string.Join(" ", currentParagraph));
+                    currentParagraph.Clear();
+                }
+            }
+            else
+            {
+                currentParagraph.Add(line.Trim());
+            }
+        }
+
+        if (currentParagraph.Count > 0)
+        {
+            paragraphs.Add(string.Join(" ", currentParagraph));
+        }
+
+        // If only one paragraph, return as single line
+        if (paragraphs.Count == 1)
+            return paragraphs[0];
+
+        // Multiple paragraphs - use <para> tags for proper IntelliSense rendering
+        var result = new StringBuilder();
+        for (int i = 0; i < paragraphs.Count; i++)
+        {
+            if (i == 0)
+            {
+                // First paragraph without para tag
+                result.Append(paragraphs[i]);
+            }
+            else
+            {
+                // Subsequent paragraphs with para tags
+                result.Append($"<para>{paragraphs[i]}</para>");
+            }
+        }
+
+        return result.ToString();
     }
 
     // JSON model classes
@@ -560,6 +644,8 @@ public class InteropGenerator : IIncrementalGenerator
         public string Name { get; set; } = "";
         public string ReturnType { get; set; } = "";
         public bool WarnUnusedResult { get; set; }
+        public bool Deprecated { get; set; }
+        public string? DeprecatedMessage { get; set; }
         public List<ParameterDef> Parameters { get; set; } = new();
         public string? Description { get; set; }
         public string? ReturnDescription { get; set; }
@@ -590,4 +676,413 @@ public class InteropGenerator : IIncrementalGenerator
         public bool IsConst { get; set; }
         public string? Description { get; set; }
     }
+
+    #region Wrapper Generation
+
+    // Functions to skip in wrapper generation (need manual implementation or are internal)
+    private static readonly HashSet<string> SkipWrapperFunctions = new()
+    {
+        "secp256k1_context_create",
+        "secp256k1_context_clone",
+        "secp256k1_context_destroy",
+        "secp256k1_context_set_illegal_callback",
+        "secp256k1_context_set_error_callback",
+        "secp256k1_context_randomize",
+        "secp256k1_context_preallocated_size",
+        "secp256k1_context_preallocated_create",
+        "secp256k1_context_preallocated_clone_size",
+        "secp256k1_context_preallocated_clone",
+        "secp256k1_context_preallocated_destroy",
+        // Functions with array-of-pointers that need manual handling
+        "secp256k1_ec_pubkey_combine",
+        "secp256k1_musig_pubkey_agg",
+        "secp256k1_musig_nonce_agg",
+        "secp256k1_musig_partial_sig_agg",
+    };
+
+    // Struct sizes from JSON (secp256k1 opaque types)
+    private static readonly Dictionary<string, int> StructSizes = new()
+    {
+        ["secp256k1_pubkey"] = 64,
+        ["secp256k1_ecdsa_signature"] = 64,
+        ["secp256k1_ecdsa_recoverable_signature"] = 65,
+        ["secp256k1_xonly_pubkey"] = 64,
+        ["secp256k1_keypair"] = 96,
+        ["secp256k1_musig_keyagg_cache"] = 197,
+        ["secp256k1_musig_secnonce"] = 132,
+        ["secp256k1_musig_pubnonce"] = 132,
+        ["secp256k1_musig_aggnonce"] = 132,
+        ["secp256k1_musig_session"] = 133,
+        ["secp256k1_musig_partial_sig"] = 36,
+    };
+
+    private string GenerateWrappers(Secp256k1Api api)
+    {
+        // Update struct sizes from JSON if available
+        var structSizes = new Dictionary<string, int>(StructSizes);
+        foreach (var s in api.Structs.Where(s => s.Size > 0))
+        {
+            structSizes[s.Name] = s.Size;
+        }
+
+        var sb = new StringBuilder();
+        sb.AppendLine("// <auto-generated/>");
+        sb.AppendLine("#nullable enable");
+        sb.AppendLine();
+        sb.AppendLine("using System;");
+        sb.AppendLine("using System.Runtime.InteropServices;");
+        sb.AppendLine();
+        sb.AppendLine("namespace Secp256k1Net");
+        sb.AppendLine("{");
+        sb.AppendLine("    public unsafe partial class Secp256k1");
+        sb.AppendLine("    {");
+
+        foreach (var func in api.Functions.Where(f => !SkipWrapperFunctions.Contains(f.Name) && !f.Deprecated))
+        {
+            GenerateWrapperMethod(sb, func, structSizes);
+        }
+
+        sb.AppendLine("    }");
+        sb.AppendLine("}");
+
+        return sb.ToString();
+    }
+
+    private void GenerateWrapperMethod(StringBuilder sb, FunctionDef func, Dictionary<string, int> structSizes)
+    {
+        // Skip if any parameter has a double-pointer or array-of-pointers type
+        if (func.Parameters.Any(p => p.Type.Contains("**") || p.Type.Contains("* const*")))
+        {
+            return;
+        }
+
+        // Skip if has function pointer parameter (callback) - these need manual implementation
+        if (func.Parameters.Any(p => p.Type.Contains("function") || p.Type.Contains("(*)")))
+        {
+            return;
+        }
+
+        var methodName = GetWrapperMethodName(func.Name);
+        var parameters = GetWrapperParameters(func, structSizes);
+        var hasContextParam = func.Parameters.FirstOrDefault()?.Type.Contains("secp256k1_context") == true;
+
+        // Skip context parameter in wrapper signature
+        var wrapperParams = hasContextParam ? parameters.Skip(1).ToList() : parameters.ToList();
+
+        // Generate XML documentation
+        sb.AppendLine();
+        if (!string.IsNullOrEmpty(func.Description))
+        {
+            sb.AppendLine($"        /// <summary>{FormatXmlDescription(func.Description)}</summary>");
+        }
+
+        foreach (var param in wrapperParams)
+        {
+            if (!string.IsNullOrEmpty(param.Description))
+            {
+                // XML param names don't use @ prefix
+                var xmlParamName = param.WrapperName.TrimStart('@');
+                sb.AppendLine($"        /// <param name=\"{xmlParamName}\">{FormatXmlDescription(param.Description)}</param>");
+            }
+        }
+
+        if (!string.IsNullOrEmpty(func.ReturnDescription))
+        {
+            sb.AppendLine($"        /// <returns>{FormatXmlDescription(func.ReturnDescription)}</returns>");
+        }
+
+        // Determine return type
+        var returnsBool = func.ReturnType == "int";
+        var returnType = returnsBool ? "bool" : MapCTypeToCSharp(func.ReturnType);
+
+        // Method signature
+        var paramSignature = string.Join(", ", wrapperParams.Select(p => $"{p.WrapperType} {p.WrapperName}"));
+        sb.AppendLine($"        public {returnType} {methodName}({paramSignature})");
+        sb.AppendLine("        {");
+
+        // Generate validation
+        foreach (var param in wrapperParams.Where(p => p.RequiredSize > 0 && p.IsSpan))
+        {
+            sb.AppendLine($"            if ({param.WrapperName}.Length < {param.RequiredSize})");
+            sb.AppendLine($"                throw new ArgumentException($\"{{nameof({param.WrapperName})}} must be at least {param.RequiredSize} bytes\");");
+        }
+
+        // Collect span parameters for fixed statement
+        var spanParams = wrapperParams.Where(p => p.IsSpan).ToList();
+        var refParams = wrapperParams.Where(p => p.IsRefParam).ToList();
+
+        var needsFixed = spanParams.Count > 0 || refParams.Count > 0;
+
+        if (needsFixed)
+        {
+            sb.AppendLine();
+
+            // Build fixed statement for byte spans
+            if (spanParams.Count > 0)
+            {
+                var fixedDeclarations = spanParams.Select(p =>
+                    $"{p.WrapperName}Ptr = &MemoryMarshal.GetReference({p.WrapperName})");
+                sb.AppendLine($"            fixed (byte* {string.Join(",\n                ", fixedDeclarations)})");
+            }
+
+            // Build fixed statement for ref params
+            foreach (var refParam in refParams)
+            {
+                var cleanName = refParam.WrapperName.TrimStart('@');
+                sb.AppendLine($"            fixed ({refParam.RefParamType}* {cleanName}Ptr = &{refParam.WrapperName})");
+            }
+
+            sb.AppendLine("            {");
+
+            // Build native call
+            var nativeArgs = BuildNativeCallArgs(func, wrapperParams, hasContextParam);
+            var fieldName = GetFieldName(func.Name);
+
+            if (returnsBool)
+            {
+                sb.AppendLine($"                return {fieldName}({nativeArgs}) == 1;");
+            }
+            else if (func.ReturnType == "void")
+            {
+                sb.AppendLine($"                {fieldName}({nativeArgs});");
+            }
+            else
+            {
+                sb.AppendLine($"                return {fieldName}({nativeArgs});");
+            }
+
+            sb.AppendLine("            }");
+        }
+        else
+        {
+            // No span or ref parameters - direct call
+            var nativeArgs = BuildNativeCallArgs(func, wrapperParams, hasContextParam);
+            var fieldName = GetFieldName(func.Name);
+
+            if (returnsBool)
+            {
+                sb.AppendLine($"            return {fieldName}({nativeArgs}) == 1;");
+            }
+            else if (func.ReturnType == "void")
+            {
+                sb.AppendLine($"            {fieldName}({nativeArgs});");
+            }
+            else
+            {
+                sb.AppendLine($"            return {fieldName}({nativeArgs});");
+            }
+        }
+
+        sb.AppendLine("        }");
+    }
+
+    private List<WrapperParameter> GetWrapperParameters(FunctionDef func, Dictionary<string, int> structSizes)
+    {
+        var result = new List<WrapperParameter>();
+
+        foreach (var param in func.Parameters)
+        {
+            var wrapper = new WrapperParameter
+            {
+                OriginalName = param.Name,
+                OriginalType = param.Type,
+                Direction = param.Direction ?? "in",
+                Description = param.Description
+            };
+
+            // Determine wrapper type and size
+            DetermineWrapperType(wrapper, param, structSizes);
+
+            result.Add(wrapper);
+        }
+
+        return result;
+    }
+
+    private void DetermineWrapperType(WrapperParameter wrapper, ParameterDef param, Dictionary<string, int> structSizes)
+    {
+        var cType = param.Type.Trim();
+        var name = param.Name;
+        var direction = param.Direction ?? "in";
+
+        // Context pointer - use IntPtr internally
+        if (cType.Contains("secp256k1_context"))
+        {
+            wrapper.WrapperType = "IntPtr";
+            wrapper.WrapperName = "_ctx";
+            wrapper.IsContextParam = true;
+            return;
+        }
+
+        // Function pointer types
+        if (cType.Contains("function") || cType.Contains("(*)"))
+        {
+            wrapper.WrapperType = "IntPtr";
+            wrapper.WrapperName = SanitizeParamName(name);
+            return;
+        }
+
+        // Size_t pointer (output length) - treat as ref parameter that needs fixed
+        if (cType.Contains("size_t") && cType.Contains("*"))
+        {
+            wrapper.WrapperType = "ref nuint";
+            wrapper.WrapperName = SanitizeParamName(name);
+            wrapper.IsRefParam = true;
+            wrapper.RefParamType = "nuint";
+            return;
+        }
+
+        // Int pointer (e.g., recid) - treat as ref/out parameter that needs fixed
+        if (cType.Contains("int") && cType.Contains("*") && !cType.Contains("uint"))
+        {
+            wrapper.WrapperType = direction == "out" ? "out int" : "ref int";
+            wrapper.WrapperName = SanitizeParamName(name);
+            wrapper.IsRefParam = true;
+            wrapper.RefParamType = "int";
+            return;
+        }
+
+        // Non-pointer primitive types
+        if (!cType.Contains("*"))
+        {
+            wrapper.WrapperType = MapCTypeToCSharp(cType);
+            wrapper.WrapperName = SanitizeParamName(name);
+            return;
+        }
+
+        // Pointer types - determine if they should be Span<byte> or ReadOnlySpan<byte>
+        wrapper.IsSpan = true;
+
+        // Determine span type based on direction and const
+        bool isInput = direction == "in" || cType.StartsWith("const ");
+        wrapper.WrapperType = isInput ? "ReadOnlySpan<byte>" : "Span<byte>";
+        wrapper.WrapperName = GetWrapperParamName(name);
+
+        // Determine required size
+        wrapper.RequiredSize = GetRequiredSize(cType, name, structSizes);
+    }
+
+    private int GetRequiredSize(string cType, string paramName, Dictionary<string, int> structSizes)
+    {
+        // Check if it's a known struct type
+        foreach (var kvp in structSizes)
+        {
+            if (cType.Contains(kvp.Key))
+            {
+                return kvp.Value;
+            }
+        }
+
+        // Check parameter name patterns
+        if (paramName.EndsWith("32") || paramName.Contains("msg32") || paramName.Contains("seckey") ||
+            paramName.Contains("tweak") || paramName.Contains("seed32") || paramName.Contains("hash32") ||
+            paramName.Contains("nonce32") || paramName.Contains("key32") || paramName.Contains("aux_rand32") ||
+            paramName.Contains("auxrnd32") || paramName.Contains("xonly_pk32"))
+        {
+            return 32;
+        }
+
+        if (paramName.EndsWith("33") || paramName.Contains("pubkey33"))
+        {
+            return 33;
+        }
+
+        if (paramName.EndsWith("64") || paramName.Contains("sig64") || paramName.Contains("ell64"))
+        {
+            return 64;
+        }
+
+        if (paramName.EndsWith("65") || paramName.Contains("pubkey65"))
+        {
+            return 65;
+        }
+
+        // Default - no size validation
+        return 0;
+    }
+
+    private string GetWrapperMethodName(string functionName)
+    {
+        // secp256k1_ec_pubkey_create -> EcPubkeyCreate
+        var name = functionName;
+
+        // Remove secp256k1_ prefix
+        if (name.StartsWith("secp256k1_"))
+        {
+            name = name.Substring("secp256k1_".Length);
+        }
+
+        // Convert snake_case to PascalCase
+        var parts = name.Split('_');
+        var result = string.Join("", parts.Select(p =>
+            p.Length > 0 ? char.ToUpper(p[0]) + p.Substring(1).ToLower() : ""));
+
+        // Handle common acronyms
+        result = result.Replace("Ecdsa", "Ecdsa")
+                       .Replace("Ecdh", "Ecdh")
+                       .Replace("Ec", "Ec");
+
+        return result;
+    }
+
+    private string GetWrapperParamName(string originalName)
+    {
+        // Convert C-style names to C# style
+        var name = originalName;
+
+        // Remove common suffixes for cleaner names
+        if (name.EndsWith("32") || name.EndsWith("33") || name.EndsWith("64") || name.EndsWith("65"))
+        {
+            // Keep the suffix in the name for clarity
+        }
+
+        return SanitizeParamName(name);
+    }
+
+    private static string BuildNativeCallArgs(FunctionDef func, List<WrapperParameter> wrapperParams, bool hasContextParam)
+    {
+        var args = new List<string>();
+
+        if (hasContextParam)
+        {
+            args.Add("_ctx");
+        }
+
+        foreach (var param in wrapperParams)
+        {
+            if (param.IsSpan)
+            {
+                args.Add($"{param.WrapperName}Ptr");
+            }
+            else if (param.IsRefParam)
+            {
+                // Use the pinned pointer variable
+                var cleanName = param.WrapperName.TrimStart('@');
+                args.Add($"{cleanName}Ptr");
+            }
+            else
+            {
+                args.Add(param.WrapperName);
+            }
+        }
+
+        return string.Join(", ", args);
+    }
+
+    private class WrapperParameter
+    {
+        public string OriginalName { get; set; } = "";
+        public string OriginalType { get; set; } = "";
+        public string WrapperType { get; set; } = "";
+        public string WrapperName { get; set; } = "";
+        public string Direction { get; set; } = "in";
+        public string? Description { get; set; }
+        public int RequiredSize { get; set; }
+        public bool IsSpan { get; set; }
+        public bool IsContextParam { get; set; }
+        public bool IsRefParam { get; set; }
+        public string RefParamType { get; set; } = "";
+    }
+
+    #endregion
 }

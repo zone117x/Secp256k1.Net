@@ -31,11 +31,7 @@ namespace Secp256k1Net
         /// <summary>Compression bit.</summary>
         SECP256K1_FLAGS_BIT_COMPRESSION = (1 << 8),
 
-        /// <summary>Flag to pass to secp256k1_context_create for verification.</summary>
-        SECP256K1_CONTEXT_VERIFY = (SECP256K1_FLAGS_TYPE_CONTEXT | SECP256K1_FLAGS_BIT_CONTEXT_VERIFY),
-        /// <summary>Flag to pass to secp256k1_context_create for signing.</summary>
-        SECP256K1_CONTEXT_SIGN = (SECP256K1_FLAGS_TYPE_CONTEXT | SECP256K1_FLAGS_BIT_CONTEXT_SIGN),
-        /// <summary>Flag to pass to secp256k1_context_create for no specific context.</summary>
+        /// <summary>Flag to pass to secp256k1_context_create. Creates a context sufficient for all functionality.</summary>
         SECP256K1_CONTEXT_NONE = (SECP256K1_FLAGS_TYPE_CONTEXT),
 
         /// <summary>Flag to pass to secp256k1_ec_pubkey_serialize for compressed format.</summary>
@@ -111,7 +107,7 @@ namespace Secp256k1Net
         public Secp256k1(ErrorCallbackDelegate errorCallback = null)
         {
             EnsureInitialized();
-            _ctx = _context_create((uint)(Flags.SECP256K1_CONTEXT_SIGN | Flags.SECP256K1_CONTEXT_VERIFY));
+            _ctx = _context_create((uint)Flags.SECP256K1_CONTEXT_NONE);
 
             SetErrorCallback(errorCallback ?? DefaultErrorCallback, null);
         }

@@ -87,6 +87,8 @@ public class FunctionDef
     public string Name { get; set; } = "";
     public string ReturnType { get; set; } = "";
     public bool WarnUnusedResult { get; set; }
+    public bool Deprecated { get; set; }
+    public string? DeprecatedMessage { get; set; }
     public List<ParameterDef> Parameters { get; set; } = new();
     public string? Description { get; set; }
     public string? ReturnDescription { get; set; }
@@ -267,8 +269,21 @@ public partial class Secp256k1HeaderParser
             var semiPos = afterParams.IndexOf(';');
             var attributes = semiPos >= 0 ? afterParams.Substring(0, semiPos) : "";
 
-            var warnUnused = collapsedContent.Substring(match.Index, endPos - match.Index).Contains("SECP256K1_WARN_UNUSED_RESULT") ||
+            var fullDeclaration = collapsedContent.Substring(match.Index, endPos - match.Index + Math.Min(200, collapsedContent.Length - endPos));
+            var warnUnused = fullDeclaration.Contains("SECP256K1_WARN_UNUSED_RESULT") ||
                              match.Value.Contains("SECP256K1_WARN_UNUSED_RESULT");
+
+            // Check for SECP256K1_DEPRECATED macro
+            var deprecated = attributes.Contains("SECP256K1_DEPRECATED");
+            string? deprecatedMessage = null;
+            if (deprecated)
+            {
+                var deprecatedMatch = DeprecatedRegex().Match(attributes);
+                if (deprecatedMatch.Success)
+                {
+                    deprecatedMessage = deprecatedMatch.Groups[1].Value;
+                }
+            }
 
             // Extract NONNULL argument positions
             var nonnullArgs = new HashSet<int>();
@@ -284,6 +299,22 @@ public partial class Secp256k1HeaderParser
                 originalPos = content.IndexOf(name + " (", StringComparison.Ordinal);
 
             var description = originalPos >= 0 ? GetPrecedingComment(content, originalPos) : null;
+
+            // Also check if description explicitly marks this function as deprecated
+            // Look for patterns like "DEPRECATED." or "but DEPRECATED" at function level
+            // Avoid false positives from mentions of deprecated flags/parameters
+            if (!deprecated && description != null)
+            {
+                // Check for explicit deprecation markers in function description
+                // e.g., "Same as secp256k1_schnorrsig_sign32, but DEPRECATED."
+                if (description.Contains("but DEPRECATED") ||
+                    description.Contains("DEPRECATED.") ||
+                    description.Contains("This function is deprecated"))
+                {
+                    deprecated = true;
+                }
+            }
+
             var returnDesc = ExtractReturnDescription(description);
             var parameters = ParseParameters(paramsStr, description);
 
@@ -298,6 +329,8 @@ public partial class Secp256k1HeaderParser
                 Name = name,
                 ReturnType = returnType,
                 WarnUnusedResult = warnUnused,
+                Deprecated = deprecated,
+                DeprecatedMessage = deprecatedMessage,
                 Parameters = parameters,
                 Description = CleanDescription(description),
                 ReturnDescription = returnDesc,
@@ -724,10 +757,9 @@ public partial class Secp256k1HeaderParser
             .Replace("*/", "")
             .Trim();
 
-        // Remove leading * from each line
+        // Remove leading * from each line, preserving empty lines as paragraph breaks
         var lines = text.Split('\n')
-            .Select(l => l.TrimStart().TrimStart('*').Trim())
-            .Where(l => !string.IsNullOrWhiteSpace(l))
+            .Select(l => l.TrimStart().TrimStart('*').TrimStart())
             .ToList();
 
         // Take just the first paragraph (up to Returns: or Args:)
@@ -740,15 +772,32 @@ public partial class Secp256k1HeaderParser
             result.Add(line);
         }
 
-        return result.Count > 0 ? string.Join(" ", result) : null;
+        // Remove trailing empty lines
+        while (result.Count > 0 && string.IsNullOrWhiteSpace(result[^1]))
+            result.RemoveAt(result.Count - 1);
+
+        // Remove leading empty lines
+        while (result.Count > 0 && string.IsNullOrWhiteSpace(result[0]))
+            result.RemoveAt(0);
+
+        return result.Count > 0 ? string.Join("\n", result) : null;
     }
 
     private string CleanMultilineText(string text)
     {
         var lines = text.Split('\n')
-            .Select(l => l.TrimStart().TrimStart('*').Trim())
-            .Where(l => !string.IsNullOrWhiteSpace(l));
-        return string.Join(" ", lines);
+            .Select(l => l.TrimStart().TrimStart('*').TrimStart())
+            .ToList();
+
+        // Remove trailing empty lines
+        while (lines.Count > 0 && string.IsNullOrWhiteSpace(lines[^1]))
+            lines.RemoveAt(lines.Count - 1);
+
+        // Remove leading empty lines
+        while (lines.Count > 0 && string.IsNullOrWhiteSpace(lines[0]))
+            lines.RemoveAt(0);
+
+        return string.Join("\n", lines);
     }
 
     private long? TryEvaluateConstant(string value, List<ConstantDef> existingConstants)
@@ -827,6 +876,9 @@ public partial class Secp256k1HeaderParser
 
     [GeneratedRegex(@"SECP256K1_ARG_NONNULL\((\d+)\)")]
     private static partial Regex NonnullRegex();
+
+    [GeneratedRegex(@"SECP256K1_DEPRECATED\s*\(\s*""([^""]*)""\s*\)")]
+    private static partial Regex DeprecatedRegex();
 
     [GeneratedRegex(@"#define\s+SECP256K1_(\w+)\s+(.+)$", RegexOptions.Multiline)]
     private static partial Regex ConstantRegex();

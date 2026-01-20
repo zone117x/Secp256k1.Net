@@ -40,6 +40,11 @@ namespace Secp256k1Net.DynamicLinking
             {
                 return false;
             }
+            catch (EntryPointNotFoundException)
+            {
+                // On some 32-bit Linux systems, libdl exists but dlopen is only in libc
+                return false;
+            }
         }
 
         public static IntPtr dlopen(string path, int flags) =>

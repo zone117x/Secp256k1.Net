@@ -13,15 +13,14 @@ namespace Secp256k1Net
 
     public unsafe partial class Secp256k1 : IDisposable
     {
-
+        public const int SECRET_KEY_LENGTH = 32;
         public const int SERIALIZED_UNCOMPRESSED_PUBKEY_LENGTH = 65;
         public const int SERIALIZED_COMPRESSED_PUBKEY_LENGTH = 33;
-        public const int PUBKEY_LENGTH = 64;
-        public const int PRIVKEY_LENGTH = 32;
+        public const int UNSERIALIZED_PUBKEY_LENGTH = 64;
         public const int UNSERIALIZED_SIGNATURE_SIZE = 65;
         public const int SERIALIZED_SIGNATURE_SIZE = 64;
         public const int SERIALIZED_DER_SIGNATURE_MAX_SIZE = 72;
-        public const int SIGNATURE_LENGTH = 64;
+        public const int UNSERIALIZED_SIGNATURE_LENGTH = 64;
         public const int HASH_LENGTH = 32;
         public const int SECRET_LENGTH = 32;
         public const int NONCE_LENGTH = 32;
@@ -107,9 +106,9 @@ namespace Secp256k1Net
             var count = publicKeys.Length;
             for (int i = 0; i < count; i++)
             {
-                if (publicKeys[i] == null || publicKeys[i].Length < PUBKEY_LENGTH)
+                if (publicKeys[i] == null || publicKeys[i].Length < UNSERIALIZED_PUBKEY_LENGTH)
                 {
-                    throw new ArgumentException($"{nameof(publicKeys)}[{i}] must be at least {PUBKEY_LENGTH} bytes");
+                    throw new ArgumentException($"{nameof(publicKeys)}[{i}] must be at least {UNSERIALIZED_PUBKEY_LENGTH} bytes");
                 }
             }
 

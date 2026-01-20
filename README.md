@@ -3,11 +3,78 @@
 [![NuGet](https://img.shields.io/nuget/v/Secp256k1.Net.svg)](https://www.nuget.org/packages/Secp256k1.Net/) [![NuGet](https://img.shields.io/nuget/dt/Secp256k1.Net.svg)](https://www.nuget.org/packages/Secp256k1.Net/) [![CI](https://github.com/zone117x/Secp256k1.Net/actions/workflows/tests.yml/badge.svg)](https://github.com/zone117x/Secp256k1.Net/actions/workflows/tests.yml) [![codecov](https://codecov.io/gh/zone117x/Secp256k1.Net/branch/master/graph/badge.svg?token=fCERq55vh9)](https://codecov.io/gh/zone117x/Secp256k1.Net)
 
 
-Cross platform C# wrapper for the native [secp256k1 library](https://github.com/zone117x/secp256k1/blob/master/Secp256k1.Native.nuspec).
+Cross platform C# wrapper for the native [`bitcoin-core/secp256k1` C library](https://github.com/zone117x).
 
-The nuget package supports win-x64, win-x86, win-arm64, macOS-x64, macOS-arm64 (Apple Silcon), linux-x64, linux-x86, and linux-arm64 out of the box. The native libraries are bundled from the [Secp256k1.Native package](https://www.nuget.org/packages/Secp256k1.Native/). This wrapper should work on any other platform that supports netstandard2.0 (.NET Core 2.0+, Mono 5.4+, etc) but requires that the [native secp256k1](https://github.com/zone117x/secp256k1) library be compiled from source. 
+```shell
+dotnet add package Secp256k1.Net
+```
+
+## Platform Support
+
+This library includes pre-compiled binaries for the following platforms:
+
+| OS | x64 | x86 | arm64 |
+|----|:---:|:---:|:-----:|
+| Windows | ✓ | ✓ | ✓ |
+| Linux (glibc) | ✓ | ✓ | ✓ |
+| Linux (musl/Alpine) | ✓ | | ✓ |
+| macOS | ✓ | | ✓ |
+
+This library targets `netstandard2.0` and `net8.0`, supporting a wide-range of .NET deployments: .NET Core 2.0+, .NET Framework 4.6.1+, Mono 5.4+, etc. Conditional compilation is used to enable optimized native library interop features available on modern targets (`net8.0` and above).
 
 ------
+
+## Usage
+
+The `Secp256k1` class provides instance methods that are wrappers for the native `secp256k1` C library with a near 1-1 API. These functions are generated from the C header files. For advanced usage, create an instance of the `Secp256k1` class and use these methods directly.
+
+The `Secp256k1` class also exposes static functions that are idiomatic C#, using a thread-safe internal context. The following is an overview of those static functions:
+
+#### Key Generation & Validation
+- `CreateSecretKey()` - Generate a cryptographically secure random secret key
+- `CreatePublicKey(secretKey, compressed)` - Derive a serialized public key from a secret key
+- `CreateXOnlyPublicKey(secretKey)` - Derive an x-only public key and parity for BIP-340
+- `CreateKeyPair(compressed)` - Generate a new secret key and public key pair
+- `IsValidSecretKey(secretKey)` - Validate a secret key
+- `IsValidPublicKey(publicKey)` - Validate a serialized public key
+
+#### Public Key Operations
+- `CompressPublicKey(publicKey)` - Convert a public key to 33-byte compressed format
+- `DecompressPublicKey(publicKey)` - Convert a public key to 65-byte uncompressed format
+- `NegatePublicKey(publicKey, compressed)` - Negate a public key
+- `CombinePublicKeys(publicKeys, compressed)` - Add multiple public keys together
+
+#### ECDSA Signing & Verification
+- `Sign(messageHash, secretKey)` - Create a 64-byte compact ECDSA signature
+- `Verify(signature, messageHash, publicKey)` - Verify an ECDSA signature
+- `SignRecoverable(messageHash, secretKey)` - Create a recoverable signature with recovery ID
+- `RecoverPublicKey(signature, recoveryId, messageHash, compressed)` - Recover public key from signature
+
+#### DER Signature Format
+- `SignatureToDer(compactSignature)` - Convert compact signature to DER format
+- `SignatureFromDer(derSignature)` - Convert DER signature to compact format
+- `VerifyDer(derSignature, messageHash, publicKey)` - Verify a DER-encoded signature
+
+#### Signature Normalization
+- `NormalizeSignature(signature)` - Normalize signature to lower-S form
+- `IsNormalizedSignature(signature)` - Check if signature is in lower-S form
+
+#### Schnorr Signatures (BIP-340)
+- `SignSchnorr(messageHash, secretKey, auxRand)` - Create a Schnorr signature
+- `VerifySchnorr(signature, message, publicKey)` - Verify a Schnorr signature
+
+#### ECDH Key Agreement
+- `ComputeSharedSecret(publicKey, secretKey)` - Compute ECDH shared secret
+
+#### Key Tweaking (BIP-32 HD Wallets)
+- `TweakSecretKeyAdd(secretKey, tweak)` - Add a tweak to a secret key
+- `TweakPublicKeyAdd(publicKey, tweak, compressed)` - Add a tweak to a public key
+- `TweakSecretKeyMul(secretKey, tweak)` - Multiply a secret key by a tweak
+- `TweakPublicKeyMul(publicKey, tweak, compressed)` - Multiply a public key by a tweak
+- `NegateSecretKey(secretKey)` - Negate a secret key
+
+#### Hashing
+- `TaggedHash(tag, message)` - Compute a BIP-340 tagged hash
 
 ## Example Usage
 

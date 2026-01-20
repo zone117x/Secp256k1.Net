@@ -22,16 +22,8 @@ namespace Secp256k1Net.Bench
         public void Setup()
         {
             // Pre-compute a Schnorr signature for verification benchmarks
-            using var secp256k1 = new Secp256k1();
-            var keypair = new byte[96];
-            if (!secp256k1.KeypairCreate(keypair, inputs.KeyPair.PrivateKey))
-                throw new Exception();
-            schnorrSig = new byte[64];
-            if (!secp256k1.SchnorrsigSign32(schnorrSig, inputs.Msg.MsgHash, keypair, auxRand))
-                throw new Exception();
-            xOnlyPubKey = new byte[64];
-            if (!secp256k1.KeypairXonlyPub(xOnlyPubKey, out _, keypair))
-                throw new Exception();
+            schnorrSig = Secp256k1.SignSchnorr(inputs.Msg.MsgHash, inputs.KeyPair.PrivateKey);
+            (xOnlyPubKey, _) = Secp256k1.CreateXOnlyPublicKey(inputs.KeyPair.PrivateKey);
 
             ValidateResults();
         }
@@ -43,16 +35,8 @@ namespace Secp256k1Net.Bench
         [BenchmarkCategory("EcdsaSign"), Benchmark(Description = "Secp256k1Net", Baseline = true)]
         public byte[] EcdsaSign_Secp256k1Net()
         {
-            using var secp256k1 = new Secp256k1();
-            Span<byte> msgHash = stackalloc byte[32];
-            System.Security.Cryptography.SHA256.HashData(inputs.Msg.MsgBytes, msgHash);
-            Span<byte> sig = stackalloc byte[Secp256k1.SIGNATURE_LENGTH];
-            if (!secp256k1.EcdsaSign(sig, msgHash, inputs.KeyPair.PrivateKey))
-                throw new Exception();
-            var serializedSig = new byte[Secp256k1.SERIALIZED_SIGNATURE_SIZE];
-            if (!secp256k1.EcdsaSignatureSerializeCompact(serializedSig, sig))
-                throw new Exception();
-            return serializedSig;
+            var msgHash = System.Security.Cryptography.SHA256.HashData(inputs.Msg.MsgBytes);
+            return Secp256k1.Sign(msgHash, inputs.KeyPair.PrivateKey);
         }
 
         [BenchmarkCategory("EcdsaSign"), Benchmark(Description = "NBitcoin")]
@@ -135,14 +119,7 @@ namespace Secp256k1Net.Bench
         [BenchmarkCategory("EcdsaVerify"), Benchmark(Description = "Secp256k1Net", Baseline = true)]
         public void EcdsaVerify_Secp256k1Net()
         {
-            using var secp256k1 = new Secp256k1();
-            Span<byte> parsedSig = stackalloc byte[Secp256k1.SIGNATURE_LENGTH];
-            if (!secp256k1.EcdsaSignatureParseCompact(parsedSig, inputs.EcdsaSig))
-                throw new Exception();
-            Span<byte> parsedPubKey = stackalloc byte[Secp256k1.PUBKEY_LENGTH];
-            if (!secp256k1.EcPubkeyParse(parsedPubKey, inputs.KeyPair.PublicKeyCompressed))
-                throw new Exception();
-            if (!secp256k1.EcdsaVerify(parsedSig, inputs.Msg.MsgHash, parsedPubKey))
+            if (!Secp256k1.Verify(inputs.EcdsaSig, inputs.Msg.MsgHash, inputs.KeyPair.PublicKeyCompressed))
                 throw new Exception();
         }
 
@@ -195,16 +172,7 @@ namespace Secp256k1Net.Bench
         [BenchmarkCategory("PubKeyCreate"), Benchmark(Description = "Secp256k1Net", Baseline = true)]
         public byte[] PubKeyCreate_Secp256k1Net()
         {
-            using var secp256k1 = new Secp256k1();
-            Span<byte> pubKey = stackalloc byte[Secp256k1.PUBKEY_LENGTH];
-            if (!secp256k1.EcPubkeyCreate(pubKey, inputs.KeyPair.PrivateKey))
-                throw new Exception();
-            // Serialize to compressed format for fair comparison
-            var compressed = new byte[Secp256k1.SERIALIZED_COMPRESSED_PUBKEY_LENGTH];
-            nuint outputLen = (nuint)compressed.Length;
-            if (!secp256k1.EcPubkeySerialize(compressed, ref outputLen, pubKey, Secp256k1EcFlags.Compressed))
-                throw new Exception();
-            return compressed;
+            return Secp256k1.CreatePublicKey(inputs.KeyPair.PrivateKey, compressed: true);
         }
 
         [BenchmarkCategory("PubKeyCreate"), Benchmark(Description = "NBitcoin")]
@@ -256,15 +224,8 @@ namespace Secp256k1Net.Bench
         [BenchmarkCategory("Ecdh"), Benchmark(Description = "Secp256k1Net", Baseline = true)]
         public byte[] Ecdh_Secp256k1Net()
         {
-            using var secp256k1 = new Secp256k1();
-            Span<byte> parsedPubKey = stackalloc byte[Secp256k1.PUBKEY_LENGTH];
-            if (!secp256k1.EcPubkeyParse(parsedPubKey, inputs.AlicePubKeyCompressed))
-                throw new Exception();
-            var output = new byte[32];
-            // Default Ecdh returns SHA256(compressed_point)
-            if (!secp256k1.Ecdh(output, parsedPubKey, inputs.KeyPair.PrivateKey))
-                throw new Exception();
-            return output;
+            // ComputeSharedSecret returns SHA256(compressed_point) by default
+            return Secp256k1.ComputeSharedSecret(inputs.AlicePubKeyCompressed, inputs.KeyPair.PrivateKey);
         }
 
         [BenchmarkCategory("Ecdh"), Benchmark(Description = "NBitcoin")]
@@ -310,17 +271,10 @@ namespace Secp256k1Net.Bench
         [BenchmarkCategory("EcdsaSignRecoverable"), Benchmark(Description = "Secp256k1Net", Baseline = true)]
         public byte[] EcdsaSignRecoverable_Secp256k1Net()
         {
-            using var secp256k1 = new Secp256k1();
-            Span<byte> sig = stackalloc byte[Secp256k1.UNSERIALIZED_SIGNATURE_SIZE];
-            if (!secp256k1.EcdsaSignRecoverable(sig, inputs.Msg.MsgHash, inputs.KeyPair.PrivateKey))
-                throw new Exception();
-            // Serialize to compact format for fair comparison
-            Span<byte> output = stackalloc byte[64];
-            if (!secp256k1.EcdsaRecoverableSignatureSerializeCompact(output, out var recId, sig))
-                throw new Exception();
+            var (signature, recoveryId) = Secp256k1.SignRecoverable(inputs.Msg.MsgHash, inputs.KeyPair.PrivateKey);
             var result = new byte[65];
-            output.CopyTo(result);
-            result[64] = (byte)recId;
+            signature.CopyTo(result, 0);
+            result[64] = recoveryId;
             return result;
         }
 
@@ -365,19 +319,10 @@ namespace Secp256k1Net.Bench
         [BenchmarkCategory("EcdsaRecover"), Benchmark(Description = "Secp256k1Net", Baseline = true)]
         public byte[] EcdsaRecover_Secp256k1Net()
         {
-            using var secp256k1 = new Secp256k1();
-            Span<byte> recSig = stackalloc byte[Secp256k1.UNSERIALIZED_SIGNATURE_SIZE];
-            if (!secp256k1.EcdsaSignRecoverable(recSig, inputs.Msg.MsgHash, inputs.KeyPair.PrivateKey))
-                throw new Exception();
-            Span<byte> pubKey = stackalloc byte[Secp256k1.PUBKEY_LENGTH];
-            if (!secp256k1.EcdsaRecover(pubKey, recSig, inputs.Msg.MsgHash))
-                throw new Exception();
-            // Serialize to compressed format for fair comparison
-            var compressed = new byte[Secp256k1.SERIALIZED_COMPRESSED_PUBKEY_LENGTH];
-            nuint outputLen = (nuint)compressed.Length;
-            if (!secp256k1.EcPubkeySerialize(compressed, ref outputLen, pubKey, Secp256k1EcFlags.Compressed))
-                throw new Exception();
-            return compressed;
+            // First sign to get the recoverable signature
+            var (signature, recoveryId) = Secp256k1.SignRecoverable(inputs.Msg.MsgHash, inputs.KeyPair.PrivateKey);
+            // Then recover the public key
+            return Secp256k1.RecoverPublicKey(signature, recoveryId, inputs.Msg.MsgHash, compressed: true);
         }
 
         [BenchmarkCategory("EcdsaRecover"), Benchmark(Description = "NBitcoin")]
@@ -414,14 +359,7 @@ namespace Secp256k1Net.Bench
         [BenchmarkCategory("SchnorrSign"), Benchmark(Description = "Secp256k1Net", Baseline = true)]
         public byte[] SchnorrSign_Secp256k1Net()
         {
-            using var secp256k1 = new Secp256k1();
-            Span<byte> keypair = stackalloc byte[96];
-            if (!secp256k1.KeypairCreate(keypair, inputs.KeyPair.PrivateKey))
-                throw new Exception();
-            var sig = new byte[64];
-            if (!secp256k1.SchnorrsigSign32(sig, inputs.Msg.MsgHash, keypair, auxRand))
-                throw new Exception();
-            return sig;
+            return Secp256k1.SignSchnorr(inputs.Msg.MsgHash, inputs.KeyPair.PrivateKey, default, verify: false);
         }
 
         [BenchmarkCategory("SchnorrSign"), Benchmark(Description = "NBitcoin")]
@@ -436,8 +374,7 @@ namespace Secp256k1Net.Bench
         [BenchmarkCategory("SchnorrVerify"), Benchmark(Description = "Secp256k1Net", Baseline = true)]
         public bool SchnorrVerify_Secp256k1Net()
         {
-            using var secp256k1 = new Secp256k1();
-            return secp256k1.SchnorrsigVerify(schnorrSig, inputs.Msg.MsgHash, xOnlyPubKey);
+            return Secp256k1.VerifySchnorr(schnorrSig, inputs.Msg.MsgHash, xOnlyPubKey);
         }
 
         [BenchmarkCategory("SchnorrVerify"), Benchmark(Description = "NBitcoin")]

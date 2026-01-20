@@ -56,6 +56,8 @@ See the [examples project](Secp256k1.Net.Examples/) for more complete working ex
 
 ## API Reference
 
+**[Full API Documentation](https://zone117x.github.io/Secp256k1.Net/api/Secp256k1Net.Secp256k1.html)**
+
 The `Secp256k1` class exposes static functions that are idiomatic C#, using a thread-safe internal context:
 
 #### Key Generation & Validation

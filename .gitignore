@@ -330,3 +330,8 @@ ASALocalRun/
 .mfractor/
 coverage
 CoverageReport
+
+# DocFX
+docs/_site/
+docs/api/
+docs/index.md

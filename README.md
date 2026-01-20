@@ -11,7 +11,7 @@ dotnet add package Secp256k1.Net
 
 ## Platform Support
 
-This library includes pre-compiled binaries for the following platforms:
+Pre-compiled binaries are bundled for the following platforms:
 
 | OS | x64 | x86 | arm64 |
 |----|:---:|:---:|:-----:|
@@ -26,7 +26,7 @@ This library targets `netstandard2.0` and `net8.0`, supporting a wide-range of .
 
 ## Usage
 
-The `Secp256k1` class provides instance methods that are wrappers for the native `secp256k1` C library with a near 1-1 API. These functions are generated from the C header files. For advanced usage, create an instance of the `Secp256k1` class and use these methods directly.
+The `Secp256k1` class provides instance methods that are wrappers for the native `secp256k1` C library. These functions are generated from the C header files and have near one-to-one API usage. For advanced usage, create an instance of the `Secp256k1` class and use these methods directly.
 
 The `Secp256k1` class also exposes static functions that are idiomatic C#, using a thread-safe internal context. The following is an overview of those static functions:
 
@@ -192,48 +192,48 @@ Apple M3 Max, 1 CPU, 14 logical and 14 physical cores
 
 
 ```
-| Method       | Categories           | Mean        | Error     | StdDev    | Ratio  | RatioSD |
-|------------- |--------------------- |------------:|----------:|----------:|-------:|--------:|
-| Secp256k1Net | Ecdh                 |    24.22 μs |  0.091 μs |  0.080 μs |   1.00 |    0.00 |
-| NBitcoin     | Ecdh                 |   166.38 μs |  0.937 μs |  0.876 μs |   6.87 |    0.04 |
-| Nethereum    | Ecdh                 |   504.34 μs |  9.122 μs |  8.532 μs |  20.82 |    0.35 |
-| BouncyCastle | Ecdh                 |   502.33 μs |  2.923 μs |  2.734 μs |  20.74 |    0.13 |
-|              |                      |             |           |           |        |         |
-| Secp256k1Net | EcdsaRecover         |    37.26 μs |  0.130 μs |  0.122 μs |   1.00 |    0.00 |
-| NBitcoin     | EcdsaRecover         |   272.45 μs |  1.350 μs |  1.263 μs |   7.31 |    0.04 |
-| Nethereum    | EcdsaRecover         | 1,992.73 μs | 16.378 μs | 14.519 μs |  53.48 |    0.41 |
-| BouncyCastle | EcdsaRecover         | 2,292.69 μs | 43.517 μs | 44.689 μs |  61.53 |    1.18 |
-|              |                      |             |           |           |        |         |
-| Secp256k1Net | EcdsaSign            |    16.58 μs |  0.069 μs |  0.064 μs |   1.00 |    0.01 |
-| NBitcoin     | EcdsaSign            |   132.70 μs |  0.685 μs |  0.640 μs |   8.00 |    0.05 |
-| Nethereum    | EcdsaSign            |   309.83 μs |  0.898 μs |  0.750 μs |  18.69 |    0.08 |
-| BouncyCastle | EcdsaSign            |   309.78 μs |  1.156 μs |  0.966 μs |  18.69 |    0.09 |
-| StarkBank    | EcdsaSign            | 1,080.47 μs |  3.760 μs |  3.334 μs |  65.17 |    0.31 |
-| Chainers     | EcdsaSign            |   289.83 μs |  3.314 μs |  3.100 μs |  17.48 |    0.19 |
-|              |                      |             |           |           |        |         |
-| Secp256k1Net | EcdsaSignRecoverable |    16.40 μs |  0.052 μs |  0.049 μs |   1.00 |    0.00 |
-| NBitcoin     | EcdsaSignRecoverable |   132.17 μs |  0.367 μs |  0.344 μs |   8.06 |    0.03 |
-| Nethereum    | EcdsaSignRecoverable | 1,310.32 μs |  6.890 μs |  6.445 μs |  79.92 |    0.45 |
-| BouncyCastle | EcdsaSignRecoverable | 1,641.76 μs | 30.547 μs | 28.574 μs | 100.14 |    1.71 |
-|              |                      |             |           |           |        |         |
-| Secp256k1Net | EcdsaVerify          |    21.45 μs |  0.161 μs |  0.151 μs |   1.00 |    0.01 |
-| NBitcoin     | EcdsaVerify          |   126.02 μs |  0.528 μs |  0.494 μs |   5.87 |    0.05 |
-| Nethereum    | EcdsaVerify          |   577.03 μs |  3.442 μs |  3.052 μs |  26.90 |    0.23 |
-| BouncyCastle | EcdsaVerify          |   577.13 μs |  2.090 μs |  1.955 μs |  26.91 |    0.20 |
-| StarkBank    | EcdsaVerify          | 2,046.77 μs | 40.200 μs | 37.603 μs |  95.42 |    1.82 |
-|              |                      |             |           |           |        |         |
-| Secp256k1Net | PubKeyCreate         |    11.17 μs |  0.130 μs |  0.122 μs |   1.00 |    0.01 |
-| NBitcoin     | PubKeyCreate         |    96.99 μs |  0.300 μs |  0.266 μs |   8.68 |    0.09 |
-| Nethereum    | PubKeyCreate         |   391.79 μs |  3.126 μs |  2.924 μs |  35.07 |    0.45 |
-| BouncyCastle | PubKeyCreate         |   393.72 μs |  1.596 μs |  1.415 μs |  35.25 |    0.39 |
-| StarkBank    | PubKeyCreate         |   976.27 μs | 11.036 μs | 10.323 μs |  87.40 |    1.28 |
-| Chainers     | PubKeyCreate         |    58.44 μs |  0.306 μs |  0.239 μs |   5.23 |    0.06 |
-|              |                      |             |           |           |        |         |
-| Secp256k1Net | SchnorrSign          |    22.05 μs |  0.111 μs |  0.104 μs |   1.00 |    0.01 |
-| NBitcoin     | SchnorrSign          |   198.06 μs |  1.010 μs |  0.945 μs |   8.98 |    0.06 |
-|              |                      |             |           |           |        |         |
-| Secp256k1Net | SchnorrVerify        |    19.32 μs |  0.056 μs |  0.049 μs |   1.00 |    0.00 |
-| NBitcoin     | SchnorrVerify        |   198.89 μs |  1.268 μs |  1.186 μs |  10.29 |    0.06 |
+| Method       | Categories           | Mean         | Error      | StdDev     | Ratio  | RatioSD |
+|------------- |--------------------- |-------------:|-----------:|-----------:|-------:|--------:|
+| Secp256k1Net | Ecdh                 |    22.964 μs |  0.1813 μs |  0.1607 μs |   1.00 |    0.01 |
+| NBitcoin     | Ecdh                 |   167.133 μs |  0.6087 μs |  0.5694 μs |   7.28 |    0.05 |
+| Nethereum    | Ecdh                 |   500.696 μs |  3.4009 μs |  3.1812 μs |  21.80 |    0.20 |
+| BouncyCastle | Ecdh                 |   503.882 μs |  6.4419 μs |  6.0257 μs |  21.94 |    0.29 |
+|              |                      |              |            |            |        |         |
+| Secp256k1Net | EcdsaRecover         |    36.042 μs |  0.1504 μs |  0.1333 μs |   1.00 |    0.01 |
+| NBitcoin     | EcdsaRecover         |   268.565 μs |  1.1492 μs |  1.0187 μs |   7.45 |    0.04 |
+| Nethereum    | EcdsaRecover         | 1,977.580 μs | 14.0846 μs | 12.4856 μs |  54.87 |    0.39 |
+| BouncyCastle | EcdsaRecover         | 2,270.418 μs | 27.8990 μs | 26.0967 μs |  62.99 |    0.74 |
+|              |                      |              |            |            |        |         |
+| Secp256k1Net | EcdsaSign            |    15.231 μs |  0.0491 μs |  0.0436 μs |   1.00 |    0.00 |
+| NBitcoin     | EcdsaSign            |   133.297 μs |  0.5326 μs |  0.4721 μs |   8.75 |    0.04 |
+| Nethereum    | EcdsaSign            |   319.805 μs |  2.8822 μs |  2.6960 μs |  21.00 |    0.18 |
+| BouncyCastle | EcdsaSign            |   312.781 μs |  2.3212 μs |  1.9383 μs |  20.54 |    0.14 |
+| StarkBank    | EcdsaSign            | 1,085.330 μs |  6.0425 μs |  5.6522 μs |  71.26 |    0.41 |
+| Chainers     | EcdsaSign            |   293.091 μs |  4.1747 μs |  3.9051 μs |  19.24 |    0.25 |
+|              |                      |              |            |            |        |         |
+| Secp256k1Net | EcdsaSignRecoverable |    15.052 μs |  0.0400 μs |  0.0312 μs |   1.00 |    0.00 |
+| NBitcoin     | EcdsaSignRecoverable |   133.714 μs |  0.7474 μs |  0.6626 μs |   8.88 |    0.05 |
+| Nethereum    | EcdsaSignRecoverable | 1,376.987 μs | 12.3970 μs | 10.9896 μs |  91.48 |    0.73 |
+| BouncyCastle | EcdsaSignRecoverable | 1,630.056 μs | 17.9736 μs | 16.8126 μs | 108.29 |    1.10 |
+|              |                      |              |            |            |        |         |
+| Secp256k1Net | EcdsaVerify          |    20.045 μs |  0.1364 μs |  0.1276 μs |   1.00 |    0.01 |
+| NBitcoin     | EcdsaVerify          |   128.001 μs |  1.1558 μs |  1.0246 μs |   6.39 |    0.06 |
+| Nethereum    | EcdsaVerify          |   588.907 μs | 10.3029 μs |  9.1332 μs |  29.38 |    0.48 |
+| BouncyCastle | EcdsaVerify          |   582.463 μs |  8.7357 μs |  8.1713 μs |  29.06 |    0.43 |
+| StarkBank    | EcdsaVerify          | 2,105.913 μs | 31.3613 μs | 29.3354 μs | 105.06 |    1.56 |
+|              |                      |              |            |            |        |         |
+| Secp256k1Net | PubKeyCreate         |     9.759 μs |  0.0638 μs |  0.0566 μs |   1.00 |    0.01 |
+| NBitcoin     | PubKeyCreate         |    95.283 μs |  0.5591 μs |  0.4956 μs |   9.76 |    0.07 |
+| Nethereum    | PubKeyCreate         |   378.257 μs |  2.0409 μs |  1.9091 μs |  38.76 |    0.29 |
+| BouncyCastle | PubKeyCreate         |   377.224 μs |  3.0774 μs |  2.5698 μs |  38.65 |    0.33 |
+| StarkBank    | PubKeyCreate         |   990.958 μs |  9.6931 μs |  9.0669 μs | 101.54 |    1.06 |
+| Chainers     | PubKeyCreate         |    57.937 μs |  0.5150 μs |  0.4818 μs |   5.94 |    0.06 |
+|              |                      |              |            |            |        |         |
+| Secp256k1Net | SchnorrSign          |    20.296 μs |  0.1379 μs |  0.1290 μs |   1.00 |    0.01 |
+| NBitcoin     | SchnorrSign          |   194.996 μs |  1.0752 μs |  0.9531 μs |   9.61 |    0.07 |
+|              |                      |              |            |            |        |         |
+| Secp256k1Net | SchnorrVerify        |    20.199 μs |  0.1088 μs |  0.1018 μs |   1.00 |    0.01 |
+| NBitcoin     | SchnorrVerify        |   192.977 μs |  0.4276 μs |  0.3999 μs |   9.55 |    0.05 |
 
 ---
 

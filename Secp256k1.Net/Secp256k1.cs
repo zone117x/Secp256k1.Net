@@ -9,7 +9,7 @@ namespace Secp256k1Net
     /// <param name="message">Error message.</param>
     /// <param name="data">Callback marker, set by user together with callback.</param>
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public unsafe delegate void ErrorCallbackDelegate(string message, void* data);
+    public delegate void ErrorCallbackDelegate(string message, IntPtr data);
 
     public unsafe partial class Secp256k1 : IDisposable
     {
@@ -57,7 +57,7 @@ namespace Secp256k1Net
         private GCHandle _errorCallbackHandle;
         private IntPtr _errorCallbackPtr;
 
-        private static void DefaultErrorCallback(string message, void* data)
+        private static void DefaultErrorCallback(string message, IntPtr data)
         {
             Console.Error.WriteLine(message);
         }
@@ -67,7 +67,7 @@ namespace Secp256k1Net
             EnsureInitialized();
             _ctx = Secp256k1Interop._context_create((uint)Secp256k1ContextFlags.None);
 
-            SetErrorCallback(errorCallback ?? DefaultErrorCallback, null);
+            SetErrorCallback(errorCallback ?? DefaultErrorCallback, IntPtr.Zero);
         }
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace Secp256k1Net
         /// </summary>
         /// <param name="cb">User-defined callback, it is called in the case of the error or illegal operation.</param>
         /// <param name="data">User-defined callback marker, it is passed as second argument when callback is called.</param>
-        public void SetErrorCallback(ErrorCallbackDelegate cb, void* data = null)
+        public void SetErrorCallback(ErrorCallbackDelegate cb, IntPtr data = default)
         {
             if (_errorCallbackPtr != IntPtr.Zero)
             {
@@ -85,8 +85,8 @@ namespace Secp256k1Net
             _errorCallbackHandle = GCHandle.Alloc(_errorCallback);
             _errorCallbackPtr = Marshal.GetFunctionPointerForDelegate(_errorCallback);
 
-            Secp256k1Interop._context_set_illegal_callback(_ctx, _errorCallbackPtr, data);
-            Secp256k1Interop._context_set_error_callback(_ctx, _errorCallbackPtr, data);
+            Secp256k1Interop._context_set_illegal_callback(_ctx, _errorCallbackPtr, (void*)data);
+            Secp256k1Interop._context_set_error_callback(_ctx, _errorCallbackPtr, (void*)data);
         }
 
         /// <summary>

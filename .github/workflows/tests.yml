@@ -244,6 +244,26 @@ jobs:
       - name: Run Mono tests
         run: ./test/NativeLibTestLegacy/test-mono.sh
 
+  platform-test-legacy-mono-linux-x86:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build package and legacy test
+        run: |
+          dotnet pack Secp256k1.Net -c Release -o pkg -p:Version=0.0.1-localtest.1
+          dotnet build test/NativeLibTestLegacy -c Release
+      - name: Run Mono tests in 32-bit container
+        run: |
+          docker run --rm --platform linux/386 \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            mono:latest \
+            mono test/NativeLibTestLegacy/bin/Release/net462/NativeLibTestLegacy.exe
+
   platform-test-legacy-mono-macos-x64:
     runs-on: macos-15-intel
     steps:

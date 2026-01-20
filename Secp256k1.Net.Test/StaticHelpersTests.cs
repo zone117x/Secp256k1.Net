@@ -1102,6 +1102,32 @@ namespace Secp256k1Net.Test
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentException))]
+        public void TweakPublicKeyAdd_InvalidTweak_Throws()
+        {
+            var (_, publicKey) = Secp256k1.CreateKeyPair();
+            // Tweak >= curve order n is invalid
+            var invalidTweak = Convert.FromHexString("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141");
+
+            Secp256k1.TweakPublicKeyAdd(publicKey, invalidTweak);
+        }
+
+        [TestMethod]
+        public void TweakPublicKeyAdd_Uncompressed()
+        {
+            var secretKey = Secp256k1.CreateSecretKey();
+            var publicKey = Secp256k1.CreatePublicKey(secretKey);
+            var tweak = new byte[32];
+            new Random(42).NextBytes(tweak);
+
+            var tweakedUncompressed = Secp256k1.TweakPublicKeyAdd(publicKey, tweak, compressed: false);
+
+            Assert.AreEqual(65, tweakedUncompressed.Length);
+            Assert.AreEqual(0x04, tweakedUncompressed[0]);
+            Assert.IsTrue(Secp256k1.IsValidPublicKey(tweakedUncompressed));
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
         public void TweakSecretKeyMul_ZeroTweak_Throws()
         {
             var secretKey = Secp256k1.CreateSecretKey();
@@ -1119,6 +1145,33 @@ namespace Secp256k1Net.Test
             tweak[0] = 0x01;
 
             Secp256k1.TweakPublicKeyMul(invalidPubKey, tweak);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void TweakPublicKeyMul_InvalidTweak_Throws()
+        {
+            var (_, publicKey) = Secp256k1.CreateKeyPair();
+            // Tweak >= curve order n is invalid for multiply
+            var invalidTweak = Convert.FromHexString("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141");
+
+            Secp256k1.TweakPublicKeyMul(publicKey, invalidTweak);
+        }
+
+        [TestMethod]
+        public void TweakPublicKeyMul_Uncompressed()
+        {
+            var secretKey = Secp256k1.CreateSecretKey();
+            var publicKey = Secp256k1.CreatePublicKey(secretKey);
+            var tweak = new byte[32];
+            new Random(42).NextBytes(tweak);
+            tweak[0] = 0x01; // Ensure non-zero
+
+            var tweakedUncompressed = Secp256k1.TweakPublicKeyMul(publicKey, tweak, compressed: false);
+
+            Assert.AreEqual(65, tweakedUncompressed.Length);
+            Assert.AreEqual(0x04, tweakedUncompressed[0]);
+            Assert.IsTrue(Secp256k1.IsValidPublicKey(tweakedUncompressed));
         }
 
         #endregion
@@ -1167,6 +1220,24 @@ namespace Secp256k1Net.Test
 
             CollectionAssert.AreNotEqual(publicKey, negated);
             Assert.IsTrue(Secp256k1.IsValidPublicKey(negated));
+        }
+
+        [TestMethod]
+        public void NegatePublicKey_Uncompressed()
+        {
+            var secretKey = Secp256k1.CreateSecretKey();
+            var publicKey = Secp256k1.CreatePublicKey(secretKey);
+
+            var negatedUncompressed = Secp256k1.NegatePublicKey(publicKey, compressed: false);
+
+            Assert.AreEqual(65, negatedUncompressed.Length);
+            Assert.AreEqual(0x04, negatedUncompressed[0]);
+            Assert.IsTrue(Secp256k1.IsValidPublicKey(negatedUncompressed));
+
+            // Verify double negate returns to original (in uncompressed form)
+            var doubleNegatedUncompressed = Secp256k1.NegatePublicKey(negatedUncompressed, compressed: false);
+            var originalUncompressed = Secp256k1.CreatePublicKey(secretKey, compressed: false);
+            CollectionAssert.AreEqual(originalUncompressed, doubleNegatedUncompressed);
         }
 
         [TestMethod]

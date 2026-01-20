@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>netstandard2.0</TargetFramework>
+        <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
         <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
         <LangVersion>latest</LangVersion>
         <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
@@ -12,15 +12,33 @@
         <PackageProjectUrl>https://github.com/zone117x/Secp256k1.Net</PackageProjectUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <NoWarn>1591,1573</NoWarn>
+        <!-- IL3000: Assembly.Location returns empty in single-file apps - we check AppContext.BaseDirectory first -->
+        <NoWarn>1591;NU5100;IL3000</NoWarn>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <RootNamespace>Secp256k1Net</RootNamespace>
         <Version Condition="'$(VersionSuffix)' != ''">$(VersionSuffix)</Version>
-        <Version Condition="'$(VersionSuffix)' == ''">0.1.0</Version>
+        <Version Condition="'$(VersionSuffix)' == ''">0.0.1-local.1</Version>
     </PropertyGroup>
+    <!--
+      Parse header files to generate secp256k1-api.json (only when submodule is available).
+      Condition ensures this runs only once during multi-TFM builds.
+    -->
+    <Target Name="ParseHeaderFiles" BeforeTargets="RunInteropGenerator" Condition="('$(TargetFramework)' == '' Or '$(TargetFrameworks)' == '') And Exists('$(MSBuildProjectDirectory)/../secp256k1/include/secp256k1.h')">
+        <Exec Command="dotnet run --project &quot;$(MSBuildProjectDirectory)/../Secp256k1.Net.InteropGen/Secp256k1.Net.InteropGen.csproj&quot; -- parse &quot;$(MSBuildProjectDirectory)/../secp256k1/include&quot; &quot;$(MSBuildProjectDirectory)/secp256k1-api.json&quot;" />
+    </Target>
+    <!--
+      Run the interop code generator before compile.
+      Condition ensures this runs only once during multi-TFM builds:
+      - When TargetFramework is empty, we're in the outer "dispatch" build
+      - When TargetFramework is set, we're in an inner per-TFM build
+      The Inputs/Outputs ensure it only runs when secp256k1-api.json changes.
+    -->
+    <Target Name="RunInteropGenerator" BeforeTargets="DispatchToInnerBuilds;CoreCompile" Condition="'$(TargetFramework)' == '' Or '$(TargetFrameworks)' == ''" Inputs="$(MSBuildProjectDirectory)/secp256k1-api.json" Outputs="$(MSBuildProjectDirectory)/Generated/Secp256k1.Native.g.cs;$(MSBuildProjectDirectory)/Generated/Secp256k1.Wrappers.g.cs">
+        <Exec Command="dotnet run --project &quot;$(MSBuildProjectDirectory)/../Secp256k1.Net.InteropGen/Secp256k1.Net.InteropGen.csproj&quot; -- generate &quot;$(MSBuildProjectDirectory)/secp256k1-api.json&quot; &quot;$(MSBuildProjectDirectory)/Generated&quot;" />
+    </Target>
     <ItemGroup>
         <None Include="../README.md" Pack="true" PackagePath="/" />
     </ItemGroup>
@@ -28,17 +46,39 @@
         <InternalsVisibleTo Include="Secp256k1.Net.Test" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Secp256k1.Native" Version="0.2.0-alpha.1" PrivateAssets="all" />
-        <PackageReference Include="System.Memory" Version="4.6.3" />
+        <PackageReference Include="Secp256k1.Native" Version="0.7.0-beta.1" PrivateAssets="all" GeneratePathProperty="true" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.102" PrivateAssets="All" />
     </ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+        <PackageReference Include="System.Memory" Version="4.6.3" />
+    </ItemGroup>
+    <!--
+      Include native libraries from Secp256k1.Native package.
+      $(PkgSecp256k1_Native) is set by GeneratePathProperty="true" on the PackageReference.
+      This makes natives available for projects referencing via ProjectReference.
+    -->
+    <ItemGroup>
+        <Content Include="$(PkgSecp256k1_Native)/runtimes/**/*.*"
+                 Link="runtimes/%(RecursiveDir)%(Filename)%(Extension)"
+                 CopyToOutputDirectory="PreserveNewest"
+                 Pack="false"
+                 Visible="false" />
+    </ItemGroup>
+    <!--
+      Pack native libraries into runtimes/{rid}/native/ so this package is self-contained
+      and follows NuGet's standard conventions for runtime-specific native assets.
+      This allows the .NET SDK to automatically copy the correct native library to output
+      when building with a RuntimeIdentifier or PlatformTarget.
+
+      We can't use %(RecursiveDir) directly because it includes "linux-x64/native/" but we need
+      the full runtimes path structure.
+    -->
     <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">
+        <!-- Use netstandard2.0 output since natives are identical across TFMs -->
         <ItemGroup>
-            <_PackageFiles Include="$(OutputPath)/native/**/*">
-                <BuildAction>Content</BuildAction>
-                <PackagePath>content/native/</PackagePath>
-                <!--<CopyToOutput>true</CopyToOutput>-->
-                <!--<PackageCopyToOutput>true</PackageCopyToOutput>-->
+            <_NativeFilesToPack Include="$(OutputPath)netstandard2.0/runtimes/*/native/*.*" />
+            <_PackageFiles Include="@(_NativeFilesToPack)">
+                <PackagePath>runtimes/$([System.IO.Path]::GetFileName($([System.IO.Path]::GetDirectoryName($([System.IO.Path]::GetDirectoryName('%(Identity)'))))))/native/%(Filename)%(Extension)</PackagePath>
             </_PackageFiles>
         </ItemGroup>
     </Target>
@@ -46,6 +86,10 @@
         <_PackageFiles Include="Secp256k1.Net.targets">
             <BuildAction>None</BuildAction>
             <PackagePath>build/</PackagePath>
+        </_PackageFiles>
+        <_PackageFiles Include="Secp256k1.Net.targets">
+            <BuildAction>None</BuildAction>
+            <PackagePath>buildTransitive/</PackagePath>
         </_PackageFiles>
     </ItemGroup>
 </Project>

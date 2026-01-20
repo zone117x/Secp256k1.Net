@@ -1,14 +1,47 @@
-﻿<Project>
+<Project>
 
+  <!--
+    Native library directory within this package.
+    $(MSBuildThisFileDirectory) points to build/ or buildTransitive/ in package context.
+    The package follows NuGet's standard runtimes/{rid}/native/ structure.
+  -->
   <PropertyGroup>
-    <Secp256k1NativeLibDirectory>$(MSBuildThisFileDirectory)/../content/native</Secp256k1NativeLibDirectory>
+    <_Secp256k1NativeDir>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../runtimes'))</_Secp256k1NativeDir>
   </PropertyGroup>
 
-  <Target Name="Secp256k1PublishNativeLibs" AfterTargets="Publish">
+  <!--
+    Cross-platform build (no RID specified):
+    Copy all native libraries to runtimes/{rid}/native/ structure in output.
+    This is only needed when the .NET SDK's automatic runtimes copying doesn't apply
+    (e.g., when building without PlatformTarget on .NET Framework).
+  -->
+  <Target Name="_Secp256k1CopyAllNatives"
+          AfterTargets="Build"
+          Condition="'$(RuntimeIdentifier)' == '' AND '$(SkipSecp256k1NativeLibCopy)' != 'true'">
     <ItemGroup>
-      <Secp256k1NativeLibs Include="$(Secp256k1NativeLibDirectory)/**/*.*" />
+      <_Secp256k1AllNatives Include="$(_Secp256k1NativeDir)/*/native/*.*" />
     </ItemGroup>
-    <Copy SourceFiles="@(Secp256k1NativeLibs)" DestinationFolder="$(PublishDir)/native/%(RecursiveDir)" />
+    <Message Importance="High" Text="[Secp256k1.Net] _Secp256k1NativeDir = $(_Secp256k1NativeDir)" />
+    <Message Importance="High" Text="[Secp256k1.Net] Found @(_Secp256k1AllNatives->Count()) native files" />
+    <Copy SourceFiles="@(_Secp256k1AllNatives)"
+          DestinationFiles="@(_Secp256k1AllNatives->'$(OutputPath)runtimes/%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true"
+          Condition="'@(_Secp256k1AllNatives)' != ''" />
+  </Target>
+
+  <!--
+    Cross-platform publish (no RID specified):
+    Copy all native libraries to runtimes/{rid}/native/ structure in publish output.
+  -->
+  <Target Name="_Secp256k1PublishAllNatives"
+          AfterTargets="Publish"
+          Condition="'$(RuntimeIdentifier)' == '' AND '$(SkipSecp256k1NativeLibCopy)' != 'true'">
+    <ItemGroup>
+      <_Secp256k1AllNativesPublish Include="$(_Secp256k1NativeDir)/*/native/*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_Secp256k1AllNativesPublish)"
+          DestinationFiles="@(_Secp256k1AllNativesPublish->'$(PublishDir)runtimes/%(RecursiveDir)%(Filename)%(Extension)')"
+          Condition="'@(_Secp256k1AllNativesPublish)' != ''" />
   </Target>
 
 </Project>

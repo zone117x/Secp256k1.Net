@@ -5,6 +5,8 @@ namespace Secp256k1Net.DynamicLinking
 {
     static class DynamicLinkingMacOS
     {
+        public const int RTLD_NOW = 2;
+
         const string LIBDL = "libdl";
 
         [DllImport(LIBDL)]

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -9,12 +10,61 @@ namespace Secp256k1Net
 {
     internal static class LoadLibNative
     {
+
+#if NET8_0_OR_GREATER
+        /// <summary>
+        /// Loads the native library using modern .NET NativeLibrary APIs.
+        /// Tries standard resolution first, then falls back to LibPathResolver.
+        /// </summary>
+        /// <param name="libName">The library name (e.g., "secp256k1").</param>
+        /// <param name="libPath">Output parameter that receives the resolved library path.</param>
+        /// <returns>The handle to the loaded library.</returns>
+        public static IntPtr LoadLibrary(string libName, out string libPath)
+        {
+            var assembly = typeof(Secp256k1).Assembly;
+            // Try standard resolution first (works for RID-specific builds and NativeAOT)
+            if (NativeLibrary.TryLoad(libName, assembly,
+                DllImportSearchPath.AssemblyDirectory | DllImportSearchPath.ApplicationDirectory,
+                out var handle))
+            {
+                libPath = libName;
+                return handle;
+            }
+
+            // Also try with lib prefix for Unix
+            var libPrefixedName = "lib" + libName;
+            if (NativeLibrary.TryLoad(libPrefixedName, assembly,
+                DllImportSearchPath.AssemblyDirectory | DllImportSearchPath.ApplicationDirectory,
+                out handle))
+            {
+                libPath = libPrefixedName;
+                return handle;
+            }
+
+            // Fallback: use LibPathResolver for comprehensive path probing
+            libPath = LibPathResolver.Resolve(libName);
+            return NativeLibrary.Load(libPath);
+        }
+
+        public static void CloseLibrary(IntPtr lib)
+        {
+            NativeLibrary.Free(lib);
+        }
+
+        public static IntPtr GetSymbolPointer(IntPtr libPtr, string symbolName)
+        {
+            return NativeLibrary.GetExport(libPtr, symbolName);
+        }
+
+#else
+
         static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
         static readonly bool IsMacOS = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
         static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
 
-        public static IntPtr LoadLib(string libPath)
+        public static IntPtr LoadLibrary(string libName, out string libPath)
         {
+            libPath = File.Exists(libName) ? libName : LibPathResolver.Resolve(libName);
             IntPtr libPtr;
 
             if (IsWindows)
@@ -23,13 +73,11 @@ namespace Secp256k1Net
             }
             else if (IsLinux)
             {
-                const int RTLD_NOW = 2;
-                libPtr = DynamicLinkingLinux.dlopen(libPath, RTLD_NOW);
+                libPtr = DynamicLinkingLinux.dlopen(libPath, DynamicLinkingLinux.RTLD_NOW);
             }
             else if (IsMacOS)
             {
-                const int RTLD_NOW = 2;
-                libPtr = DynamicLinkingMacOS.dlopen(libPath, RTLD_NOW);
+                libPtr = DynamicLinkingMacOS.dlopen(libPath, DynamicLinkingMacOS.RTLD_NOW);
             }
             else
             {
@@ -144,5 +192,6 @@ namespace Secp256k1Net
             var functionPtr = pointerDereferenceFunc.Invoke(ptr);
             return Marshal.GetDelegateForFunctionPointer<TDelegate>(functionPtr);
         }
+#endif
     }
 }

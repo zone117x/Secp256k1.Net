@@ -1,277 +1,390 @@
-﻿using System;
-using System.Text;
+using System;
 using System.Linq;
 using System.Numerics;
-using System.Security.Cryptography;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Running;
-using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Running;
 
 namespace Secp256k1Net.Bench
 {
-    // Use ShortRun job for faster CI execution (fewer iterations, less accurate but still useful)
-    // Set CI=true environment variable to enable, otherwise uses default (more accurate) settings
-    public class CiBenchmarkConfig : ManualConfig
-    {
-        public CiBenchmarkConfig()
-        {
-            if (Environment.GetEnvironmentVariable("CI") == "true")
-            {
-                AddJob(Job.ShortRun);
-            }
-            else
-            {
-                AddJob(Job.Default);
-            }
-        }
-    }
-
-    record class KeyPair(byte[] PrivateKey, byte[] PublicKeyCompressed, byte[] PublicKeyUncompressed);
-    record class Msg(string MsgString, byte[] MsgBytes, byte[] MsgHash);
-
-    class BenchInputs
-    {
-        public readonly KeyPair KeyPair;
-        public readonly Msg Msg;
-        public readonly byte[] EcdsaSig;
-
-        public BenchInputs()
-        {
-            KeyPair = new(
-                Convert.FromHexString("7ef7543476bf146020cb59f9968a25ec67c3c73dbebad8a0b53a3256170dcdfe"),
-                Convert.FromHexString("03bf2e2462a3e64b941187b903156dbe9fb9b09b1e76ff5a55edf3d441dcd50822"),
-                Convert.FromHexString("04bf2e2462a3e64b941187b903156dbe9fb9b09b1e76ff5a55edf3d441dcd508227f20aebd43fb7de880b28ea03baae531c05f17d2f99940aa6a3fe1a4c788c7a1")
-            );
-
-            var msg = "Message for signing";
-            var msgBytes = Encoding.UTF8.GetBytes(msg);
-            var msgHash = SHA256.HashData(msgBytes);
-            Msg = new(msg, msgBytes, msgHash);
-
-            // 32-byte big endian R value, followed by a 32-byte big endian S value
-            EcdsaSig = Convert.FromHexString("8748f4a24fd0ecca9100ef947b73cbb6f11d67d151d2a900ab9fec1dce0051cc687136810ad4aba6812ad39cea0a41ba2cb04cb32d574a443f0d5c03e2dfa44f");
-        }
-    }
-
     [Config(typeof(CiBenchmarkConfig))]
     [CsvMeasurementsExporter]
     [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
     [CategoriesColumn]
-    public class EcdsaSignVerify
+    public partial class Secp256k1Benchmarks
     {
-        private readonly BenchInputs inputs = new BenchInputs();
+        private readonly BenchInputs inputs = new();
+        private readonly byte[] auxRand = new byte[32]; // Zero aux randomness for deterministic Schnorr benchmark
+        private byte[] schnorrSig;
+        private byte[] xOnlyPubKey;
 
-        [BenchmarkCategory("Sign"), Benchmark(Description = "Secp256k1Net", Baseline = true)]
-        public byte[] Secp256k1NetSign()
+        [GlobalSetup]
+        public void Setup()
         {
-            return Secp256k1NetUtil.Sign(inputs.KeyPair, inputs.Msg);
+            // Pre-compute a Schnorr signature for verification benchmarks
+            schnorrSig = Secp256k1.SignSchnorr(inputs.Msg.MsgHash, inputs.KeyPair.PrivateKey);
+            (xOnlyPubKey, _) = Secp256k1.CreateXOnlyPublicKey(inputs.KeyPair.PrivateKey);
+
+            ValidateResults();
         }
 
-        [BenchmarkCategory("Sign"), Benchmark(Description = "NBitcoin")]
-        public byte[] NBitcoinSign()
+        // ===== ECDSA Sign =====
+        // All benchmarks hash MsgBytes internally for fair comparison.
+        // StarkBank only supports string input, but since it hashes with SHA256 internally,
+        // its signatures are compatible (just need low-S normalization for verification).
+        [BenchmarkCategory("EcdsaSign"), Benchmark(Description = "Secp256k1Net", Baseline = true)]
+        public byte[] EcdsaSign_Secp256k1Net()
         {
-            return NBitcoinUtil.Sign(inputs.KeyPair, inputs.Msg);
+            var msgHash = System.Security.Cryptography.SHA256.HashData(inputs.Msg.MsgBytes);
+            return Secp256k1.Sign(msgHash, inputs.KeyPair.PrivateKey);
         }
 
-        [BenchmarkCategory("Sign"), Benchmark(Description = "Nethereum")]
-        public byte[] NethereumSign()
+        [BenchmarkCategory("EcdsaSign"), Benchmark(Description = "NBitcoin")]
+        public byte[] EcdsaSign_NBitcoin()
         {
-            return NethereumUtil.Sign(inputs.KeyPair, inputs.Msg);
-        }
-
-        [BenchmarkCategory("Sign"), Benchmark(Description = "BouncyCastle")]
-        public byte[] BouncyCastleSign()
-        {
-            return BouncyCastleUtil.Sign(inputs.KeyPair, inputs.Msg);
-        }
-
-        [BenchmarkCategory("Sign"), Benchmark(Description = "StarkBank")]
-        public byte[] StarkBankSign()
-        {
-            return StarkBankUtil.Sign(inputs.KeyPair, inputs.Msg);
-        }
-
-        [BenchmarkCategory("Sign"), Benchmark(Description = "Chainers")]
-        public byte[] ChainersSign()
-        {
-            return ChainersUtil.Sign(inputs.KeyPair, inputs.Msg);
-        }
-
-        [BenchmarkCategory("Verify"), Benchmark(Description = "Secp256k1Net", Baseline = true)]
-        public void Secp256k1NetVerify()
-        {
-            Secp256k1NetUtil.Verify(inputs.KeyPair, inputs.Msg, inputs.EcdsaSig);
-        }
-
-        [BenchmarkCategory("Verify"), Benchmark(Description = "NBitcoin")]
-        public void NBitcoinVerify()
-        {
-            NBitcoinUtil.Verify(inputs.KeyPair, inputs.Msg, inputs.EcdsaSig);
-        }
-
-        [BenchmarkCategory("Verify"), Benchmark(Description = "Nethereum")]
-        public void NethereumVerify()
-        {
-            NethereumUtil.Verify(inputs.KeyPair, inputs.Msg, inputs.EcdsaSig);
-        }
-
-        [BenchmarkCategory("Verify"), Benchmark(Description = "BouncyCastle")]
-        public void BouncyCastleVerify()
-        {
-            BouncyCastleUtil.Verify(inputs.KeyPair, inputs.Msg, inputs.EcdsaSig);
-        }
-
-        [BenchmarkCategory("Verify"), Benchmark(Description = "StarkBank")]
-        public void StarkBankVerify()
-        {
-            StarkBankUtil.Verify(inputs.KeyPair, inputs.Msg, inputs.EcdsaSig);
-        }
-    }
-
-    interface EcdsaSigner
-    {
-        static abstract byte[] Sign(KeyPair keyPair, Msg msg);
-    }
-
-    interface EcdsaVerifier
-    {
-        static abstract void Verify(KeyPair keyPair, Msg msg, byte[] signature);
-    }
-
-    class Secp256k1NetUtil : EcdsaSigner, EcdsaVerifier
-    {
-        public static byte[] Sign(KeyPair keyPair, Msg msg)
-        {
-            using var secp256k1 = new Secp256k1();
-            var sig = new byte[Secp256k1.SIGNATURE_LENGTH];
-            if (!secp256k1.Sign(sig, msg.MsgHash, keyPair.PrivateKey))
-                throw new Exception();
-            var serializedSig = new byte[Secp256k1.SERIALIZED_SIGNATURE_SIZE];
-            if (!secp256k1.SignatureSerializeCompact(serializedSig, sig))
-                throw new Exception();
-            return serializedSig;
-        }
-
-        public static void Verify(KeyPair keyPair, Msg msg, byte[] signature)
-        {
-            using var secp256k1 = new Secp256k1();
-            var parsedSig = new byte[Secp256k1.SIGNATURE_LENGTH];
-            if (!secp256k1.SignatureParseCompact(parsedSig, signature))
-                throw new Exception();
-            var parsedPubKey = new byte[Secp256k1.PUBKEY_LENGTH];
-            if (!secp256k1.PublicKeyParse(parsedPubKey, keyPair.PublicKeyCompressed))
-                throw new Exception();
-            if (!secp256k1.Verify(parsedSig, msg.MsgHash, parsedPubKey))
-                throw new Exception();
-        }
-    }
-
-    class NBitcoinUtil : EcdsaSigner, EcdsaVerifier
-    {
-        public static byte[] Sign(KeyPair keyPair, Msg msg)
-        {
-            var ecPrivKey = NBitcoin.Secp256k1.ECPrivKey.Create(keyPair.PrivateKey);
-            var sig = ecPrivKey.SignECDSARFC6979(msg.MsgHash);
+            var msgHash = System.Security.Cryptography.SHA256.HashData(inputs.Msg.MsgBytes);
+            var ecPrivKey = NBitcoin.Secp256k1.ECPrivKey.Create(inputs.KeyPair.PrivateKey);
+            var sig = ecPrivKey.SignECDSARFC6979(msgHash);
             var serializedSig = new byte[64];
             sig.WriteCompactToSpan(serializedSig);
             return serializedSig;
         }
 
-        public static void Verify(KeyPair keyPair, Msg msg, byte[] signature)
+        [BenchmarkCategory("EcdsaSign"), Benchmark(Description = "Nethereum")]
+        public byte[] EcdsaSign_Nethereum()
         {
-            if (!NBitcoin.Secp256k1.SecpECDSASignature.TryCreateFromCompact(signature, out var parsedSig))
-                throw new Exception("Failed to parse compact signature");
-            var ecPubKey = NBitcoin.Secp256k1.ECPubKey.Create(keyPair.PublicKeyCompressed);
-            if (!ecPubKey.SigVerify(parsedSig, msg.MsgHash))
-                throw new Exception("Failed to verify signature");
-        }
-    }
-
-    class NethereumUtil : EcdsaSigner, EcdsaVerifier
-    {
-        public static byte[] Sign(KeyPair keyPair, Msg msg)
-        {
-            var ecPrivKey = new Nethereum.Signer.EthECKey(keyPair.PrivateKey, isPrivate: true);
-            var sig = ecPrivKey.Sign(msg.MsgHash);
-            var serializedSig = sig.To64ByteArray();
+            var msgHash = System.Security.Cryptography.SHA256.HashData(inputs.Msg.MsgBytes);
+            var ecPrivKey = new Nethereum.Signer.EthECKey(inputs.KeyPair.PrivateKey, isPrivate: true);
+            var sig = ecPrivKey.Sign(msgHash);
+            var serializedSig = new byte[64];
+            sig.R.CopyTo(serializedSig, 32 - sig.R.Length);
+            sig.S.CopyTo(serializedSig, 64 - sig.S.Length);
             return serializedSig;
         }
 
-        public static void Verify(KeyPair keyPair, Msg msg, byte[] signature)
+        [BenchmarkCategory("EcdsaSign"), Benchmark(Description = "BouncyCastle")]
+        public byte[] EcdsaSign_BouncyCastle()
         {
-            var parsedSig = Nethereum.Signer.EthECDSASignatureFactory.FromComponents(signature);
-            var pubKey = new Nethereum.Signer.EthECKey(keyPair.PublicKeyCompressed, isPrivate: false);
-            if (!pubKey.Verify(msg.MsgHash, parsedSig))
-                throw new Exception("Failed to verify signature");
-        }
-    }
-
-    class BouncyCastleUtil : EcdsaSigner, EcdsaVerifier
-    {
-        public static byte[] Sign(KeyPair keyPair, Msg msg)
-        {
+            var msgHash = System.Security.Cryptography.SHA256.HashData(inputs.Msg.MsgBytes);
             var curve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256k1");
             var domain = new Org.BouncyCastle.Crypto.Parameters.ECDomainParameters(curve.Curve, curve.G, curve.N, curve.H);
-            var d = new Org.BouncyCastle.Math.BigInteger(1, keyPair.PrivateKey);
+            var d = new Org.BouncyCastle.Math.BigInteger(1, inputs.KeyPair.PrivateKey);
             var keyParameters = new Org.BouncyCastle.Crypto.Parameters.ECPrivateKeyParameters(d, domain);
             var signer = new Org.BouncyCastle.Crypto.Signers.ECDsaSigner();
             signer.Init(true, keyParameters);
-            var signature = signer.GenerateSignature(msg.MsgHash);
-            var r = signature[0].ToByteArrayUnsigned();
-            var s = signature[1].ToByteArrayUnsigned();
+            var signature = signer.GenerateSignature(msgHash);
+            var r = signature[0];
+            var s = signature[1];
+            // Normalize to low-S (required by libsecp256k1)
+            var halfN = domain.N.ShiftRight(1);
+            if (s.CompareTo(halfN) > 0)
+                s = domain.N.Subtract(s);
+            var rBytes = r.ToByteArrayUnsigned();
+            var sBytes = s.ToByteArrayUnsigned();
             var serializedSig = new byte[64];
-            r.CopyTo(serializedSig, 32 - r.Length);
-            s.CopyTo(serializedSig, 64 - s.Length);
+            rBytes.CopyTo(serializedSig, 32 - rBytes.Length);
+            sBytes.CopyTo(serializedSig, 64 - sBytes.Length);
             return serializedSig;
         }
 
-        public static void Verify(KeyPair keyPair, Msg msg, byte[] signature)
+        [BenchmarkCategory("EcdsaSign"), Benchmark(Description = "StarkBank")]
+        public byte[] EcdsaSign_StarkBank()
+        {
+            // StarkBank hashes internally using SHA256, so pass MsgString directly
+            var privateKey = EllipticCurve.PrivateKey.fromString(inputs.KeyPair.PrivateKey);
+            var sig = EllipticCurve.Ecdsa.sign(inputs.Msg.MsgString, privateKey);
+            var r = sig.r.ToByteArray(isUnsigned: true, isBigEndian: true);
+            var serializedSig = new byte[64];
+            r.CopyTo(serializedSig, 32 - r.Length);
+
+            // Normalize to low-S (StarkBank doesn't do this)
+            var s = sig.s > StarkBankHelper.HalfN ? StarkBankHelper.CurveN - sig.s : sig.s;
+            var sBytes = s.ToByteArray(isUnsigned: true, isBigEndian: true);
+            sBytes.CopyTo(serializedSig, 64 - sBytes.Length);
+            return serializedSig;
+        }
+
+        [BenchmarkCategory("EcdsaSign"), Benchmark(Description = "Chainers")]
+        public byte[] EcdsaSign_Chainers()
+        {
+            var msgHash = System.Security.Cryptography.SHA256.HashData(inputs.Msg.MsgBytes);
+            // SignCompressedCompact returns 65 bytes (1 byte header + 32 R + 32 S)
+            var fullSig = Cryptography.ECDSA.Secp256K1Manager.SignCompressedCompact(msgHash, inputs.KeyPair.PrivateKey);
+            var serializedSig = new byte[64];
+            Array.Copy(fullSig, 1, serializedSig, 0, 64);
+            return serializedSig;
+        }
+
+        // ===== ECDSA Verify =====
+        [BenchmarkCategory("EcdsaVerify"), Benchmark(Description = "Secp256k1Net", Baseline = true)]
+        public void EcdsaVerify_Secp256k1Net()
+        {
+            if (!Secp256k1.Verify(inputs.EcdsaSig, inputs.Msg.MsgHash, inputs.KeyPair.PublicKeyCompressed))
+                throw new Exception();
+        }
+
+        [BenchmarkCategory("EcdsaVerify"), Benchmark(Description = "NBitcoin")]
+        public void EcdsaVerify_NBitcoin()
+        {
+            if (!NBitcoin.Secp256k1.SecpECDSASignature.TryCreateFromCompact(inputs.EcdsaSig, out var parsedSig))
+                throw new Exception();
+            var ecPubKey = NBitcoin.Secp256k1.ECPubKey.Create(inputs.KeyPair.PublicKeyCompressed);
+            if (!ecPubKey.SigVerify(parsedSig, inputs.Msg.MsgHash))
+                throw new Exception();
+        }
+
+        [BenchmarkCategory("EcdsaVerify"), Benchmark(Description = "Nethereum")]
+        public void EcdsaVerify_Nethereum()
+        {
+            var parsedSig = Nethereum.Signer.EthECDSASignatureFactory.FromComponents(inputs.EcdsaSig);
+            var pubKey = new Nethereum.Signer.EthECKey(inputs.KeyPair.PublicKeyCompressed, isPrivate: false);
+            if (!pubKey.Verify(inputs.Msg.MsgHash, parsedSig))
+                throw new Exception();
+        }
+
+        [BenchmarkCategory("EcdsaVerify"), Benchmark(Description = "BouncyCastle")]
+        public void EcdsaVerify_BouncyCastle()
         {
             var curve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256k1");
             var domain = new Org.BouncyCastle.Crypto.Parameters.ECDomainParameters(curve.Curve, curve.G, curve.N, curve.H);
-            var q = curve.Curve.DecodePoint(keyPair.PublicKeyCompressed);
+            var q = curve.Curve.DecodePoint(inputs.KeyPair.PublicKeyCompressed);
             var keyParameters = new Org.BouncyCastle.Crypto.Parameters.ECPublicKeyParameters(q, domain);
             var verifier = new Org.BouncyCastle.Crypto.Signers.ECDsaSigner();
             verifier.Init(false, keyParameters);
-            var rp = new Org.BouncyCastle.Math.BigInteger(1, signature.Take(32).ToArray());
-            var sp = new Org.BouncyCastle.Math.BigInteger(1, signature.Skip(32).ToArray());
-            if (!verifier.VerifySignature(msg.MsgHash, rp, sp))
-                throw new Exception("Failed to verify signature");
-        }
-    }
-
-    class StarkBankUtil : EcdsaSigner, EcdsaVerifier
-    {
-        public static byte[] Sign(KeyPair keyPair, Msg msg)
-        {
-            var privateKey = EllipticCurve.PrivateKey.fromString(keyPair.PrivateKey);
-            var sig = EllipticCurve.Ecdsa.sign(msg.MsgString, privateKey);
-            var r = sig.r.ToByteArray(isUnsigned: true, isBigEndian: true);
-            var s = sig.s.ToByteArray(isUnsigned: true, isBigEndian: true);
-            var serializedSig = new byte[64];
-            r.CopyTo(serializedSig, 32 - r.Length);
-            s.CopyTo(serializedSig, 64 - s.Length);
-            return serializedSig;
+            var rp = new Org.BouncyCastle.Math.BigInteger(1, inputs.EcdsaSig.Take(32).ToArray());
+            var sp = new Org.BouncyCastle.Math.BigInteger(1, inputs.EcdsaSig.Skip(32).ToArray());
+            if (!verifier.VerifySignature(inputs.Msg.MsgHash, rp, sp))
+                throw new Exception();
         }
 
-        public static void Verify(KeyPair keyPair, Msg msg, byte[] signature)
+        [BenchmarkCategory("EcdsaVerify"), Benchmark(Description = "StarkBank")]
+        public void EcdsaVerify_StarkBank()
         {
-            var r = new BigInteger(signature.Take(32).ToArray(), isUnsigned: true, isBigEndian: true);
-            var s = new BigInteger(signature.Skip(32).ToArray(), isUnsigned: true, isBigEndian: true);
+            var r = new BigInteger(inputs.EcdsaSig.Take(32).ToArray(), isUnsigned: true, isBigEndian: true);
+            var s = new BigInteger(inputs.EcdsaSig.Skip(32).ToArray(), isUnsigned: true, isBigEndian: true);
             var parsedSig = new EllipticCurve.Signature(r, s);
-            var pubKey = EllipticCurve.PublicKey.fromString(keyPair.PublicKeyUncompressed.Skip(1).ToArray());
-            if (!EllipticCurve.Ecdsa.verify(msg.MsgString, parsedSig, pubKey))
-                throw new Exception("Failed to verify signature");
+            var pubKey = EllipticCurve.PublicKey.fromString(inputs.KeyPair.PublicKeyUncompressed.Skip(1).ToArray());
+            if (!EllipticCurve.Ecdsa.verify(inputs.Msg.MsgString, parsedSig, pubKey))
+                throw new Exception();
         }
-    }
 
-    class ChainersUtil : EcdsaSigner
-    {
-        public static byte[] Sign(KeyPair keyPair, Msg msg)
+        // ===== Public Key Creation =====
+        [BenchmarkCategory("PubKeyCreate"), Benchmark(Description = "Secp256k1Net", Baseline = true)]
+        public byte[] PubKeyCreate_Secp256k1Net()
         {
-            var sig = Cryptography.ECDSA.Secp256K1Manager.SignCompressedCompact(msg.MsgHash, keyPair.PrivateKey);
-            return sig;
+            return Secp256k1.CreatePublicKey(inputs.KeyPair.PrivateKey, compressed: true);
+        }
+
+        [BenchmarkCategory("PubKeyCreate"), Benchmark(Description = "NBitcoin")]
+        public byte[] PubKeyCreate_NBitcoin()
+        {
+            var ecPrivKey = NBitcoin.Secp256k1.ECPrivKey.Create(inputs.KeyPair.PrivateKey);
+            var pubKey = ecPrivKey.CreatePubKey();
+            return pubKey.ToBytes(true);
+        }
+
+        [BenchmarkCategory("PubKeyCreate"), Benchmark(Description = "Nethereum")]
+        public byte[] PubKeyCreate_Nethereum()
+        {
+            var ecKey = new Nethereum.Signer.EthECKey(inputs.KeyPair.PrivateKey, isPrivate: true);
+            return ecKey.GetPubKey(true);
+        }
+
+        [BenchmarkCategory("PubKeyCreate"), Benchmark(Description = "BouncyCastle")]
+        public byte[] PubKeyCreate_BouncyCastle()
+        {
+            var curve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256k1");
+            var d = new Org.BouncyCastle.Math.BigInteger(1, inputs.KeyPair.PrivateKey);
+            var q = curve.G.Multiply(d);
+            return q.GetEncoded(true);
+        }
+
+        [BenchmarkCategory("PubKeyCreate"), Benchmark(Description = "StarkBank")]
+        public byte[] PubKeyCreate_StarkBank()
+        {
+            var privateKey = EllipticCurve.PrivateKey.fromString(inputs.KeyPair.PrivateKey);
+            var pubKey = privateKey.publicKey();
+            // StarkBank doesn't have a toCompressed() method, so manually compress
+            var x = pubKey.point.x.ToByteArray(isUnsigned: true, isBigEndian: true);
+            var y = pubKey.point.y;
+            var result = new byte[33];
+            result[0] = (byte)(y.IsEven ? 0x02 : 0x03);
+            x.CopyTo(result, 33 - x.Length);
+            return result;
+        }
+
+        [BenchmarkCategory("PubKeyCreate"), Benchmark(Description = "Chainers")]
+        public byte[] PubKeyCreate_Chainers()
+        {
+            return Cryptography.ECDSA.Secp256K1Manager.GetPublicKey(inputs.KeyPair.PrivateKey, true);
+        }
+
+        // ===== ECDH =====
+        // All benchmarks return SHA256(compressed_point) for fair comparison
+        [BenchmarkCategory("Ecdh"), Benchmark(Description = "Secp256k1Net", Baseline = true)]
+        public byte[] Ecdh_Secp256k1Net()
+        {
+            // ComputeSharedSecret returns SHA256(compressed_point) by default
+            return Secp256k1.ComputeSharedSecret(inputs.AlicePubKeyCompressed, inputs.KeyPair.PrivateKey);
+        }
+
+        [BenchmarkCategory("Ecdh"), Benchmark(Description = "NBitcoin")]
+        public byte[] Ecdh_NBitcoin()
+        {
+            var bobPrivKey = NBitcoin.Secp256k1.ECPrivKey.Create(inputs.KeyPair.PrivateKey);
+            var alicePubKey = NBitcoin.Secp256k1.ECPubKey.Create(inputs.AlicePubKeyCompressed);
+            var sharedPubKey = alicePubKey.GetSharedPubkey(bobPrivKey);
+            // Get compressed point and hash it
+            var compressed = sharedPubKey.ToBytes(true);
+            return System.Security.Cryptography.SHA256.HashData(compressed);
+        }
+
+        [BenchmarkCategory("Ecdh"), Benchmark(Description = "Nethereum")]
+        public byte[] Ecdh_Nethereum()
+        {
+            // Nethereum's CalculateCommonSecret returns only x-coordinate (32 bytes)
+            var ecKey = new Nethereum.Signer.EthECKey(inputs.KeyPair.PrivateKey, isPrivate: true);
+            var aliceKey = new Nethereum.Signer.EthECKey(inputs.AlicePubKeyCompressed, isPrivate: false);
+            var xCoord = ecKey.CalculateCommonSecret(aliceKey);
+
+            // Reconstruct compressed point (0x02 prefix = even y, correct for our test inputs)
+            var compressed = new byte[33];
+            compressed[0] = 0x02;
+            xCoord.CopyTo(compressed, 1);
+
+            return System.Security.Cryptography.SHA256.HashData(compressed);
+        }
+
+        [BenchmarkCategory("Ecdh"), Benchmark(Description = "BouncyCastle")]
+        public byte[] Ecdh_BouncyCastle()
+        {
+            var curve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256k1");
+            var bobD = new Org.BouncyCastle.Math.BigInteger(1, inputs.KeyPair.PrivateKey);
+            var aliceQ = curve.Curve.DecodePoint(inputs.AlicePubKeyCompressed);
+            // Compute shared point directly: sharedPoint = aliceQ * bobD
+            var sharedPoint = aliceQ.Multiply(bobD).Normalize();
+            var compressed = sharedPoint.GetEncoded(true);
+            return System.Security.Cryptography.SHA256.HashData(compressed);
+        }
+
+        // ===== Recoverable Sign =====
+        [BenchmarkCategory("EcdsaSignRecoverable"), Benchmark(Description = "Secp256k1Net", Baseline = true)]
+        public byte[] EcdsaSignRecoverable_Secp256k1Net()
+        {
+            var (signature, recoveryId) = Secp256k1.SignRecoverable(inputs.Msg.MsgHash, inputs.KeyPair.PrivateKey);
+            var result = new byte[65];
+            signature.CopyTo(result, 0);
+            result[64] = recoveryId;
+            return result;
+        }
+
+        [BenchmarkCategory("EcdsaSignRecoverable"), Benchmark(Description = "NBitcoin")]
+        public byte[] EcdsaSignRecoverable_NBitcoin()
+        {
+            var ecPrivKey = NBitcoin.Secp256k1.ECPrivKey.Create(inputs.KeyPair.PrivateKey);
+            if (!ecPrivKey.TrySignRecoverable(inputs.Msg.MsgHash, out var sig))
+                throw new Exception();
+            var output = new byte[65];
+            sig.WriteToSpanCompact(output.AsSpan(0, 64), out var recId);
+            output[64] = (byte)recId;
+            return output;
+        }
+
+        [BenchmarkCategory("EcdsaSignRecoverable"), Benchmark(Description = "Nethereum")]
+        public byte[] EcdsaSignRecoverable_Nethereum()
+        {
+            var ecKey = new Nethereum.Signer.EthECKey(inputs.KeyPair.PrivateKey, isPrivate: true);
+            var sig = ecKey.SignAndCalculateV(inputs.Msg.MsgHash);
+            var output = new byte[65];
+            sig.R.CopyTo(output, 32 - sig.R.Length);
+            sig.S.CopyTo(output, 64 - sig.S.Length);
+            output[64] = (byte)(sig.V.Length > 0 ? sig.V[0] : 0);
+            return output;
+        }
+
+        [BenchmarkCategory("EcdsaSignRecoverable"), Benchmark(Description = "BouncyCastle")]
+        public byte[] EcdsaSignRecoverable_BouncyCastle()
+        {
+            var (r, s, recId, _, _) = BouncyCastleRecoveryHelper.SignRecoverable(inputs.KeyPair.PrivateKey, inputs.Msg.MsgHash);
+            var output = new byte[65];
+            var rBytes = r.ToByteArrayUnsigned();
+            var sBytes = s.ToByteArrayUnsigned();
+            rBytes.CopyTo(output, 32 - rBytes.Length);
+            sBytes.CopyTo(output, 64 - sBytes.Length);
+            output[64] = (byte)recId;
+            return output;
+        }
+
+        // ===== Public Key Recovery =====
+        [BenchmarkCategory("EcdsaRecover"), Benchmark(Description = "Secp256k1Net", Baseline = true)]
+        public byte[] EcdsaRecover_Secp256k1Net()
+        {
+            // First sign to get the recoverable signature
+            var (signature, recoveryId) = Secp256k1.SignRecoverable(inputs.Msg.MsgHash, inputs.KeyPair.PrivateKey);
+            // Then recover the public key
+            return Secp256k1.RecoverPublicKey(signature, recoveryId, inputs.Msg.MsgHash, compressed: true);
+        }
+
+        [BenchmarkCategory("EcdsaRecover"), Benchmark(Description = "NBitcoin")]
+        public byte[] EcdsaRecover_NBitcoin()
+        {
+            var ecPrivKey = NBitcoin.Secp256k1.ECPrivKey.Create(inputs.KeyPair.PrivateKey);
+            if (!ecPrivKey.TrySignRecoverable(inputs.Msg.MsgHash, out var recSig))
+                throw new Exception();
+            if (!NBitcoin.Secp256k1.ECPubKey.TryRecover(
+                NBitcoin.Secp256k1.Context.Instance, recSig, inputs.Msg.MsgHash, out var pubKey))
+                throw new Exception();
+            return pubKey.ToBytes(true);
+        }
+
+        [BenchmarkCategory("EcdsaRecover"), Benchmark(Description = "Nethereum")]
+        public byte[] EcdsaRecover_Nethereum()
+        {
+            var ecKey = new Nethereum.Signer.EthECKey(inputs.KeyPair.PrivateKey, isPrivate: true);
+            var sig = ecKey.SignAndCalculateV(inputs.Msg.MsgHash);
+            var recoveredKey = Nethereum.Signer.EthECKey.RecoverFromSignature(sig, inputs.Msg.MsgHash);
+            return recoveredKey.GetPubKey(true);
+        }
+
+        [BenchmarkCategory("EcdsaRecover"), Benchmark(Description = "BouncyCastle")]
+        public byte[] EcdsaRecover_BouncyCastle()
+        {
+            var (r, s, recId, curve, domain) = BouncyCastleRecoveryHelper.SignRecoverable(inputs.KeyPair.PrivateKey, inputs.Msg.MsgHash);
+            var e = new Org.BouncyCastle.Math.BigInteger(1, inputs.Msg.MsgHash);
+            var recovered = BouncyCastleRecoveryHelper.RecoverPublicKey(curve, domain, e, r, s, recId);
+            return recovered.GetEncoded(true);
+        }
+
+        // ===== Schnorr Sign =====
+        [BenchmarkCategory("SchnorrSign"), Benchmark(Description = "Secp256k1Net", Baseline = true)]
+        public byte[] SchnorrSign_Secp256k1Net()
+        {
+            return Secp256k1.SignSchnorr(inputs.Msg.MsgHash, inputs.KeyPair.PrivateKey, default, verify: false);
+        }
+
+        [BenchmarkCategory("SchnorrSign"), Benchmark(Description = "NBitcoin")]
+        public byte[] SchnorrSign_NBitcoin()
+        {
+            var ecPrivKey = NBitcoin.Secp256k1.ECPrivKey.Create(inputs.KeyPair.PrivateKey);
+            var sig = ecPrivKey.SignBIP340(inputs.Msg.MsgHash);
+            return sig.ToBytes();
+        }
+
+        // ===== Schnorr Verify =====
+        [BenchmarkCategory("SchnorrVerify"), Benchmark(Description = "Secp256k1Net", Baseline = true)]
+        public bool SchnorrVerify_Secp256k1Net()
+        {
+            return Secp256k1.VerifySchnorr(schnorrSig, inputs.Msg.MsgHash, xOnlyPubKey);
+        }
+
+        [BenchmarkCategory("SchnorrVerify"), Benchmark(Description = "NBitcoin")]
+        public bool SchnorrVerify_NBitcoin()
+        {
+            var ecPrivKey = NBitcoin.Secp256k1.ECPrivKey.Create(inputs.KeyPair.PrivateKey);
+            var xOnlyPub = ecPrivKey.CreateXOnlyPubKey();
+            if (!NBitcoin.Secp256k1.SecpSchnorrSignature.TryCreate(schnorrSig, out var sig))
+                throw new Exception();
+            return xOnlyPub.SigVerifyBIP340(sig, inputs.Msg.MsgHash);
         }
     }
 
@@ -279,9 +392,14 @@ namespace Secp256k1Net.Bench
     {
         static void Main(string[] args)
         {
-            BenchmarkRunner.Run<EcdsaSignVerify>();
+            // Support --validate flag as shortcut for VALIDATE=true
+            if (args.Length > 0 && args[0] == "--validate")
+            {
+                Environment.SetEnvironmentVariable("VALIDATE", "true");
+            }
+
+            BenchmarkRunner.Run<Secp256k1Benchmarks>();
             Console.WriteLine("Benchmarks done");
         }
     }
-
 }

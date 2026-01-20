@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -27,6 +28,28 @@ namespace Secp256k1Net
             [(OSX, Arm64)] = ("osx-arm64", "lib", ".dylib"),
         };
 
+        // Musl (Alpine) variants - checked first on musl systems
+        static readonly Dictionary<PlatInfo, (string Prefix, string LibPrefix, string Extension)> MuslPlatformPaths = new Dictionary<PlatInfo, (string, string, string)>
+        {
+            [(Linux, X64)] = ("linux-musl-x64", "lib", ".so"),
+            [(Linux, Arm64)] = ("linux-musl-arm64", "lib", ".so"),
+        };
+
+        static readonly Lazy<bool> IsMuslLinux = new Lazy<bool>(() =>
+        {
+            if (!IsOSPlatform(Linux))
+                return false;
+            try
+            {
+                // Alpine Linux has this file
+                return File.Exists("/etc/alpine-release");
+            }
+            catch
+            {
+                return false;
+            }
+        });
+
         static readonly OSPlatform[] SupportedPlatforms = { Windows, OSX, Linux };
         static string SupportedPlatformDescriptions() => string.Join("\n", PlatformPaths.Keys.Select(GetPlatformDesc));
 
@@ -53,16 +76,27 @@ namespace Secp256k1Net
 
             var searchedPaths = new HashSet<string>();
 
+            // On musl Linux (Alpine), try musl-specific paths first, then fall back to glibc paths
+            var platformsToTry = new List<(string Prefix, string LibPrefix, string Extension)>();
+            if (IsMuslLinux.Value && MuslPlatformPaths.TryGetValue(CurrentPlatformInfo, out var muslPlatform))
+            {
+                platformsToTry.Add(muslPlatform);
+            }
+            platformsToTry.Add(platform);
+
             foreach (var containerDir in GetSearchLocations())
             {
-                foreach (var libPath in SearchContainerPaths(containerDir, library, platform))
+                foreach (var platformToTry in platformsToTry)
                 {
-                    if (!searchedPaths.Contains(libPath) && File.Exists(libPath))
+                    foreach (var libPath in SearchContainerPaths(containerDir, library, platformToTry))
                     {
-                        Cache.TryAdd(library, libPath);
-                        return libPath;
+                        if (!searchedPaths.Contains(libPath) && File.Exists(libPath))
+                        {
+                            Cache.TryAdd(library, libPath);
+                            return libPath;
+                        }
+                        searchedPaths.Add(libPath);
                     }
-                    searchedPaths.Add(libPath);
                 }
             }
 
@@ -70,41 +104,45 @@ namespace Secp256k1Net
 
         }
 
+#if NET8_0_OR_GREATER
+        [UnconditionalSuppressMessage("SingleFile", "IL3000:Assembly.Location returns empty in single-file apps",
+            Justification = "AppContext.BaseDirectory is checked first; Assembly.Location is a fallback for non-single-file scenarios")]
+#endif
         static IEnumerable<string> GetSearchLocations()
         {
-            string execPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            if(execPath is not null)
-            {
-                yield return execPath;
-            }
-
-            string callingPath = Path.GetDirectoryName(Assembly.GetCallingAssembly().Location);
-            if(callingPath is not null)
-            {
-                yield return callingPath;
-            }
-
-            var entryAssembly = Assembly.GetEntryAssembly();
-            if(entryAssembly is not null)
-            {
-                string entryPath = Path.GetDirectoryName(entryAssembly.Location);
-                if(entryPath is not null)
-                {
-                    yield return entryPath;
-                }
-            }
-
-            if(AppContext.BaseDirectory is not null)
+            // AppContext.BaseDirectory is the recommended way to get the app directory,
+            // especially for single-file apps where Assembly.Location returns empty.
+            if (!string.IsNullOrEmpty(AppContext.BaseDirectory))
             {
                 yield return AppContext.BaseDirectory;
             }
 
-            foreach(string extraPath in ExtraNativeLibSearchPaths)
+#pragma warning disable IL3000 // Assembly.Location returns empty in single-file apps (handled by AppContext.BaseDirectory above)
+            string execPath = Assembly.GetExecutingAssembly()?.Location;
+            if (!string.IsNullOrEmpty(execPath))
+            {
+                yield return Path.GetDirectoryName(execPath);
+            }
+
+            string callingPath = Assembly.GetCallingAssembly()?.Location;
+            if (!string.IsNullOrEmpty(callingPath))
+            {
+                yield return Path.GetDirectoryName(callingPath);
+            }
+
+            var entryAssemblyPath = Assembly.GetEntryAssembly()?.Location;
+            if (!string.IsNullOrEmpty(entryAssemblyPath))
+            {
+                yield return Path.GetDirectoryName(entryAssemblyPath);
+            }
+#pragma warning restore IL3000
+
+            foreach (string extraPath in ExtraNativeLibSearchPaths)
             {
                 yield return extraPath;
             }
 
-            if(execPath is not null)
+            if (!string.IsNullOrEmpty(execPath))
             {
                 // If the this lib is being executed from its nuget package directory then the native
                 // files should be found up a couple directories.
@@ -114,7 +152,7 @@ namespace Secp256k1Net
 
         static IEnumerable<string> SearchContainerPaths(string containerDir, string library, (string Prefix, string LibPrefix, string Extension) platform)
         {
-            foreach(var subDir in GetSearchSubDir(library, platform))
+            foreach (var subDir in GetSearchSubDir(library, platform))
             {
                 yield return Path.Combine(containerDir, subDir);
                 yield return Path.Combine(containerDir, "publish", subDir);

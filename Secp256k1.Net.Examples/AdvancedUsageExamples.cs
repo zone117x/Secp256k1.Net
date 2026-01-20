@@ -18,6 +18,7 @@ public static class AdvancedUsageExamples
         WorkingWithInternalFormats();
         CustomEcdhHashFunction();
         CustomNonceFunction();
+        Rfc6979NonceFunction();
         PublicKeyComparison();
         PublicKeySorting();
         KeypairOperations();
@@ -141,6 +142,19 @@ public static class AdvancedUsageExamples
         secp256k1.Ecdh(sharedSecretXY, internalPubkeyB, secretKeyA, hashXY, IntPtr.Zero);
         Console.WriteLine($"Hash(X||Y) ECDH: {Convert.ToHexString(sharedSecretXY)}");
 
+        // Using the built-in SHA256 hash function as a callback
+        // The library provides EcdhHashFunctionSha256 which can be wrapped in a delegate
+        EcdhHashFunction builtInSha256 = (Span<byte> output, ReadOnlySpan<byte> x32, ReadOnlySpan<byte> y32, IntPtr data) =>
+        {
+            // Delegate to the built-in implementation
+            return secp256k1.EcdhHashFunctionSha256(output, x32, y32, Span<byte>.Empty) ? 1 : 0;
+        };
+
+        Span<byte> sharedSecretBuiltIn = stackalloc byte[32];
+        secp256k1.Ecdh(sharedSecretBuiltIn, internalPubkeyB, secretKeyA, builtInSha256, IntPtr.Zero);
+        Console.WriteLine($"Built-in SHA256 ECDH: {Convert.ToHexString(sharedSecretBuiltIn)}");
+        Console.WriteLine($"Matches standard: {sharedSecretStandard.SequenceEqual(sharedSecretBuiltIn)}");
+
         Console.WriteLine();
     }
 
@@ -200,6 +214,93 @@ public static class AdvancedUsageExamples
         bool standardValid = secp256k1.EcdsaVerify(internalSig, messageHash, internalPubkey);
         bool customValid = secp256k1.EcdsaVerify(customInternalSig, messageHash, internalPubkey);
         Console.WriteLine($"Standard sig valid: {standardValid}, Custom sig valid: {customValid}");
+
+        Console.WriteLine();
+    }
+
+    /// <summary>
+    /// Demonstrates using the RFC6979 nonce function directly.
+    /// RFC6979 provides deterministic nonce generation for ECDSA signatures,
+    /// ensuring the same message and key always produce the same signature.
+    /// </summary>
+    static void Rfc6979NonceFunction()
+    {
+        Console.WriteLine("--- RFC6979 Nonce Function ---");
+
+        using var secp256k1 = new Secp256k1();
+
+        // Create a keypair
+        Span<byte> secretKey = stackalloc byte[32];
+        RandomNumberGenerator.Fill(secretKey);
+        while (!secp256k1.EcSeckeyVerify(secretKey))
+        {
+            RandomNumberGenerator.Fill(secretKey);
+        }
+
+        Span<byte> internalPubkey = stackalloc byte[64];
+        secp256k1.EcPubkeyCreate(internalPubkey, secretKey);
+
+        byte[] messageHash = SHA256.HashData("RFC6979 nonce example"u8);
+
+        // Generate a nonce using RFC6979 directly
+        // This is the same algorithm used internally by EcdsaSign when no custom nonce function is provided
+        Span<byte> nonce = stackalloc byte[32];
+        bool nonceGenerated = secp256k1.NonceFunctionRfc6979(
+            nonce,
+            messageHash,
+            secretKey,
+            ReadOnlySpan<byte>.Empty, // algo16: optional algorithm identifier (usually empty)
+            Span<byte>.Empty,          // data: optional extra entropy (usually empty)
+            0                          // attempt: retry counter (usually 0)
+        );
+        Console.WriteLine($"Nonce generated: {nonceGenerated}");
+        Console.WriteLine($"RFC6979 nonce: {Convert.ToHexString(nonce)}");
+
+        // Demonstrate determinism: same inputs always produce the same nonce
+        Span<byte> nonce2 = stackalloc byte[32];
+        secp256k1.NonceFunctionRfc6979(nonce2, messageHash, secretKey, ReadOnlySpan<byte>.Empty, Span<byte>.Empty, 0);
+        Console.WriteLine($"Same nonce on retry: {nonce.SequenceEqual(nonce2)}");
+
+        // Using extra entropy (ndata) for additional randomization
+        // When provided, RFC6979 mixes this into the nonce generation
+        Span<byte> extraEntropy = stackalloc byte[32];
+        RandomNumberGenerator.Fill(extraEntropy);
+
+        Span<byte> nonceWithEntropy = stackalloc byte[32];
+        secp256k1.NonceFunctionRfc6979(
+            nonceWithEntropy,
+            messageHash,
+            secretKey,
+            ReadOnlySpan<byte>.Empty,
+            extraEntropy,  // 32 bytes of extra entropy
+            0
+        );
+        Console.WriteLine($"Nonce with extra entropy: {Convert.ToHexString(nonceWithEntropy)}");
+        Console.WriteLine($"Different from base nonce: {!nonce.SequenceEqual(nonceWithEntropy)}");
+
+        // The attempt parameter is used when the generated nonce would produce an invalid signature
+        // (extremely rare). Each attempt produces a different nonce.
+        Span<byte> nonceAttempt1 = stackalloc byte[32];
+        secp256k1.NonceFunctionRfc6979(nonceAttempt1, messageHash, secretKey, ReadOnlySpan<byte>.Empty, Span<byte>.Empty, 1);
+        Console.WriteLine($"Nonce with attempt=1: {Convert.ToHexString(nonceAttempt1)}");
+        Console.WriteLine($"Different from attempt=0: {!nonce.SequenceEqual(nonceAttempt1)}");
+
+        // Sign using the default nonce function (which uses RFC6979 internally)
+        // This produces the same signature every time for the same message/key
+        Span<byte> sig1 = stackalloc byte[64];
+        Span<byte> sig2 = stackalloc byte[64];
+        secp256k1.EcdsaSign(sig1, messageHash, secretKey);
+        secp256k1.EcdsaSign(sig2, messageHash, secretKey);
+
+        Span<byte> compact1 = stackalloc byte[64];
+        Span<byte> compact2 = stackalloc byte[64];
+        secp256k1.EcdsaSignatureSerializeCompact(compact1, sig1);
+        secp256k1.EcdsaSignatureSerializeCompact(compact2, sig2);
+
+        Console.WriteLine($"\nDeterministic signatures (RFC6979):");
+        Console.WriteLine($"Signature 1: {Convert.ToHexString(compact1)}");
+        Console.WriteLine($"Signature 2: {Convert.ToHexString(compact2)}");
+        Console.WriteLine($"Signatures identical: {compact1.SequenceEqual(compact2)}");
 
         Console.WriteLine();
     }
@@ -538,9 +639,27 @@ public static class AdvancedUsageExamples
         Span<byte> sharedSecretB = stackalloc byte[32];
         secp256k1.EllswiftXdh(sharedSecretB, ellswiftA, ellswiftB, secretKeyB, 1, hashFunc, IntPtr.Zero);
 
-        Console.WriteLine($"\nParty A shared secret: {Convert.ToHexString(sharedSecretA)}");
-        Console.WriteLine($"Party B shared secret: {Convert.ToHexString(sharedSecretB)}");
+        Console.WriteLine($"\nParty A shared secret (custom hash): {Convert.ToHexString(sharedSecretA)}");
+        Console.WriteLine($"Party B shared secret (custom hash): {Convert.ToHexString(sharedSecretB)}");
         Console.WriteLine($"Shared secrets match: {sharedSecretA.SequenceEqual(sharedSecretB)}");
+
+        // Using the built-in BIP-324 hash function as a callback
+        // This is the standard hash function for Bitcoin P2P encrypted transport
+        EllswiftXdhHashFunction bip324Hash = (Span<byte> output, ReadOnlySpan<byte> x32,
+            ReadOnlySpan<byte> ell_a64, ReadOnlySpan<byte> ell_b64, IntPtr data) =>
+        {
+            // Delegate to the built-in BIP-324 implementation
+            return secp256k1.EllswiftXdhHashFunctionBip324(output, x32, ell_a64, ell_b64, Span<byte>.Empty) ? 1 : 0;
+        };
+
+        Span<byte> sharedSecretBip324A = stackalloc byte[32];
+        Span<byte> sharedSecretBip324B = stackalloc byte[32];
+        secp256k1.EllswiftXdh(sharedSecretBip324A, ellswiftA, ellswiftB, secretKeyA, 0, bip324Hash, IntPtr.Zero);
+        secp256k1.EllswiftXdh(sharedSecretBip324B, ellswiftA, ellswiftB, secretKeyB, 1, bip324Hash, IntPtr.Zero);
+
+        Console.WriteLine($"\nParty A shared secret (BIP-324): {Convert.ToHexString(sharedSecretBip324A)}");
+        Console.WriteLine($"Party B shared secret (BIP-324): {Convert.ToHexString(sharedSecretBip324B)}");
+        Console.WriteLine($"BIP-324 secrets match: {sharedSecretBip324A.SequenceEqual(sharedSecretBip324B)}");
 
         Console.WriteLine();
         Console.WriteLine("BIP-324 use case:");

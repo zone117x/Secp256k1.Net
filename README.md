@@ -108,12 +108,12 @@ The `Secp256k1` class exposes static functions that are idiomatic C#, using a th
 
 The `Secp256k1` class also provides instance methods that are direct wrappers for the native C library, with near one-to-one API mapping. These offer more control over memory allocation and access to additional features:
 
-- [Custom ECDH hash functions](Secp256k1.Net.Examples/AdvancedUsageExamples.cs#L119) - Use custom hash functions for ECDH
-- [Custom nonce functions](Secp256k1.Net.Examples/AdvancedUsageExamples.cs#L179) - Provide custom nonce generation for signing
-- [Public key sorting](Secp256k1.Net.Examples/AdvancedUsageExamples.cs#L273) - Sort public keys lexicographically
-- [Keypair operations](Secp256k1.Net.Examples/AdvancedUsageExamples.cs#L307) - Work with 96-byte keypair objects
-- [X-only pubkey tweaking](Secp256k1.Net.Examples/AdvancedUsageExamples.cs#L430) - Taproot-style key tweaking (BIP-341)
-- [ElligatorSwift encoding](Secp256k1.Net.Examples/AdvancedUsageExamples.cs#L493) - BIP-324 encrypted transport
+- [Custom ECDH hash functions](Secp256k1.Net.Examples/AdvancedUsageExamples.cs#L97) - Use custom hash functions for ECDH
+- [Custom nonce functions](Secp256k1.Net.Examples/AdvancedUsageExamples.cs#L164) - Provide custom nonce generation for signing
+- [Public key sorting](Secp256k1.Net.Examples/AdvancedUsageExamples.cs#L347) - Sort public keys lexicographically
+- [Keypair operations](Secp256k1.Net.Examples/AdvancedUsageExamples.cs#L392) - Work with 96-byte keypair objects
+- [X-only pubkey tweaking](Secp256k1.Net.Examples/AdvancedUsageExamples.cs#L497) - Taproot-style key tweaking (BIP-341)
+- [ElligatorSwift encoding](Secp256k1.Net.Examples/AdvancedUsageExamples.cs#L561) - BIP-324 encrypted transport
 - [MuSig2 multi-signatures](Secp256k1.Net.Examples/MuSig2Examples.cs#L57) - Aggregate Schnorr signatures from multiple signers 
 
 # Benchmarks

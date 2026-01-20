@@ -6,9 +6,6 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 FRAMEWORK="${1:-net10.0}"
 REPORT_DIR="$PROJECT_DIR/CoverageReport"
 
-echo "Restoring tools..."
-dotnet tool restore
-
 echo "Rebuilding test project..."
 dotnet build "$SCRIPT_DIR" --configuration Release --framework "$FRAMEWORK" --force
 
@@ -21,7 +18,7 @@ dotnet test "$SCRIPT_DIR" --configuration Release --framework "$FRAMEWORK" --no-
 COVERAGE_FILE="$REPORT_DIR/coverage.$FRAMEWORK.cobertura.xml"
 
 echo "Generating HTML report..."
-dotnet tool run reportgenerator \
+dotnet tool exec dotnet-reportgenerator-globaltool --yes -- \
     -reports:"$COVERAGE_FILE" \
     -targetdir:"$REPORT_DIR" \
     -reporttypes:Html

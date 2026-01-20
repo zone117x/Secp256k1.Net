@@ -427,7 +427,9 @@ namespace Secp256k1Net
 
             // EcdsaSignatureNormalize returns true (1) if the signature was NOT normalized
             // Returns false (0) if it was already normalized
-            return !Instance.EcdsaSignatureNormalize(Span<byte>.Empty, sigInternal);
+            // We need to provide a valid output buffer even though we don't use it
+            Span<byte> normalizedOutput = stackalloc byte[UNSERIALIZED_SIGNATURE_LENGTH];
+            return !Instance.EcdsaSignatureNormalize(normalizedOutput, sigInternal);
         }
 
         /// <summary>

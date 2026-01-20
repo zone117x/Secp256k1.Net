@@ -279,6 +279,14 @@ namespace Secp256k1Net.Test
             Secp256k1.CreatePublicKey(invalidKey);
         }
 
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void CreateXOnlyPublicKey_InvalidSecretKey_Throws()
+        {
+            var invalidKey = new byte[32]; // all zeros is invalid
+            Secp256k1.CreateXOnlyPublicKey(invalidKey);
+        }
+
         #endregion
 
         #region Key Validation Tests
@@ -405,6 +413,14 @@ namespace Secp256k1Net.Test
             Secp256k1.CompressPublicKey(invalidKey);
         }
 
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void DecompressPublicKey_InvalidKey_Throws()
+        {
+            var invalidKey = new byte[33];
+            Secp256k1.DecompressPublicKey(invalidKey);
+        }
+
         #endregion
 
         #region ECDSA Sign/Verify Tests
@@ -476,6 +492,27 @@ namespace Secp256k1Net.Test
             Secp256k1.Sign(messageHash, invalidKey);
         }
 
+        [TestMethod]
+        public void Verify_InvalidPublicKey_ReturnsFalse()
+        {
+            var invalidPubKey = new byte[33];
+            var signature = new byte[64];
+            var messageHash = new byte[32];
+
+            Assert.IsFalse(Secp256k1.Verify(signature, messageHash, invalidPubKey));
+        }
+
+        [TestMethod]
+        public void Verify_InvalidSignature_ReturnsFalse()
+        {
+            var (_, publicKey) = Secp256k1.CreateKeyPair();
+            var invalidSig = new byte[64];
+            for (int i = 0; i < 64; i++) invalidSig[i] = 0xFF;
+            var messageHash = new byte[32];
+
+            Assert.IsFalse(Secp256k1.Verify(invalidSig, messageHash, publicKey));
+        }
+
         #endregion
 
         #region Recoverable Signature Tests
@@ -534,6 +571,15 @@ namespace Secp256k1Net.Test
             for (int i = 0; i < signature.Length; i++) signature[i] = 0x01;
 
             Secp256k1.RecoverPublicKey(signature, 5, messageHash);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void SignRecoverable_InvalidSecretKey_Throws()
+        {
+            var invalidKey = new byte[32]; // all zeros is invalid
+            var messageHash = new byte[32];
+            Secp256k1.SignRecoverable(messageHash, invalidKey);
         }
 
         #endregion
@@ -699,6 +745,37 @@ namespace Secp256k1Net.Test
             Secp256k1.VerifySchnorr(signature, message, invalidCompressedPubKey);
         }
 
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void SignSchnorr_WrongMessageLength_Throws()
+        {
+            var secretKey = Secp256k1.CreateSecretKey();
+            var wrongLengthMessage = new byte[31];
+
+            Secp256k1.SignSchnorr(wrongLengthMessage, secretKey);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void SignSchnorr_InvalidSecretKey_Throws()
+        {
+            var invalidKey = new byte[32]; // all zeros is invalid
+            var message = new byte[32];
+
+            Secp256k1.SignSchnorr(message, invalidKey);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void SignSchnorr_ShortAuxRand_Throws()
+        {
+            var secretKey = Secp256k1.CreateSecretKey();
+            var message = new byte[32];
+            var shortAuxRand = new byte[16]; // Less than 32 bytes
+
+            Secp256k1.SignSchnorr(message, secretKey, shortAuxRand);
+        }
+
         #endregion
 
         #region DER Signature Tests
@@ -774,6 +851,26 @@ namespace Secp256k1Net.Test
             Secp256k1.SignatureFromDer(invalidDer);
         }
 
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void SignatureToDer_InvalidSignature_Throws()
+        {
+            var invalidSig = new byte[64];
+            for (int i = 0; i < 64; i++) invalidSig[i] = 0xFF;
+
+            Secp256k1.SignatureToDer(invalidSig);
+        }
+
+        [TestMethod]
+        public void VerifyDer_InvalidPublicKey_ReturnsFalse()
+        {
+            var invalidPubKey = new byte[33];
+            var derSig = new byte[72];
+            var messageHash = new byte[32];
+
+            Assert.IsFalse(Secp256k1.VerifyDer(derSig, messageHash, invalidPubKey));
+        }
+
         #endregion
 
         #region Signature Normalization Tests
@@ -820,6 +917,29 @@ namespace Secp256k1Net.Test
             var invalidSignature = new byte[64];
             for (int i = 0; i < invalidSignature.Length; i++) invalidSignature[i] = 0xFF;
             Secp256k1.NormalizeSignature(invalidSignature);
+        }
+
+        [TestMethod]
+        public void IsNormalizedSignature_NormalizedSignature_ReturnsTrue()
+        {
+            var secretKey = Secp256k1.CreateSecretKey();
+            var messageHash = new byte[32];
+            new Random(42).NextBytes(messageHash);
+
+            // secp256k1 always produces normalized (low-S) signatures
+            var signature = Secp256k1.Sign(messageHash, secretKey);
+
+            Assert.IsTrue(Secp256k1.IsNormalizedSignature(signature));
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void IsNormalizedSignature_InvalidSignature_Throws()
+        {
+            var invalidSig = new byte[64];
+            for (int i = 0; i < 64; i++) invalidSig[i] = 0xFF;
+
+            Secp256k1.IsNormalizedSignature(invalidSig);
         }
 
         #endregion
@@ -969,6 +1089,38 @@ namespace Secp256k1Net.Test
             Secp256k1.TweakSecretKeyAdd(secretKey, tweak);
         }
 
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void TweakPublicKeyAdd_InvalidPublicKey_Throws()
+        {
+            var invalidPubKey = new byte[33];
+            var tweak = new byte[32];
+            new Random(42).NextBytes(tweak);
+
+            Secp256k1.TweakPublicKeyAdd(invalidPubKey, tweak);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void TweakSecretKeyMul_ZeroTweak_Throws()
+        {
+            var secretKey = Secp256k1.CreateSecretKey();
+            var zeroTweak = new byte[32]; // Zero tweak is invalid for multiply
+
+            Secp256k1.TweakSecretKeyMul(secretKey, zeroTweak);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void TweakPublicKeyMul_InvalidPublicKey_Throws()
+        {
+            var invalidPubKey = new byte[33];
+            var tweak = new byte[32];
+            tweak[0] = 0x01;
+
+            Secp256k1.TweakPublicKeyMul(invalidPubKey, tweak);
+        }
+
         #endregion
 
         #region Negate Tests
@@ -1015,6 +1167,22 @@ namespace Secp256k1Net.Test
 
             CollectionAssert.AreNotEqual(publicKey, negated);
             Assert.IsTrue(Secp256k1.IsValidPublicKey(negated));
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void NegateSecretKey_InvalidSecretKey_Throws()
+        {
+            var invalidKey = new byte[32]; // all zeros is invalid
+            Secp256k1.NegateSecretKey(invalidKey);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void NegatePublicKey_InvalidPublicKey_Throws()
+        {
+            var invalidPubKey = new byte[33];
+            Secp256k1.NegatePublicKey(invalidPubKey);
         }
 
         #endregion
@@ -1117,6 +1285,16 @@ namespace Secp256k1Net.Test
             var negatedKey = Secp256k1.NegatePublicKey(publicKey);
 
             Secp256k1.CombinePublicKeys(new[] { publicKey, negatedKey });
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void CombinePublicKeys_InvalidKeyInArray_Throws()
+        {
+            var (_, validKey) = Secp256k1.CreateKeyPair();
+            var invalidKey = new byte[33];
+
+            Secp256k1.CombinePublicKeys(new[] { validKey, invalidKey });
         }
 
         #endregion

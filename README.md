@@ -24,159 +24,97 @@ This library targets `netstandard2.0` and `net8.0`, supporting a wide-range of .
 
 ------
 
-## Usage
+## Quick Start
 
-The `Secp256k1` class provides instance methods that are wrappers for the native `secp256k1` C library. These functions are generated from the C header files and have near one-to-one API usage. For advanced usage, create an instance of the `Secp256k1` class and use these methods directly.
+```csharp
+using Secp256k1Net;
+using System.Security.Cryptography;
+using System.Text;
 
-The `Secp256k1` class also exposes static functions that are idiomatic C#, using a thread-safe internal context. The following is an overview of those static functions:
+// Generate a key pair
+var (secretKey, publicKey) = Secp256k1.CreateKeyPair(compressed: true);
+
+// Sign a message (ECDSA)
+byte[] message = SHA256.HashData(Encoding.UTF8.GetBytes("Hello, secp256k1!"));
+byte[] signature = Secp256k1.Sign(message, secretKey);
+bool isValid = Secp256k1.Verify(signature, message, publicKey);
+
+// Schnorr signatures (BIP-340)
+var (xOnlyPubKey, _) = Secp256k1.CreateXOnlyPublicKey(secretKey);
+byte[] schnorrSig = Secp256k1.SignSchnorr(message, secretKey);
+bool schnorrValid = Secp256k1.VerifySchnorr(schnorrSig, message, xOnlyPubKey);
+
+// ECDH shared secret
+var (aliceSecret, alicePublic) = Secp256k1.CreateKeyPair(compressed: true);
+var (bobSecret, bobPublic) = Secp256k1.CreateKeyPair(compressed: true);
+byte[] sharedSecret1 = Secp256k1.ComputeSharedSecret(bobPublic, aliceSecret);
+byte[] sharedSecret2 = Secp256k1.ComputeSharedSecret(alicePublic, bobSecret);
+// sharedSecret1 == sharedSecret2
+```
+
+See the [examples project](Secp256k1.Net.Examples/) for more complete working examples.
+
+## API Reference
+
+The `Secp256k1` class exposes static functions that are idiomatic C#, using a thread-safe internal context:
 
 #### Key Generation & Validation
-- `CreateSecretKey()` - Generate a cryptographically secure random secret key
-- `CreatePublicKey(secretKey, compressed)` - Derive a serialized public key from a secret key
-- `CreateXOnlyPublicKey(secretKey)` - Derive an x-only public key and parity for BIP-340
-- `CreateKeyPair(compressed)` - Generate a new secret key and public key pair
-- `IsValidSecretKey(secretKey)` - Validate a secret key
-- `IsValidPublicKey(publicKey)` - Validate a serialized public key
+- `CreateSecretKey()` - Generate a cryptographically secure random secret key ([example](Secp256k1.Net.Examples/KeyGenerationExamples.cs#L31))
+- `CreatePublicKey(secretKey, compressed)` - Derive a serialized public key from a secret key ([example](Secp256k1.Net.Examples/KeyGenerationExamples.cs#L48))
+- `CreateXOnlyPublicKey(secretKey)` - Derive an x-only public key and parity for BIP-340 ([example](Secp256k1.Net.Examples/KeyGenerationExamples.cs#L69))
+- `CreateKeyPair(compressed)` - Generate a new secret key and public key pair ([example](Secp256k1.Net.Examples/KeyGenerationExamples.cs#L85))
+- `IsValidSecretKey(secretKey)` - Validate a secret key ([example](Secp256k1.Net.Examples/KeyGenerationExamples.cs#L105))
+- `IsValidPublicKey(publicKey)` - Validate a serialized public key ([example](Secp256k1.Net.Examples/KeyGenerationExamples.cs#L132))
 
 #### Public Key Operations
-- `CompressPublicKey(publicKey)` - Convert a public key to 33-byte compressed format
-- `DecompressPublicKey(publicKey)` - Convert a public key to 65-byte uncompressed format
-- `NegatePublicKey(publicKey, compressed)` - Negate a public key
-- `CombinePublicKeys(publicKeys, compressed)` - Add multiple public keys together
+- `CompressPublicKey(publicKey)` - Convert a public key to 33-byte compressed format ([example](Secp256k1.Net.Examples/PublicKeyOperationsExamples.cs#L34))
+- `DecompressPublicKey(publicKey)` - Convert a public key to 65-byte uncompressed format ([example](Secp256k1.Net.Examples/PublicKeyOperationsExamples.cs#L57))
+- `NegatePublicKey(publicKey, compressed)` - Negate a public key ([example](Secp256k1.Net.Examples/PublicKeyOperationsExamples.cs#L76))
+- `CombinePublicKeys(publicKeys, compressed)` - Add multiple public keys together ([example](Secp256k1.Net.Examples/PublicKeyOperationsExamples.cs#L107))
 
 #### ECDSA Signing & Verification
-- `Sign(messageHash, secretKey)` - Create a 64-byte compact ECDSA signature
-- `Verify(signature, messageHash, publicKey)` - Verify an ECDSA signature
-- `SignRecoverable(messageHash, secretKey)` - Create a recoverable signature with recovery ID
-- `RecoverPublicKey(signature, recoveryId, messageHash, compressed)` - Recover public key from signature
+- `Sign(messageHash, secretKey)` - Create a 64-byte compact ECDSA signature ([example](Secp256k1.Net.Examples/EcdsaSigningExamples.cs#L41))
+- `Verify(signature, messageHash, publicKey)` - Verify an ECDSA signature ([example](Secp256k1.Net.Examples/EcdsaSigningExamples.cs#L46))
+- `SignRecoverable(messageHash, secretKey)` - Create a recoverable signature with recovery ID ([example](Secp256k1.Net.Examples/EcdsaSigningExamples.cs#L62))
+- `RecoverPublicKey(signature, recoveryId, messageHash, compressed)` - Recover public key from signature ([example](Secp256k1.Net.Examples/EcdsaSigningExamples.cs#L86))
 
 #### DER Signature Format
-- `SignatureToDer(compactSignature)` - Convert compact signature to DER format
-- `SignatureFromDer(derSignature)` - Convert DER signature to compact format
-- `VerifyDer(derSignature, messageHash, publicKey)` - Verify a DER-encoded signature
+- `SignatureToDer(compactSignature)` - Convert compact signature to DER format ([example](Secp256k1.Net.Examples/DerSignatureExamples.cs#L37))
+- `SignatureFromDer(derSignature)` - Convert DER signature to compact format ([example](Secp256k1.Net.Examples/DerSignatureExamples.cs#L58))
+- `VerifyDer(derSignature, messageHash, publicKey)` - Verify a DER-encoded signature ([example](Secp256k1.Net.Examples/DerSignatureExamples.cs#L82))
 
 #### Signature Normalization
-- `NormalizeSignature(signature)` - Normalize signature to lower-S form
-- `IsNormalizedSignature(signature)` - Check if signature is in lower-S form
+- `NormalizeSignature(signature)` - Normalize signature to lower-S form ([example](Secp256k1.Net.Examples/SignatureNormalizationExamples.cs#L36))
+- `IsNormalizedSignature(signature)` - Check if signature is in lower-S form ([example](Secp256k1.Net.Examples/SignatureNormalizationExamples.cs#L67))
 
 #### Schnorr Signatures (BIP-340)
-- `SignSchnorr(messageHash, secretKey, auxRand)` - Create a Schnorr signature
-- `VerifySchnorr(signature, message, publicKey)` - Verify a Schnorr signature
+- `SignSchnorr(messageHash, secretKey, auxRand)` - Create a Schnorr signature ([example](Secp256k1.Net.Examples/SchnorrSignatureExamples.cs#L42))
+- `VerifySchnorr(signature, message, publicKey)` - Verify a Schnorr signature ([example](Secp256k1.Net.Examples/SchnorrSignatureExamples.cs#L66))
 
 #### ECDH Key Agreement
-- `ComputeSharedSecret(publicKey, secretKey)` - Compute ECDH shared secret
+- `ComputeSharedSecret(publicKey, secretKey)` - Compute ECDH shared secret ([example](Secp256k1.Net.Examples/EcdhExamples.cs#L35))
 
 #### Key Tweaking (BIP-32 HD Wallets)
-- `TweakSecretKeyAdd(secretKey, tweak)` - Add a tweak to a secret key
-- `TweakPublicKeyAdd(publicKey, tweak, compressed)` - Add a tweak to a public key
-- `TweakSecretKeyMul(secretKey, tweak)` - Multiply a secret key by a tweak
-- `TweakPublicKeyMul(publicKey, tweak, compressed)` - Multiply a public key by a tweak
-- `NegateSecretKey(secretKey)` - Negate a secret key
+- `TweakSecretKeyAdd(secretKey, tweak)` - Add a tweak to a secret key ([example](Secp256k1.Net.Examples/KeyTweakingExamples.cs#L37))
+- `TweakPublicKeyAdd(publicKey, tweak, compressed)` - Add a tweak to a public key ([example](Secp256k1.Net.Examples/KeyTweakingExamples.cs#L60))
+- `TweakSecretKeyMul(secretKey, tweak)` - Multiply a secret key by a tweak ([example](Secp256k1.Net.Examples/KeyTweakingExamples.cs#L87))
+- `TweakPublicKeyMul(publicKey, tweak, compressed)` - Multiply a public key by a tweak ([example](Secp256k1.Net.Examples/KeyTweakingExamples.cs#L107))
+- `NegateSecretKey(secretKey)` - Negate a secret key ([example](Secp256k1.Net.Examples/KeyTweakingExamples.cs#L134))
 
 #### Hashing
-- `TaggedHash(tag, message)` - Compute a BIP-340 tagged hash
+- `TaggedHash(tag, message)` - Compute a BIP-340 tagged hash ([example](Secp256k1.Net.Examples/HashingExamples.cs#L32))
 
-## Example Usage
+## Advanced Usage
 
-#### Generate key pair
-```csharp
-using var secp256k1 = new Secp256k1();
+The `Secp256k1` class also provides instance methods that are direct wrappers for the native C library, with near one-to-one API mapping. These offer more control over memory allocation and access to additional features:
 
-// Generate a private key
-var privateKey = new byte[Secp256k1.PRIVKEY_LENGTH];
-var rnd = System.Security.Cryptography.RandomNumberGenerator.Create();
-do { rnd.GetBytes(privateKey); }
-while (!secp256k1.SecretKeyVerify(privateKey));
-
-// Derive public key bytes
-var publicKey = new byte[Secp256k1.PUBKEY_LENGTH];
-Assert.True(secp256k1.PublicKeyCreate(publicKey, privateKey));
-
-// Serialize the public key to compressed format
-var serializedCompressedPublicKey = new byte[Secp256k1.SERIALIZED_COMPRESSED_PUBKEY_LENGTH];
-Assert.True(secp256k1.PublicKeySerialize(serializedCompressedPublicKey, publicKey, Flags.SECP256K1_EC_COMPRESSED));
-
-// Serialize the public key to uncompressed format
-var serializedUncompressedPublicKey = new byte[Secp256k1.SERIALIZED_UNCOMPRESSED_PUBKEY_LENGTH];
-Assert.True(secp256k1.PublicKeySerialize(serializedUncompressedPublicKey, publicKey, Flags.SECP256K1_EC_UNCOMPRESSED));
-
-// Parse public key from serialized compressed public key
-var parsedPublicKey1 = new byte[Secp256k1.PUBKEY_LENGTH];
-Assert.IsTrue(secp256k1.PublicKeyParse(parsedPublicKey1, serializedCompressedPublicKey));
-Assert.AreEqual(Convert.ToHexString(publicKey), Convert.ToHexString(parsedPublicKey1));
-
-// Parse public key from serialied uncompressed public key
-var parsedPublicKey2 = new byte[Secp256k1.PUBKEY_LENGTH];
-Assert.IsTrue(secp256k1.PublicKeyParse(parsedPublicKey2, serializedUncompressedPublicKey));
-Assert.AreEqual(Convert.ToHexString(publicKey), Convert.ToHexString(parsedPublicKey2));
-```
-
-#### Sign and verify message
-```csharp
-using var secp256k1 = new Secp256k1();
-var keypair = new
-{
-    PrivateKey = Convert.FromHexString("7ef7543476bf146020cb59f9968a25ec67c3c73dbebad8a0b53a3256170dcdfe"),
-    PublicKey = Convert.FromHexString("2208d5dc41d4f3ed555aff761e9bb0b99fbe6d1503b98711944be6a362242ebfa1c788c7a4e13f6aaa4099f9d2175fc031e5aa3ba08eb280e87dfb43bdae207f")
-};
-
-// Create message hash
-var msgBytes = System.Text.Encoding.UTF8.GetBytes("Hello!!");
-var msgHash = System.Security.Cryptography.SHA256.HashData(msgBytes);
-Assert.Equal(Secp256k1.HASH_LENGTH, msgHash.Length);
-
-// Sign then verify message hash
-var signature = new byte[Secp256k1.SIGNATURE_LENGTH];
-Assert.True(secp256k1.Sign(signature, msgHash, keypair.PrivateKey));
-Assert.True(secp256k1.Verify(signature, msgHash, keypair.PublicKey));
-```
-
-#### Compute an ECDH (EC Diffie-Hellman) secret
-```csharp
-using var secp256k1 = new Secp256k1();
-            
-var aliceKeyPair = new
-{
-  PrivateKey = Convert.FromHexString("7ef7543476bf146020cb59f9968a25ec67c3c73dbebad8a0b53a3256170dcdfe"),
-  PublicKey = Convert.FromHexString("2208d5dc41d4f3ed555aff761e9bb0b99fbe6d1503b98711944be6a362242ebfa1c788c7a4e13f6aaa4099f9d2175fc031e5aa3ba08eb280e87dfb43bdae207f")
-};
-var bobKeyPair = new
-{
-  PrivateKey = Convert.FromHexString("d8bdb07407bb011137ef7ba6a7f07c6a55c1e3600a6aa138e34ab5c16439ceda"),
-  PublicKey = Convert.FromHexString("62127c4563f711169b1d3e56a34f218302a2587c3725bd418b9388933373e095d45ec4d74ca734599598c89d7719bda5fb799afeec89c6940d569e05bd5a1bba")
-};
-
-// Create secret using Alice's public key and Bob's private key
-var secret1 = new byte[Secp256k1.SECRET_LENGTH];
-Assert.True(secp256k1.Ecdh(secret1, aliceKeyPair.PublicKey, bobKeyPair.PrivateKey));
-
-// Create secret using Bob's public key and Alice's private key
-var secret2 = new byte[Secp256k1.SECRET_LENGTH];
-Assert.True(secp256k1.Ecdh(secret2, bobKeyPair.PublicKey, aliceKeyPair.PrivateKey));
-
-// Validate secrets match
-Assert.Equal(Convert.ToHexString(secret1), Convert.ToHexString(secret2));
-```
-
-#### Parsing and serializing DER signatures
-```csharp
-using var secp256k1 = new Secp256k1();
-
-// Parse DER signature
-var signatureOutput = new byte[Secp256k1.SIGNATURE_LENGTH];
-var derSignature = Convert.FromHexString("30440220484ECE2B365D2B2C2EAD34B518328BBFEF0F4409349EEEC9CB19837B5795A5F5022040C4F6901FE489F923C49D4104554FD08595EAF864137F87DADDD0E3619B0605");                
-Assert.True(secp256k1.SignatureParseDer(signatureOutput, derSignature));
-
-// Serialize DER signature
-Span<byte> derSignatureOutput = new byte[Secp256k1.SERIALIZED_DER_SIGNATURE_MAX_SIZE];
-Assert.True(secp256k1.SignatureSerializeDer(derSignatureOutput, signatureOutput, out int signatureOutputLength));
-derSignatureOutput = derSignatureOutput.Slice(0, signatureOutputLength);
-
-// Validate signature is the same after round trip parse and serialize
-Assert.Equal(Convert.ToHexString(derSignature), Convert.ToHexString(derSignatureOutput));
-```
-
-See the [tests project](Secp256k1.Net.Test/Tests.cs) for more examples. 
+- [Custom ECDH hash functions](Secp256k1.Net.Examples/AdvancedUsageExamples.cs#L119) - Use custom hash functions for ECDH
+- [Custom nonce functions](Secp256k1.Net.Examples/AdvancedUsageExamples.cs#L179) - Provide custom nonce generation for signing
+- [Public key sorting](Secp256k1.Net.Examples/AdvancedUsageExamples.cs#L273) - Sort public keys lexicographically
+- [Keypair operations](Secp256k1.Net.Examples/AdvancedUsageExamples.cs#L307) - Work with 96-byte keypair objects
+- [X-only pubkey tweaking](Secp256k1.Net.Examples/AdvancedUsageExamples.cs#L430) - Taproot-style key tweaking (BIP-341)
+- [ElligatorSwift encoding](Secp256k1.Net.Examples/AdvancedUsageExamples.cs#L493) - BIP-324 encrypted transport
+- [MuSig2 multi-signatures](Secp256k1.Net.Examples/MuSig2Examples.cs#L57) - Aggregate Schnorr signatures from multiple signers 
 
 # Benchmarks
 
